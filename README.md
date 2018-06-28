@@ -23,6 +23,20 @@ $ make
 ```
 $ ./bin/auto_EACSF
 ```
+5. Open the application by typing the line below (do not click to open). 
+```
+$ ./Auto_EACSF
+```
+
+Necessary Executables
+- ABC: 
+- ANTs: 
+- BRAINSFit:
+- FSL-BET
+- ImageMath:
+- ITK Transform Tools:
+- N4: 
+- Python: 
 
 # How to fix an error?
 You can fix an error by utilizing Qtcreator
@@ -31,3 +45,5 @@ You can fix an error by utilizing Qtcreator
 3. Build the application
 4. Run on Qtcreator 
 5. Check console for detailed error message
+
+

@@ -94,6 +94,14 @@ private slots:
     void on_checkBox_SkullStripping_stateChanged(int arg1);
     void on_CerebellumMask_clicked();
     void on_pushButton_execute_clicked();
+
+    //ANTS Registration
+    void on_comboBox_RegType_currentTextChanged(const QString &arg1);
+    void on_comboBox_Metric_currentTextChanged(const QString &arg1);
+    void on_spinBox_SimilarityParameter_valueChanged(const QString &arg1);
+    void on_doubleSpinBox_GaussianSigma_valueChanged(const QString &arg1);
+    void on_spinBox_T1Weight_valueChanged(const QString &arg1);
+    void on_lineEdit_Iterations_textChanged(const QString &arg1);
 };
 
 #endif // CSFWINDOW_H

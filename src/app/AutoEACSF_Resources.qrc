@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/PythonScripts">
-        <file>script.py</file>
+        <file>main_script.py</file>
         <file>ABCparam.xml</file>
         <file>vent_mask.py</file>
         <file>rigid_align.py</file>

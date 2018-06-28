@@ -4,5 +4,5 @@ csfwindow.h
 loaddata_dialog.cpp
 loaddata_dialog.h
 csfwindow.ui
-script.py
+main_script.py
 AutoEACSF_Resources.qrc

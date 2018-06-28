@@ -30,6 +30,16 @@ QString ITK;
 QString N4;
 QString Python;
 
+//ANTS Registration_Default
+QString Registration_Type;
+QString Transformation_Step="0.25";
+QString Iterations="100x50x25";
+QString Sim_Metric="CC";
+QString Sim_Parameter="4";
+QString Gaussian="3";
+QString T1_Weight="1";
+
+
 CSFWindow::CSFWindow(QWidget *parent):QMainWindow(parent){
     this->setupUi(this);
     this->initializeMenuBar();
@@ -373,7 +383,37 @@ void CSFWindow::on_pushButton_TissueSegAtlas_clicked()
 
 // 5th Tab - 4.Ventricle Masking
 
+
 // 6th Tab - 5.ANTS Registration
+void CSFWindow::on_comboBox_RegType_currentTextChanged(const QString &registration_type)
+{
+    Registration_Type=registration_type;
+}
+
+void CSFWindow::on_comboBox_Metric_currentTextChanged(const QString &sim_metric)
+{
+    Sim_Metric=sim_metric;
+}
+
+void CSFWindow::on_lineEdit_Iterations_textChanged(const QString &iterations)
+{
+    Iterations=iterations;
+}
+
+void CSFWindow::on_spinBox_SimilarityParameter_valueChanged(const QString &sim_parameter)
+{
+    Sim_Parameter=sim_parameter;
+}
+
+void CSFWindow::on_doubleSpinBox_GaussianSigma_valueChanged(const QString &gaussian)
+{
+    Gaussian=gaussian;
+}
+
+void CSFWindow::on_spinBox_T1Weight_valueChanged(const QString &t1_weight)
+{
+    T1_Weight=t1_weight;
+}
 
 // 7th Tab - 6.Execution
 void CSFWindow::on_checkBox_SkullStripping_clicked(bool checked)
@@ -392,7 +432,7 @@ void CSFWindow::readyReadStandardOutput()
 void CSFWindow::on_pushButton_execute_clicked()
 {
     //0. WRITE MAIN_SCRIPT
-    QFile file(QString(":/PythonScripts/script.py"));
+    QFile file(QString(":/PythonScripts/main_script.py"));
     file.open(QIODevice::ReadOnly);
     QString script = file.readAll();
     file.close();
@@ -470,7 +510,13 @@ void CSFWindow::on_pushButton_execute_clicked()
 
     v_script.replace("@T1IMG@", "./stx_noscale_718312_V24_t1w_RAI_Bias.nrrd");
     v_script.replace("@ATLAS@", "./atlas_T1_sym_stripped_RAI-byte.nrrd");
-    v_script.replace("@IMAGEMETRIC@", "");
+    v_script.replace("@REG_TYPE@", Registration_Type);
+    v_script.replace("@TRANS_STEP@", Transformation_Step);
+    v_script.replace("@ITERATIONS@", Iterations);
+    v_script.replace("@SIM_METRIC@", Sim_Metric);
+    v_script.replace("@SIM_PARAMETER@", Sim_Parameter);
+    v_script.replace("@GAUSSIAN@", Gaussian);
+    v_script.replace("@T1_WEIGHT@", T1_Weight);
     v_script.replace("@TISSUE_SEG@", "./stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd");
     v_script.replace("@VENTRICLE_MASK@" ,"./Vent_CSF-BIN-RAI-Fusion_INV.nrrd");
     v_script.replace("@OUTPUT_DIR@", output_dir);
@@ -487,7 +533,8 @@ void CSFWindow::on_pushButton_execute_clicked()
     QMessageBox::information(
         this,
         tr("Auto EACSF"),
-        tr("Python scripts are running. It may take up to 24 hours to process.") );
+        tr("Python scripts are running. It may take up to 24 hours to process.")
+    );
 
     // RUN PYTHON    
     QString  command("python");
@@ -496,3 +543,4 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardOutput()), SLOT(readyReadStandardOutput()));
     prc->startDetached(command, params, output_dir);
 }
+
