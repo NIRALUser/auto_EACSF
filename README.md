@@ -7,7 +7,7 @@ Requirements: Qt5, Python3
 Build:
 1. Get files from Github
 ```
-$ git clone git@github.com:ArthurLeMaout/auto_EACSF.git
+$ git clone http://github.com/ArthurLeMaout/auto_EACSF.git
 ```
 2. Make an out-of-source build directory
 ```
