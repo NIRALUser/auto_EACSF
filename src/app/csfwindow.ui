@@ -17,14 +17,14 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
+      <x>30</x>
+      <y>10</y>
       <width>1021</width>
-      <height>631</height>
+      <height>651</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>5</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -73,7 +73,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>200</y>
+        <y>250</y>
         <width>231</width>
         <height>31</height>
        </rect>
@@ -86,7 +86,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>250</y>
+        <y>200</y>
         <width>231</width>
         <height>31</height>
        </rect>
@@ -101,7 +101,7 @@
         <x>320</x>
         <y>50</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -114,7 +114,7 @@
         <x>320</x>
         <y>100</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -124,17 +124,17 @@
         <x>320</x>
         <y>150</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_VentriclMask">
+     <widget class="QLineEdit" name="lineEdit_VentricleMask">
       <property name="geometry">
        <rect>
         <x>320</x>
-        <y>200</y>
+        <y>250</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -145,9 +145,9 @@
       <property name="geometry">
        <rect>
         <x>320</x>
-        <y>250</y>
+        <y>200</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -160,7 +160,7 @@
         <x>320</x>
         <y>370</y>
         <width>611</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -190,7 +190,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>330</y>
+        <y>340</y>
         <width>131</width>
         <height>31</height>
        </rect>
@@ -222,7 +222,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>420</y>
+        <y>430</y>
         <width>91</width>
         <height>21</height>
        </rect>
@@ -246,11 +246,20 @@
         <height>31</height>
        </rect>
       </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>500</number>
+      </property>
       <property name="value">
-       <number>37</number>
+       <number>70</number>
       </property>
      </widget>
      <widget class="QDoubleSpinBox" name="doubleSpinBox_mm">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>210</x>
@@ -258,6 +267,12 @@
         <width>71</width>
         <height>31</height>
        </rect>
+      </property>
+      <property name="minimum">
+       <double>-50.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>50.000000000000000</double>
       </property>
       <property name="singleStep">
        <double>0.010000000000000</double>
@@ -280,6 +295,9 @@
       </property>
      </widget>
      <widget class="QRadioButton" name="radioButton_mm">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>70</x>
@@ -291,6 +309,9 @@
       <property name="text">
        <string>Option 2: mm</string>
       </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="CerebellumMask">
       <property name="geometry">
@@ -298,7 +319,7 @@
         <x>80</x>
         <y>300</y>
         <width>231</width>
-        <height>28</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -311,7 +332,7 @@
         <x>320</x>
         <y>300</y>
         <width>611</width>
-        <height>32</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -326,9 +347,9 @@
      <widget class="QPushButton" name="pushButton_ABC">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>30</x>
         <y>50</y>
-        <width>151</width>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
@@ -339,9 +360,9 @@
      <widget class="QPushButton" name="pushButton_ANTS">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>30</x>
         <y>100</y>
-        <width>151</width>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
@@ -349,25 +370,25 @@
        <string>ANTS</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_ITK">
+     <widget class="QPushButton" name="pushButton_convertITKformats">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>300</y>
-        <width>151</width>
+        <x>30</x>
+        <y>350</y>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>ITK Transform Tools</string>
+       <string>convertITKformats</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_FSLBET">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>30</x>
         <y>200</y>
-        <width>151</width>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
@@ -375,25 +396,12 @@
        <string>FSLBET</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_N4">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
-        <y>350</y>
-        <width>151</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>N4</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="pushButton_ImageMath">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>30</x>
         <y>250</y>
-        <width>151</width>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
@@ -404,14 +412,14 @@
      <widget class="QPushButton" name="pushButton_Python">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>400</y>
-        <width>151</width>
+        <x>30</x>
+        <y>450</y>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Python</string>
+       <string>Python 3</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_ABC">
@@ -420,7 +428,7 @@
         <x>220</x>
         <y>50</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -433,7 +441,7 @@
         <x>220</x>
         <y>100</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -443,7 +451,7 @@
         <x>220</x>
         <y>150</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -453,7 +461,7 @@
         <x>220</x>
         <y>200</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -463,27 +471,17 @@
         <x>220</x>
         <y>250</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_ITK">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>300</y>
-        <width>631</width>
-        <height>33</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_N4">
+     <widget class="QLineEdit" name="lineEdit_convertITKformats">
       <property name="geometry">
        <rect>
         <x>220</x>
         <y>350</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -509,9 +507,9 @@
      <widget class="QPushButton" name="pushButton_BRAINSFit">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>30</x>
         <y>150</y>
-        <width>151</width>
+        <width>181</width>
         <height>31</height>
        </rect>
       </property>
@@ -523,10 +521,59 @@
       <property name="geometry">
        <rect>
         <x>220</x>
+        <y>450</y>
+        <width>631</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ImageStat">
+      <property name="geometry">
+       <rect>
+        <x>220</x>
+        <y>300</y>
+        <width>631</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ImageStat">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>300</y>
+        <width>181</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ImageStat</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WarpImageMultiTransform">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>400</y>
+        <width>181</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>WarpImageMultiTransform</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_WarpImageMultiTransform">
+      <property name="geometry">
+       <rect>
+        <x>220</x>
         <y>400</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
+      </property>
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </widget>
@@ -554,7 +601,7 @@
       <property name="geometry">
        <rect>
         <x>60</x>
-        <y>80</y>
+        <y>140</y>
         <width>201</width>
         <height>26</height>
        </rect>
@@ -620,27 +667,81 @@
        <string>2. Skull Stripping</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_ReferenceAtlasDir">
+     <widget class="QPushButton" name="pushButton_ReferenceAtlasFile">
       <property name="geometry">
        <rect>
         <x>60</x>
-        <y>120</y>
+        <y>90</y>
         <width>201</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Reference Atlas Directory</string>
+       <string>Reference Atlas File</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_ReferenceAtlasDir">
+     <widget class="QLineEdit" name="lineEdit_ReferenceAtlasFile">
       <property name="geometry">
        <rect>
         <x>280</x>
-        <y>120</y>
+        <y>90</y>
         <width>661</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_dataAlignmentMessage">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>290</x>
+        <y>40</y>
+        <width>551</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="text">
+       <string>You have selected at least one mask, which implies your data is aligned.</string>
+      </property>
+     </widget>
+     <widget class="QListWidget" name="listWidget_SSAtlases">
+      <property name="geometry">
+       <rect>
+        <x>260</x>
+        <y>310</y>
+        <width>501</width>
+        <height>291</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_SSAtlasFolder">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>260</y>
+        <width>661</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_SSAtlasFolder">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>260</y>
+        <width>201</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Atlases Folder</string>
       </property>
      </widget>
     </widget>
@@ -715,7 +816,7 @@
         <x>360</x>
         <y>150</y>
         <width>601</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -733,11 +834,11 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab_VentricleMasking">
+    <widget class="QWidget" name="tab_VentricleRemoval">
      <attribute name="title">
-      <string>4. Ventricle Masking</string>
+      <string>4. Ventricle Removal</string>
      </attribute>
-     <widget class="QLabel" name="label_VerticleMasking">
+     <widget class="QLabel" name="label_VentricleRemoval">
       <property name="geometry">
        <rect>
         <x>30</x>
@@ -753,33 +854,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Ventricle Masking Parameters</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_ROIAtalsT1">
-      <property name="geometry">
-       <rect>
-        <x>170</x>
-        <y>90</y>
-        <width>81</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>ROI Atlas T1</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_ROIAtalsLabel">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>140</y>
-        <width>111</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>ROI Atlas Label</string>
+       <string>Ventricle Removal Parameters</string>
       </property>
      </widget>
      <widget class="QSpinBox" name="spinBox_LeftVentricleLabel">
@@ -792,7 +867,7 @@
        </rect>
       </property>
       <property name="value">
-       <number>45</number>
+       <number>3</number>
       </property>
      </widget>
      <widget class="QSpinBox" name="spinBox_RightVentricleLabel">
@@ -805,7 +880,7 @@
        </rect>
       </property>
       <property name="value">
-       <number>46</number>
+       <number>4</number>
       </property>
      </widget>
      <widget class="QLabel" name="label_LeftVentricleLabel">
@@ -840,7 +915,7 @@
         <x>270</x>
         <y>90</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
@@ -850,11 +925,11 @@
         <x>270</x>
         <y>140</y>
         <width>631</width>
-        <height>33</height>
+        <height>31</height>
        </rect>
       </property>
      </widget>
-     <widget class="QCheckBox" name="checkBox_VerticleMasking">
+     <widget class="QCheckBox" name="checkBox_VentricleRemoval">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -864,23 +939,49 @@
        </rect>
       </property>
       <property name="text">
-       <string>Perform ventircle masking</string>
+       <string>Remove ventricles from CSF</string>
       </property>
       <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QPushButton" name="pushButton_ROIAtlasT1">
+      <property name="geometry">
+       <rect>
+        <x>119</x>
+        <y>90</y>
+        <width>121</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ROI Atlas T1</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ROIAtlasLabel">
+      <property name="geometry">
+       <rect>
+        <x>119</x>
+        <y>140</y>
+        <width>121</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>ROI Atlas Label</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_ANTSregistration">
      <attribute name="title">
-      <string>5. ANTS Registration</string>
+      <string>ANTS Parameters</string>
      </attribute>
      <widget class="QLabel" name="label_ANTSregistration">
       <property name="geometry">
        <rect>
         <x>20</x>
         <y>20</y>
-        <width>171</width>
+        <width>221</width>
         <height>21</height>
        </rect>
       </property>
@@ -1243,32 +1344,88 @@
     </widget>
     <widget class="QWidget" name="tab_Execution">
      <attribute name="title">
-      <string>6. Execution</string>
+      <string>Execution</string>
      </attribute>
-     <widget class="QGraphicsView" name="graphicsView">
+     <widget class="QTextBrowser" name="out_log">
       <property name="geometry">
        <rect>
         <x>40</x>
-        <y>30</y>
-        <width>741</width>
-        <height>521</height>
+        <y>70</y>
+        <width>451</width>
+        <height>511</height>
+       </rect>
+      </property>
+      <property name="html">
+       <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+     <widget class="QTextBrowser" name="err_log">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>70</y>
+        <width>451</width>
+        <height>511</height>
        </rect>
       </property>
      </widget>
+     <widget class="QLabel" name="label_out">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>50</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>9</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Output messages</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_err">
+      <property name="geometry">
+       <rect>
+        <x>740</x>
+        <y>50</y>
+        <width>59</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Errors</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_execute">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>20</y>
+        <width>101</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Execute</string>
+      </property>
+     </widget>
     </widget>
-   </widget>
-   <widget class="QPushButton" name="pushButton_execute">
-    <property name="geometry">
-     <rect>
-      <x>910</x>
-      <y>660</y>
-      <width>95</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Execute</string>
-    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -1277,7 +1434,7 @@
      <x>0</x>
      <y>0</y>
      <width>1065</width>
-     <height>28</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
