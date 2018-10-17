@@ -53,6 +53,8 @@ if(NOT DEFINED ABC_SOURCE_DIR)
       -DITK_DIR:PATH=${ITK_DIR}
 
       ${${proj}_CMAKE_OPTIONS}
+    DEPENDS
+      ${${proj}_DEPENDENCIES}
     INSTALL_COMMAND ""
     )
   set(ABC_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
