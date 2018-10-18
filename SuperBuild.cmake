@@ -139,3 +139,5 @@ if(verbose)
     message("  ${argname}")
   endforeach()
 endif()
+
+add_subdirectory(src)
