@@ -15,7 +15,7 @@ using std::endl;
 using std::cout;
 
 CSFWindow::CSFWindow(QWidget *parent):
-    QMainWindow(parent)
+    QMainWindow(parent),executables({"ABC", "ANTS", "BRAINSFit", "bet", "ImageMath"})
 {
     this->setupUi(this);
     this->initializeMenuBar();
@@ -28,6 +28,7 @@ CSFWindow::CSFWindow(QWidget *parent):
     readDataConfiguration_p(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/bin/parameter_configuration_SH.json"));
     readDataConfiguration_sw(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/software_ex.json"));
 #endif
+    find_executables();
 }
 
 CSFWindow::~CSFWindow()
@@ -61,7 +62,24 @@ void CSFWindow::initializeMenuBar(){
 }
 
 void CSFWindow::find_executables(){
-
+    /*
+    QString env_PATH(qgetenv("PATH"));
+    cout<<"**************************************"<<endl;
+    cout<<"VAR PATH : "<<env_PATH.toStdString()<<endl;
+    cout<<"**************************************"<<endl;
+    */
+#ifdef Q_OS_LINUX
+    cout<<"linux"<<endl;
+    QDir CD=QDir::current();
+    CD.cdUp();
+    for(QString exe : executables)
+    {
+        cout<<exe.toStdString()<<", "<<endl;
+    }
+#endif
+#ifdef Q_OS_MACOS
+    cout<<"macos"<<endl;
+#endif
 }
 
 void CSFWindow::readDataConfiguration_d(QString filename)
@@ -810,7 +828,7 @@ void CSFWindow::on_checkBox_SkullStripping_clicked(const bool checkState)
     if (checkState != lineEdit_isEmpty(lineEdit_BrainMask))
     {
         int ret=questionMsgBox(checkState,QString("brain mask"),QString("skull stripping"));
-        if (checkState && ret==QMessageBox::No || !checkState && ret==QMessageBox::Yes)
+        if ((checkState && ret==QMessageBox::No) || (!checkState && ret==QMessageBox::Yes))
         {
             checkBox_SkullStripping->setChecked(!checkState);
         }
@@ -859,7 +877,7 @@ void CSFWindow::on_checkBox_TissueSeg_clicked(const bool checkState)
     if (checkState != lineEdit_isEmpty(lineEdit_TissueSeg))
     {
         int ret=questionMsgBox(checkState,QString("tissue segmentation"),QString("tissue segmentation"));
-        if (checkState && ret==QMessageBox::No || !checkState && ret==QMessageBox::Yes)
+        if ((checkState && ret==QMessageBox::No) || (!checkState && ret==QMessageBox::Yes))
         {
             checkBox_TissueSeg->setChecked(!checkState);
         }
@@ -895,7 +913,7 @@ void CSFWindow::on_checkBox_VentricleRemoval_clicked(const bool checkState)
     if (checkState != lineEdit_isEmpty(lineEdit_VentricleMask))
     {
         int ret=questionMsgBox(checkState,QString("ventricle mask"),QString("ventricle removal"));
-        if (checkState && ret==QMessageBox::No || !checkState && ret==QMessageBox::Yes)
+        if ((checkState && ret==QMessageBox::No) || (!checkState && ret==QMessageBox::Yes))
         {
             checkBox_VentricleRemoval->setChecked(!checkState);
         }

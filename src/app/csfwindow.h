@@ -61,6 +61,7 @@ private:
     QString output_dir;
 
     //Executables
+    QStringList executables;
     QString ABC;
     QString ANTS;
     QString BRAINSFit;
