@@ -158,5 +158,4 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
-add_subdirectory(src)769eb74e1c63b6f6f9573b645
 add_subdirectory(src)
