@@ -140,6 +140,7 @@ if(verbose)
   endforeach()
 endif()
 
+<<<<<<< HEAD
 #Qt example------------------------------------
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -158,4 +159,6 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
+=======
+>>>>>>> bb2cfe84106efe2769eb74e1c63b6f6f9573b645
 add_subdirectory(src)
