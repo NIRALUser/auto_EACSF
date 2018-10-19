@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QtCore>
+#include <QMap>
 
 #include "ui_csfwindow.h"
 
@@ -25,6 +26,7 @@ public:
 
 private:
     void initializeMenuBar();
+    void check_exe_in_folder(QString name, QString path);
     void find_executables();
     void readDataConfiguration_d(QString filename);
     void readDataConfiguration_p(QString filename);
@@ -61,7 +63,8 @@ private:
     QString output_dir;
 
     //Executables
-    QStringList executables;
+    QStringList exec_names;
+    QMap<QString,QString> executables;
     QString ABC;
     QString ANTS;
     QString BRAINSFit;

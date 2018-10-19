@@ -3,11 +3,13 @@
 #include <QFile>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QProcess>
 #include <QMessageBox>
 #include <QDebug>
 #include <QtCore>
 #include <QScrollBar>
+#include <QRegExp>
 
 #define DEFAULT_PARAM 1
 
@@ -15,7 +17,7 @@ using std::endl;
 using std::cout;
 
 CSFWindow::CSFWindow(QWidget *parent):
-    QMainWindow(parent),executables({"ABC", "ANTS", "BRAINSFit", "bet", "ImageMath"})
+    QMainWindow(parent),exec_names({"ABC","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3"})
 {
     this->setupUi(this);
     this->initializeMenuBar();
@@ -28,7 +30,27 @@ CSFWindow::CSFWindow(QWidget *parent):
     readDataConfiguration_p(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/bin/parameter_configuration_SH.json"));
     readDataConfiguration_sw(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/software_ex.json"));
 #endif
+    for (QString name : exec_names)
+    {
+        executables[name]=QString();
+    }
+
     find_executables();
+
+    for (QString s : executables.keys())
+    {
+        cout<<s.toStdString()<<" : "<<executables[s].toStdString()<<endl;
+    }
+
+    lineEdit_ABC->setText(executables[exec_names[0]]);
+    lineEdit_ANTS->setText(executables[exec_names[1]]);
+    lineEdit_BRAINSFit->setText(executables[exec_names[2]]);
+    lineEdit_FSLBET->setText(executables[exec_names[3]]);
+    lineEdit_ImageMath->setText(executables[exec_names[4]]);
+    lineEdit_ImageStat->setText(executables[exec_names[5]]);
+    lineEdit_convertITKformats->setText(executables[exec_names[6]]);
+    lineEdit_WarpImageMultiTransform->setText(executables[exec_names[7]]);
+    lineEdit_Python->setText(executables[exec_names[8]]);
 }
 
 CSFWindow::~CSFWindow()
@@ -61,25 +83,82 @@ void CSFWindow::initializeMenuBar(){
     connect( action_SaveSoftware, SIGNAL( triggered() ), SLOT( OnSaveSoftwareConfiguration() ) );
 }
 
+void CSFWindow::check_exe_in_folder(QString name, QString path)
+{
+    QFileInfo check_exe(path);
+    if (check_exe.exists() && check_exe.isExecutable())
+    {
+        cout<<name.toStdString()<<" found"<<endl;
+        executables[name]=path;
+    }
+    else
+    {
+        cout<<name.toStdString()<<" not found"<<endl;
+    }
+}
+
 void CSFWindow::find_executables(){
-    /*
     QString env_PATH(qgetenv("PATH"));
+    /*
     cout<<"**************************************"<<endl;
     cout<<"VAR PATH : "<<env_PATH.toStdString()<<endl;
     cout<<"**************************************"<<endl;
     */
+    QStringList path_split=env_PATH.split(":");
 #ifdef Q_OS_LINUX
     cout<<"linux"<<endl;
     QDir CD=QDir::current();
     CD.cdUp();
-    for(QString exe : executables)
-    {
-        cout<<exe.toStdString()<<", "<<endl;
-    }
+    cout<<CD.absolutePath().toStdString()<<endl;
+    //{"ABC", "ANTS", "BRAINSFit", "bet", "ImageMath", "ImageStat", "convertITKformats", "WarpImageMultiTransform", "python3"}
+
+    // Manual checking for exe in superbuild
+    check_exe_in_folder(exec_names[0],QDir::cleanPath(CD.absolutePath()+QString("/ABC-build/StandAloneCLI/ABC_CLI")));
+
+    check_exe_in_folder(exec_names[1],QDir::cleanPath(CD.absolutePath()+QString("/ANTs-build/bin/ANTS")));
+
+    check_exe_in_folder(exec_names[2],QDir::cleanPath(CD.absolutePath()+QString("/BRAINSTools-build/bin/BRAINSFit")));
+
+    check_exe_in_folder(exec_names[4],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/ImageMath")));
+
+    check_exe_in_folder(exec_names[5],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/ImageStat")));
+
+    check_exe_in_folder(exec_names[6],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/convertITKformats")));
+
+    check_exe_in_folder(exec_names[7],QDir::cleanPath(CD.absolutePath()+QString("/ANTs-build/bin/WarpImageMultiTransform")));
+
+
 #endif
 #ifdef Q_OS_MACOS
     cout<<"macos"<<endl;
 #endif
+    for (QString exe : executables.keys())
+    {
+        if (executables[exe].isEmpty()) //if exe has not been found
+        {
+            for (QString p : path_split)
+            {
+                QString p_exe = QDir::cleanPath(p + QString("/") + exe);
+                QFileInfo check_p_exe(p_exe);
+                if (check_p_exe.exists() && check_p_exe.isExecutable())
+                {
+                    executables[exe]=p_exe;
+                    break;
+                }
+                if (exe==QString("ABC"))
+                {
+                    p_exe=QDir::cleanPath(p + QString("/ABC_CLI"));
+                    check_p_exe=QFileInfo(p_exe);
+                    if (check_p_exe.exists() && check_p_exe.isExecutable())
+                    {
+                        executables[exe]=p_exe;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 void CSFWindow::readDataConfiguration_d(QString filename)
