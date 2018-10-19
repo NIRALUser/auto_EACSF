@@ -158,4 +158,7 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
+set(CMAKE_C_FLAGS "-std=c++11 -fPIC")
+set(CMAKE_CXX_FLAGS "-std=c++11 -fPIC")
+
 add_subdirectory(src)
