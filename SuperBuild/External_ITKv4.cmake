@@ -70,7 +70,7 @@ if(NOT ( DEFINED "USE_SYSTEM_${extProjName}" AND "${USE_SYSTEM_${extProjName}}" 
       -DVTK_DIR:PATH=${VTK_DIR}
     )
   ### --- End Project specific additions
-  set(${proj}_REPOSITORY ${git_protocol}://itk.org/ITK.git)
+  set(${proj}_REPOSITORY http://itk.org/ITK.git)
   set(${proj}_GIT_TAG "release-4.13")
   set(ITK_VERSION_ID ITK-4.13)
 
