@@ -21,14 +21,15 @@ CSFWindow::CSFWindow(QWidget *parent):
 {
     this->setupUi(this);
     this->initializeMenuBar();
+    checkBox_VentricleRemoval->setChecked(true);
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
     prc= new QProcess;
 
 #if DEFAULT_PARAM
-    readDataConfiguration_d(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/bin/data_configuration_martin.json"));
-    readDataConfiguration_p(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/bin/parameter_configuration_SH.json"));
-    readDataConfiguration_sw(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/software_ex.json"));
+    readDataConfiguration_d(QDir::cleanPath(QDir::currentPath()+QString("/data_configuration_martin.json")));
+    readDataConfiguration_p(QDir::cleanPath(QDir::currentPath()+QString("/parameter_configuration_SH.json")));
+    //readDataConfiguration_sw(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-no-sb/auto_EACSF/data/software_ex.json"));
 #endif
     for (QString name : exec_names)
     {
@@ -36,11 +37,12 @@ CSFWindow::CSFWindow(QWidget *parent):
     }
 
     find_executables();
-
+    /*
     for (QString s : executables.keys())
     {
         cout<<s.toStdString()<<" : "<<executables[s].toStdString()<<endl;
     }
+    */
 
     lineEdit_ABC->setText(executables[exec_names[0]]);
     lineEdit_ANTS->setText(executables[exec_names[1]]);
@@ -88,12 +90,12 @@ void CSFWindow::check_exe_in_folder(QString name, QString path)
     QFileInfo check_exe(path);
     if (check_exe.exists() && check_exe.isExecutable())
     {
-        cout<<name.toStdString()<<" found"<<endl;
+        //cout<<name.toStdString()<<" found"<<endl;
         executables[name]=path;
     }
     else
     {
-        cout<<name.toStdString()<<" not found"<<endl;
+        //cout<<name.toStdString()<<" not found"<<endl;
     }
 }
 
@@ -106,10 +108,9 @@ void CSFWindow::find_executables(){
     */
     QStringList path_split=env_PATH.split(":");
 #ifdef Q_OS_LINUX
-    cout<<"linux"<<endl;
     QDir CD=QDir::current();
     CD.cdUp();
-    cout<<CD.absolutePath().toStdString()<<endl;
+    //cout<<CD.absolutePath().toStdString()<<endl;
     //{"ABC", "ANTS", "BRAINSFit", "bet", "ImageMath", "ImageStat", "convertITKformats", "WarpImageMultiTransform", "python3"}
 
     // Manual checking for exe in superbuild
@@ -132,6 +133,9 @@ void CSFWindow::find_executables(){
 #ifdef Q_OS_MACOS
     cout<<"macos"<<endl;
 #endif
+
+    //for unfound exe, look in path
+
     for (QString exe : executables.keys())
     {
         if (executables[exe].isEmpty()) //if exe has not been found
@@ -203,16 +207,12 @@ void CSFWindow::readDataConfiguration_p(QString filename)
     doubleSpinBox_mm->setValue(paramFile.value(QString("ACPC_mm")).toDouble());
 
     lineEdit_ReferenceAtlasFile->setText(paramFile.value(QString("Reference_Atlas_dir")).toString());
-    spinBox_CSFLabel->setValue(paramFile.value(QString("TissueSeg_csf")).toInt());
     lineEdit_TissueSegAtlas->setText(paramFile.value(QString("TissueSeg_Atlas_dir")).toString());
 
     lineEdit_SSAtlasFolder->setText(paramFile.value(QString("SkullStripping_Atlases_dir")).toString());
     displayAtlases(lineEdit_SSAtlasFolder->text());
 
-    lineEdit_ROIAtalsT1->setText(paramFile.value(QString("ROI_Atlas_T1")).toString());
-    lineEdit_ROIAtalsLabel->setText(paramFile.value(QString("ROI_Atlas_Label")).toString());
-    spinBox_LeftVentricleLabel->setValue(paramFile.value(QString("left_vLabel")).toInt());
-    spinBox_RightVentricleLabel->setValue(paramFile.value(QString("right_vLabel")).toInt());
+    lineEdit_ROIAtlasT1->setText(paramFile.value(QString("ROI_Atlas_T1")).toString());
 
     comboBox_RegType->setCurrentText(paramFile.value(QString("ANTS_reg_type")).toString());
     doubleSpinBox_TransformationStep->setValue(paramFile.value(QString("ANTS_transformation_step")).toDouble());
@@ -269,15 +269,11 @@ void CSFWindow::writeDataConfiguration_p(QJsonObject &json)
     json["ACPC_mm"] = doubleSpinBox_mm->value();
 
     json["Reference_Atlas_dir"] = lineEdit_ReferenceAtlasFile->text();
-    json["TissueSeg_csf"] = spinBox_CSFLabel->value();
     json["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
 
     json["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
 
-    json["ROI_Atlas_T1"] = lineEdit_ROIAtalsT1->text();
-    json["ROI_Atlas_Label"] = lineEdit_ROIAtalsLabel->text();
-    json["left_vLabel"] = spinBox_LeftVentricleLabel->value();
-    json["right_vLabel"] = spinBox_RightVentricleLabel->value();
+    json["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
 
     json["ANTS_reg_type"] = comboBox_RegType->currentText();
     json["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
@@ -662,7 +658,7 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
     QTextStream xmlStream(&xmlFile);
     xmlStream << "<?xml version=\"1.0\"?>" << '\n' << "<!DOCTYPE SEGMENTATION-PARAMETERS>" << '\n' << "<SEGMENTATION-PARAMETERS>" << '\n';
     xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << TissueSegAtlas << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
-    xmlStream << "<OUTPUT-DIRECTORY>" << output_dir << "</OUTPUT-DIRECTORY>" << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
+    xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
     xmlStream << "<IMAGE>" << '\n' << "\t<FILE>" << T1img << "</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
     if (T2provided)
     {
@@ -679,8 +675,14 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
 
 void CSFWindow::write_vent_mask()
 {
-    QString ROI_AtlasT1=lineEdit_ROIAtalsT1->text();
-    QString ROI_AtlasLabel=lineEdit_ROIAtalsLabel->text();
+    QString ROI_AtlasT1=lineEdit_ROIAtlasT1->text();
+    QString brainMask=lineEdit_BrainMask->text();
+
+    QDir CD=QDir::current();
+    CD.cdUp();
+    CD.cdUp();
+    QString ventRegMask=QDir::cleanPath(CD.absolutePath()+ QString("/auto_EACSF/data/masks/Vent_CSF-BIN-RAI-Fusion_INV.nrrd"));
+
 
     QFile v_file(QString(":/PythonScripts/vent_mask.py"));
     v_file.open(QIODevice::ReadOnly);
@@ -697,7 +699,8 @@ void CSFWindow::write_vent_mask()
     v_script.replace("@GAUSSIAN@", Gaussian);
     v_script.replace("@T1_WEIGHT@", T1_Weight);
     v_script.replace("@TISSUE_SEG@", TissueSeg);
-    v_script.replace("@VENTRICLE_MASK@" ,ROI_AtlasLabel);
+    v_script.replace("@VENTRICLE_MASK@" ,brainMask);
+    v_script.replace("@VENT_REG_MASK@",ventRegMask);
     v_script.replace("@IMAGEMATH_PATH@",ImageMath);
     v_script.replace("@ANTS_PATH@", ANTS);
     v_script.replace("@WIMT_PATH@",WarpImageMultiTransform);
@@ -802,12 +805,6 @@ void CSFWindow::on_lineEdit_BrainMask_textChanged()
 void CSFWindow::on_pushButton_VentricleMask_clicked()
 {
     lineEdit_VentricleMask->setText(OpenFile());
-}
-
-void CSFWindow::on_lineEdit_VentricleMask_textChanged()
-{
-    setBestDataAlignmentOption();
-    checkBox_VentricleRemoval->setChecked(lineEdit_isEmpty(lineEdit_VentricleMask));
 }
 
 void CSFWindow::on_pushButton_TissueSeg_clicked()
@@ -970,16 +967,10 @@ void CSFWindow::on_checkBox_TissueSeg_stateChanged(int state)
     else{enab=false;}
 
     label_TissueSeg->setEnabled(enab);
-    label_CSFLabel->setEnabled(enab);
-    spinBox_CSFLabel->setEnabled(enab);
     pushButton_TissueSegAtlas->setEnabled(enab);
     lineEdit_TissueSegAtlas->setEnabled(enab);
 }
 
-void CSFWindow::on_spinBox_CSFLabel_valueChanged(const int val)
-{
-
-}
 
 void CSFWindow::on_pushButton_TissueSegAtlas_clicked()
 {
@@ -987,19 +978,6 @@ void CSFWindow::on_pushButton_TissueSegAtlas_clicked()
 }
 
 // 5th Tab - 4.Ventricle Masking
-void CSFWindow::on_checkBox_VentricleRemoval_clicked(const bool checkState)
-{
-    if (checkState != lineEdit_isEmpty(lineEdit_VentricleMask))
-    {
-        int ret=questionMsgBox(checkState,QString("ventricle mask"),QString("ventricle removal"));
-        if ((checkState && ret==QMessageBox::No) || (!checkState && ret==QMessageBox::Yes))
-        {
-            checkBox_VentricleRemoval->setChecked(!checkState);
-        }
-
-    }
-}
-
 void CSFWindow::on_checkBox_VentricleRemoval_stateChanged(int state)
 {
     bool enab;
@@ -1007,34 +985,13 @@ void CSFWindow::on_checkBox_VentricleRemoval_stateChanged(int state)
     else{enab=false;}
 
     label_VentricleRemoval->setEnabled(enab);
-    label_LeftVentricleLabel->setEnabled(enab);
-    label_RightVentricleLabel->setEnabled(enab);
     pushButton_ROIAtlasT1->setEnabled(enab);
-    pushButton_ROIAtlasLabel->setEnabled(enab);
-    lineEdit_ROIAtalsT1->setEnabled(enab);
-    lineEdit_ROIAtalsLabel->setEnabled(enab);
-    spinBox_LeftVentricleLabel->setEnabled(enab);
-    spinBox_RightVentricleLabel->setEnabled(enab);
+    lineEdit_ROIAtlasT1->setEnabled(enab);
 }
 
 void CSFWindow::on_pushButton_ROIAtlasT1_clicked()
 {
-    lineEdit_ROIAtalsT1->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_ROIAtlasLabel_clicked()
-{
-    lineEdit_ROIAtalsLabel->setText(OpenFile());
-}
-
-void CSFWindow::on_spinBox_LeftVentricleLabel_valueChanged(const int val)
-{
-
-}
-
-void CSFWindow::on_spinBox_RightVentricleLabel_valueChanged(const int val)
-{
-
+    lineEdit_ROIAtlasT1->setText(OpenFile());
 }
 
 // 6th Tab - ANTS Registration

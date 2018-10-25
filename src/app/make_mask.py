@@ -51,7 +51,7 @@ def main(args):
     if (l%2 != 0):
         exit('Atlases list : wrong format')
 
-    atlases_nb=l/2
+    atlases_nb=int(l/2)
 
     ### Convert to *.nii.gz
     T1_dir = os.path.dirname(T1)
@@ -210,7 +210,7 @@ def main(args):
     args=[ImageMath,Weighted_Majority_Mask, '-erode', '8,1', '-outfile', TEMP_ERODE_MASK]
     call_and_print(args)
 
-    FINAL_MASK = os.path.join(output_dir, "".join([T1_base,"_FinalMask.nrrd"]))
+    FINAL_MASK = os.path.join(output_dir, "".join([T1_base,"_FinalBrainMask.nrrd"]))
     args=[ImageMath,Weighted_Majority_Mask, '-dilate', '1,1', '-outfile', Weighted_Majority_Mask]
     call_and_print(args)
 

@@ -107,7 +107,6 @@ private slots:
     void on_pushButton_BrainMask_clicked();
     void on_lineEdit_BrainMask_textChanged();
     void on_pushButton_VentricleMask_clicked();
-    void on_lineEdit_VentricleMask_textChanged();
     void on_pushButton_TissueSeg_clicked();
     void on_lineEdit_TissueSeg_textChanged();
     void on_CerebellumMask_clicked();
@@ -141,17 +140,12 @@ private slots:
     void on_checkBox_TissueSeg_clicked(const bool checkState);
     void on_checkBox_TissueSeg_stateChanged(int state);
 
-    void on_spinBox_CSFLabel_valueChanged(const int val);
     void on_pushButton_TissueSegAtlas_clicked();
 
     //5th Tab
-    void on_checkBox_VentricleRemoval_clicked(const bool checkState);
     void on_checkBox_VentricleRemoval_stateChanged(int state);
 
     void on_pushButton_ROIAtlasT1_clicked();
-    void on_pushButton_ROIAtlasLabel_clicked();
-    void on_spinBox_LeftVentricleLabel_valueChanged(const int val);
-    void on_spinBox_RightVentricleLabel_valueChanged(const int val);
 
     //ANTS Registration
     void on_comboBox_RegType_currentTextChanged(const QString &val);

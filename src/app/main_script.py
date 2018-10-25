@@ -92,7 +92,7 @@ def main(args):
     ABC=args.ABC
 
     ### Masks
-    PRE_VENT_MASK = args.ventricleMask
+    BRAIN_MASK = args.brainMask
 
     if (args.useDfCerMask == "true"):
         PRE_CEREBELLUM_MASK = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/CVS_MASK_RAI_Dilate.nrrd"
@@ -106,10 +106,11 @@ def main(args):
     if (args.performReg == "true"):
        print("######## Running rigid_align_script ########")
        sys.stdout.flush()
-       call([python, "rigid_align_script.py"])
-       T1 = os.path.join(OUT_PATH, "".join([T1_base,"_stx.nrrd"]))
+       OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
+       call([python, "rigid_align_script.py",'--output',OUT_RR])
+       T1 = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
        if (T2_exists):
-           T2=os.path.join(OUT_PATH, "".join([T2_base,"_stx.nrrd"]))
+           T2=os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
 
        print("######## Finished running rigid_align_script ########")
        sys.stdout.flush()
@@ -117,10 +118,11 @@ def main(args):
     if (args.performSS == "true"):
        print("######## Running make_mask_script ########")
        sys.stdout.flush()
-       args=[python, "make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output']
+       OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
+       args=[python, "make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS]
        print(args)
        call(args)
-       PRE_VENT_MASK = os.path.join(OUT_PATH, "".join([T1_base,"_FinalMask.nrrd"]))
+       BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
        print("######## Finished running make_mask_script ########")
        sys.stdout.flush()
 
@@ -136,13 +138,14 @@ def main(args):
     if (args.performVR == "true"):
        print("######## Running vent_mask_script ########")
        sys.stdout.flush()
-       call([python, "vent_mask_script.py", '--t1', T1])
-       Segmentation = os.path.join(OUT_PATH, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
+       OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
+       call([python, "vent_mask_script.py", '--t1', T1, '--output',OUT_VR])
+       Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
        print("######## Finished running vent_mask_script ########")
        sys.stdout.flush()
 
-    PRE_VENT_MASK_dir = os.path.dirname(PRE_VENT_MASK)
-    PRE_VENT_MASK_base = os.path.splitext(os.path.basename(PRE_VENT_MASK))[0]
+    BRAIN_MASK_dir = os.path.dirname(BRAIN_MASK)
+    BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
     PRE_CEREBELLUM_MASK_dir = os.path.dirname(PRE_CEREBELLUM_MASK)
     PRE_CEREBELLUM_MASK_base = os.path.splitext(os.path.basename(PRE_CEREBELLUM_MASK))[0]
     Segmentation_dir = os.path.dirname(Segmentation)
@@ -151,7 +154,7 @@ def main(args):
     ######### Cutting lateral ventricle ######
     print("#### Cutting lateral ventricle ####")
     MID_TEMP00 = os.path.join(OUT_PATH, "".join([T1_base,"_MID00.nrrd"]))
-    args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mul', PRE_VENT_MASK]
+    args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mul', BRAIN_MASK]
     call_and_print(args)
 
     ######### Cutting below AC-PC line #######
@@ -220,7 +223,7 @@ if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Calculates outter CSF')
     parser.add_argument('--t1', type=str, help='T1 Image', default="@T1IMG@")
     parser.add_argument('--t2', type=str, help='T2 Image', default="@T2IMG@")
-    parser.add_argument('--ventricleMask', type=str, help='Ventricle mask', default="@VENTRICLE_MASK@")
+    parser.add_argument('--brainMask', type=str, help='Brain mask', default="@BRAIN_MASK@")
     parser.add_argument('--cerebellumMask', type=str, help='Cereb Mask', default="@CEREB_MASK@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
     parser.add_argument('--ACPCunit', type=str, help='ACPC unit (mm/index)', default="@ACPC_UNIT@")

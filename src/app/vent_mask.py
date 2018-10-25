@@ -52,6 +52,7 @@ def main(args):
 
     TISSUE_SEG = args.tissueSeg
     VENT_MASK = args.ventricleMask
+    VENT_REGION_MASK = args.ventRegMask
     OUTPUT_DIR = args.output
 
     T1_dir=os.path.dirname(T1)
@@ -65,11 +66,15 @@ def main(args):
     args = [ANTS, '3', '-m',SIM_METRIC+'['+T1+','+ATLAS+','+T1_WEIGHT+','+SIM_PARAMETER+']', '-i',ITERATIONS,'-o',ANTs_MATRIX_NAME, '-t', 'SyN['+TRANSFORMATION_STEP+']', '-r', 'Gauss['+GAUSSIAN+',0]']
     call_and_print(args)
 
-    args=[WarpImageMultiTransform, '3', VENT_MASK, OUT_VENT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
-    call_and_print(args)
+    if (VENT_MASK != ""):
+        args=[WarpImageMultiTransform, '3', VENT_MASK, OUT_VENT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
+        call_and_print(args)
 
-    args=[ImageMath, TISSUE_SEG, '-mul', OUT_VENT_MASK, '-outfile', SEG_WithoutVent]
-    call_and_print(args)
+        args=[ImageMath, TISSUE_SEG, '-mul', OUT_VENT_MASK, '-outfile', SEG_WithoutVent]
+        call_and_print(args)
+
+
+
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Calculates segmentation w/o ventricle mask. Computes deformation field with T1 vs ATLAS, applies warp to ventricle mask and masks tissue-seg')
@@ -84,6 +89,7 @@ if (__name__ == "__main__"):
     parser.add_argument('--t1Weight', type=str, help='T1 Weight', default="@T1_WEIGHT@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
     parser.add_argument('--ventricleMask', type=str, help='Ventricle mask', default="@VENTRICLE_MASK@")
+    parser.add_argument('--ventRegMask', type=str, help='Ventricle region mask', default="@VENT_REG_MASK@")
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@IMAGEMATH_PATH@')
     parser.add_argument('--ANTS', type=str, help='ANTS executable path', default='@ANTS_PATH@')
     parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WIMT_PATH@')
