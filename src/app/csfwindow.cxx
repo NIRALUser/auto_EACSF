@@ -60,18 +60,6 @@ CSFWindow::~CSFWindow()
 
 }
 
-void CSFWindow::disp_output()
-{
-    QString output(prc->readAllStandardOutput());
-    out_log->append(output);
-}
-
-void CSFWindow::disp_err()
-{
-    QString errors(prc->readAllStandardError());
-    err_log->append(errors);
-}
-
 // File
 void CSFWindow::initializeMenuBar(){
     //Load and Save
@@ -509,6 +497,10 @@ void CSFWindow::displayAtlases(QString folder_path)
 
 void CSFWindow::write_main_script()
 {
+    QString CSFLabel=QString::number(spinBox_CSFLabel->value());
+    QString CerebMask=lineEdit_CerebellumMask->text();
+    QString BrainMask=lineEdit_BrainMask->text();
+
     QFile file(QString(":/PythonScripts/main_script.py"));
     file.open(QIODevice::ReadOnly);
     QString script = file.readAll();
@@ -523,9 +515,10 @@ void CSFWindow::write_main_script()
     {
         script.replace("@T2IMG@", T2img);
     }
-    script.replace("@VENTRICLE_MASK@", VentricleMask);
+    script.replace("@BRAIN_MASK@", BrainMask);
     script.replace("@CEREB_MASK@", CerebMask);
     script.replace("@TISSUE_SEG@", TissueSeg);
+    script.replace("@CSF_LABEL@",CSFLabel);
     if(radioButton_Index->isChecked())
     {
         script.replace("@ACPC_UNIT@", QString("index"));
@@ -547,9 +540,7 @@ void CSFWindow::write_main_script()
     script.replace("@ABC@",ABC);
     script.replace("@OUTPUT_DIR@", output_dir);
 
-    QDir dir=QDir();
-    dir.mkdir(output_dir);
-    QString main_script = QDir::cleanPath(output_dir + QString("/main_script.py"));
+    QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
     QFile outfile(main_script);
     outfile.open(QIODevice::WriteOnly);
     QTextStream outstream(&outfile);
@@ -579,7 +570,7 @@ void CSFWindow::write_rigid_align()
     rgd_script.replace("@BRAINSFIT_PATH@", BRAINSFit);
     rgd_script.replace("@OUTPUT_DIR@", output_dir);
 
-    QString rigid_align_script = QDir::cleanPath(output_dir + QString("/rigid_align_script.py"));
+    QString rigid_align_script = QDir::cleanPath(scripts_dir + QString("/rigid_align_script.py"));
     QFile rgd_outfile(rigid_align_script);
     rgd_outfile.open(QIODevice::WriteOnly);
     QTextStream rgd_outstream(&rgd_outfile);
@@ -642,7 +633,7 @@ void CSFWindow::write_make_mask()
     msk_script.replace("@WIMT_PATH@",WarpImageMultiTransform);
     msk_script.replace("@OUTPUT_DIR@", output_dir);
 
-    QString make_mask_script = QDir::cleanPath(output_dir + QString("/make_mask_script.py"));
+    QString make_mask_script = QDir::cleanPath(scripts_dir + QString("/make_mask_script.py"));
     QFile msk_outfile(make_mask_script);
     msk_outfile.open(QIODevice::WriteOnly);
     QTextStream msk_outstream(&msk_outfile);
@@ -650,14 +641,38 @@ void CSFWindow::write_make_mask()
     msk_outfile.close();
 }
 
+void CSFWindow::write_tissue_seg()
+{
+    QString TS_Atlas_dir=lineEdit_TissueSegAtlas->text();
+    QFile seg_file(QString(":/PythonScripts/tissue_seg.py"));
+    seg_file.open(QIODevice::ReadOnly);
+    QString seg_script = seg_file.readAll();
+    seg_file.close();
+
+    seg_script.replace("@T1IMG@", T1img);
+    seg_script.replace("@T2IMG@", T2img);
+    seg_script.replace("@ATLASES_DIR@", TS_Atlas_dir);
+    seg_script.replace("@BRAINSFIT_PATH@", BRAINSFit);
+    seg_script.replace("@ANTS_PATH@", ANTS);
+    seg_script.replace("@WIMT_PATH@", WarpImageMultiTransform);
+    seg_script.replace("@ABC_PATH@", ABC);
+    seg_script.replace("@OUTPUT_DIR@", output_dir);
+
+    QString tissue_seg_script = QDir::cleanPath(scripts_dir + QString("/tissue_seg_script.py"));
+    QFile seg_outfile(tissue_seg_script);
+    seg_outfile.open(QIODevice::WriteOnly);
+    QTextStream seg_outstream(&seg_outfile);
+    seg_outstream << seg_script;
+    seg_outfile.close();
+}
+
 void CSFWindow::write_ABCxmlfile(bool T2provided)
 {
-    QString TissueSegAtlas=lineEdit_TissueSegAtlas->text();
     QFile xmlFile(QDir::cleanPath(output_dir+QString("/ABCparam.xml")));
     xmlFile.open(QIODevice::WriteOnly);
     QTextStream xmlStream(&xmlFile);
     xmlStream << "<?xml version=\"1.0\"?>" << '\n' << "<!DOCTYPE SEGMENTATION-PARAMETERS>" << '\n' << "<SEGMENTATION-PARAMETERS>" << '\n';
-    xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << TissueSegAtlas << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
+    xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/TissueSegAtlas")) << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
     xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
     xmlStream << "<IMAGE>" << '\n' << "\t<FILE>" << T1img << "</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
     if (T2provided)
@@ -676,13 +691,7 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
 void CSFWindow::write_vent_mask()
 {
     QString ROI_AtlasT1=lineEdit_ROIAtlasT1->text();
-    QString brainMask=lineEdit_BrainMask->text();
-
-    QDir CD=QDir::current();
-    CD.cdUp();
-    CD.cdUp();
-    QString ventRegMask=QDir::cleanPath(CD.absolutePath()+ QString("/auto_EACSF/data/masks/Vent_CSF-BIN-RAI-Fusion_INV.nrrd"));
-
+    QString VentricleMask=lineEdit_VentricleMask->text();
 
     QFile v_file(QString(":/PythonScripts/vent_mask.py"));
     v_file.open(QIODevice::ReadOnly);
@@ -699,15 +708,14 @@ void CSFWindow::write_vent_mask()
     v_script.replace("@GAUSSIAN@", Gaussian);
     v_script.replace("@T1_WEIGHT@", T1_Weight);
     v_script.replace("@TISSUE_SEG@", TissueSeg);
-    v_script.replace("@VENTRICLE_MASK@" ,brainMask);
-    v_script.replace("@VENT_REG_MASK@",ventRegMask);
+    v_script.replace("@VENTRICLE_MASK@" ,VentricleMask);
     v_script.replace("@IMAGEMATH_PATH@",ImageMath);
     v_script.replace("@ANTS_PATH@", ANTS);
     v_script.replace("@WIMT_PATH@",WarpImageMultiTransform);
     v_script.replace("@OUTPUT_DIR@", output_dir);
     v_script.replace("@OUTPUT_MASK@", "_AtlasToVent.nrrd");
 
-    QString vent_mask_script = QDir::cleanPath(output_dir + QString("/vent_mask_script.py"));
+    QString vent_mask_script = QDir::cleanPath(scripts_dir + QString("/vent_mask_script.py"));
     QFile v_outfile(vent_mask_script);
     v_outfile.open(QIODevice::WriteOnly);
     QTextStream v_outstream(&v_outfile);
@@ -716,6 +724,24 @@ void CSFWindow::write_vent_mask()
 }
 
 //SLOTS
+void CSFWindow::disp_output()
+{
+    QString output(prc->readAllStandardOutput());
+    out_log->append(output);
+}
+
+void CSFWindow::disp_err()
+{
+    QString errors(prc->readAllStandardError());
+    err_log->append(errors);
+}
+
+void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
+    QString exit_message;
+    exit_message = QString("Auto_EACSF pipeline ") + ((exitStatus == QProcess::NormalExit) ? QString("exited with code ") + QString::number(exitCode) : QString("crashed"));
+    out_log->append(exit_message);
+    cout<<exit_message.toStdString()<<endl;
+}
 
 void CSFWindow::OnLoadDataConfiguration(){
     QString filename= OpenFile();
@@ -891,7 +917,7 @@ void CSFWindow::on_pushButton_Python_clicked()
      lineEdit_Python->setText(OpenFile());
 }
 
-// 3rd Tab - 1.Reference Alginment, 2.Skull Stripping
+// 3rd Tab - 1.Reference Alignment, 2.Skull Stripping
 
 void CSFWindow::on_pushButton_ReferenceAtlasFile_clicked()
 {
@@ -1039,10 +1065,15 @@ void CSFWindow::on_pushButton_execute_clicked()
     //MAIN_KEY WORDS
     T1img=lineEdit_T1img->text();
     T2img=lineEdit_T2img->text();
-    VentricleMask=lineEdit_VentricleMask->text();
-    CerebMask=lineEdit_CerebellumMask->text();
     TissueSeg=lineEdit_TissueSeg->text();
     output_dir=lineEdit_OutputDir->text();
+    scripts_dir=QDir::cleanPath(output_dir+QString("/PythonScripts"));
+
+    QDir out_dir=QDir();
+    out_dir.mkdir(output_dir);
+
+    QDir sc_dir=QDir();
+    sc_dir.mkdir(scripts_dir);
 
     //EXECUTABLES
     ABC=lineEdit_ABC->text();
@@ -1055,6 +1086,7 @@ void CSFWindow::on_pushButton_execute_clicked()
     WarpImageMultiTransform=lineEdit_WarpImageMultiTransform->text();
     Python=lineEdit_Python->text();
 
+    //0. WRITE MAIN_SCRIPT
     write_main_script();
 
     //1. WRITE RIGID_ALIGN_SCRIPT
@@ -1063,10 +1095,13 @@ void CSFWindow::on_pushButton_execute_clicked()
     //2. WRITE MAKE_MASK_SCRIPT
     write_make_mask();
 
-    //3. WRITE Auto_SEG XML
+    //3. WRITE TISSUE_SEG_SCRIPT
+    write_tissue_seg();
+
+    //4. WRITE Auto_SEG XML
     write_ABCxmlfile(!lineEdit_isEmpty(lineEdit_T2img));
 
-    //4. WRITE VENT_MASK_SCRIPT
+    //5. WRITE VENT_MASK_SCRIPT
     write_vent_mask();
 
     //Notification
@@ -1078,10 +1113,10 @@ void CSFWindow::on_pushButton_execute_clicked()
 
     // RUN PYTHON    
 
-    QString main_script = QDir::cleanPath(output_dir + QString("/main_script.py"));
+    QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
     QStringList params = QStringList() << main_script;
 
-    connect(prc, SIGNAL(finished(int)), this, SLOT(prc_finished()));
+    connect(prc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(prc_finished(int, QProcess::ExitStatus)));
     connect(prc, SIGNAL(started()), this, SLOT(prc_started()));
     connect(prc, SIGNAL(readyReadStandardOutput()), this, SLOT(disp_output()));
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));

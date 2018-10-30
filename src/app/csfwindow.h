@@ -49,6 +49,7 @@ private:
     void write_main_script();
     void write_rigid_align();
     void write_make_mask();
+    void write_tissue_seg();
     void write_ABCxmlfile(bool T2provided);
     void write_vent_mask();
 
@@ -57,10 +58,9 @@ private:
     //Inputs
     QString T1img;
     QString T2img;
-    QString VentricleMask;
-    QString CerebMask;
     QString TissueSeg;
     QString output_dir;
+    QString scripts_dir;
 
     //Executables
     QStringList exec_names;
@@ -92,6 +92,7 @@ private:
 private slots:
     void disp_output();
     void disp_err();
+    void prc_finished(int exitCode, QProcess::ExitStatus exitStatus);
 
     //File
     void OnLoadDataConfiguration();
