@@ -34,16 +34,16 @@ def call_and_print(args):
         print('\n'+args[0]+' : exit with success\n\n')
         sys.stdout.flush()
 
-def main(args):
+def main(main_args):
     print("Running main_script")
     sys.stdout.flush()
 
     ### Coronal mask settings
-    ACPC_unit=args.ACPCunit
+    ACPC_unit=main_args.ACPCunit
     if(ACPC_unit == "index"):
-        ACPC_val=int(args.ACPCval)
+        ACPC_val=int(main_args.ACPCval)
     else:
-        ACPC_mm=float(args.ACPCval)
+        ACPC_mm=float(main_args.ACPCval)
         im=itk.imread("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t1w_RAI.nrrd")
         index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
         ACPC_val=round(index_coord[0])
@@ -66,8 +66,8 @@ def main(args):
             Coronal_Mask = itk_outfile_name
 
     ### Inputs
-    T1 = args.t1
-    T2 = args.t2
+    T1 = main_args.t1
+    T2 = main_args.t2
     T2_exists=True
     if (T2 == ""):
         T2_exists=False
@@ -86,28 +86,28 @@ def main(args):
             T2_base=T2_split[0]
 
     ### Executables
-    python=args.python3
-    ImageMath=args.ImageMath
-    ImageStat=args.ImageStat
-    ABC=args.ABC
+    python=main_args.python3
+    ImageMath=main_args.ImageMath
+    ImageStat=main_args.ImageStat
+    ABC=main_args.ABC
 
     ### Masks
-    BRAIN_MASK = args.brainMask
+    BRAIN_MASK = main_args.brainMask
 
-    if (args.useDfCerMask == "true"):
+    if (main_args.useDfCerMask == "true"):
         PRE_CEREBELLUM_MASK = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/CVS_MASK_RAI_Dilate.nrrd"
     else:
-        PRE_CEREBELLUM_MASK = args.cerebellumMask
-    Segmentation = args.tissueSeg
+        PRE_CEREBELLUM_MASK = main_args.cerebellumMask
+    Segmentation = main_args.tissueSeg
     if (Segmentation == "") :
         CSFLabel=3
     else:
-        CSFLabel=int(args.CSFLabel)
+        CSFLabel=int(main_args.CSFLabel)
 
     ### Output path
-    OUT_PATH = args.output
+    OUT_PATH = main_args.output
 
-    if (args.performReg == "true"):
+    if (main_args.performReg == "true"):
        print("######## Running rigid_align_script ########")
        sys.stdout.flush()
        OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
@@ -119,24 +119,22 @@ def main(args):
        print("######## Finished running rigid_align_script ########")
        sys.stdout.flush()
 
-    if (args.performSS == "true"):
+    if (main_args.performSS == "true"):
        print("######## Running make_mask_script ########")
        sys.stdout.flush()
        OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
-       args=[python, "PythonScripts/make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS]
-       call(args)
+       call([python, "PythonScripts/make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
        BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
        print("######## Finished running make_mask_script ########")
        sys.stdout.flush()
 
 
-    if (args.performTSeg == "true"):
+    if (main_args.performTSeg == "true"):
        print("######## Running ABC Segmentation ########")
        sys.stdout.flush()
        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-       args=[python, "PythonScripts/tissue_seg_script.py", '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS]
-       call(args)
+       call([python, "PythonScripts/tissue_seg_script.py", '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
        print("######## Finished running ABC Segmentation ########")
        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
        sys.stdout.flush()
