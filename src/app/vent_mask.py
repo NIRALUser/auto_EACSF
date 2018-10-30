@@ -1,10 +1,11 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Han Bit Yoon (email: hanbit.yoon@gmail.com)
+##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
 ######################################################################################################### 
 import sys
 import os
 import argparse
 import subprocess
+import itk
 
 def eprint(*args, **kwargs):
     #print errors function
@@ -52,8 +53,16 @@ def main(args):
 
     TISSUE_SEG = args.tissueSeg
     VENT_MASK = args.ventricleMask
-    VENT_REGION_MASK = args.ventRegMask
     OUTPUT_DIR = args.output
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+
+    AUTO_EACSF_PARENT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(OUTPUT_DIR))))
+    MASKS_DIR = os.path.join(AUTO_EACSF_PARENT_DIR,'auto_EACSF/data/masks')
+    VENT_REGION_MASK = os.path.join(MASKS_DIR,'Vent_CSF-BIN-RAI-Fusion_INV.nrrd')
+
+    VENT_MASK_base=os.path.splitext(os.path.basename(VENT_MASK))[0]
+    VENT_MASK_INV = os.path.join(OUTPUT_DIR,VENT_MASK_base+'_INV.nrrd')
 
     T1_dir=os.path.dirname(T1)
     T1_base=os.path.splitext(os.path.basename(T1))[0]
@@ -66,11 +75,21 @@ def main(args):
     args = [ANTS, '3', '-m',SIM_METRIC+'['+T1+','+ATLAS+','+T1_WEIGHT+','+SIM_PARAMETER+']', '-i',ITERATIONS,'-o',ANTs_MATRIX_NAME, '-t', 'SyN['+TRANSFORMATION_STEP+']', '-r', 'Gauss['+GAUSSIAN+',0]']
     call_and_print(args)
 
+    args=[WarpImageMultiTransform, '3', VENT_REGION_MASK, OUT_VENT_REGION_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
+    call_and_print(args)
+
+    args=[ImageMath, TISSUE_SEG, '-mul', OUT_VENT_REGION_MASK, '-outfile', SEG_WithoutVent]
+    call_and_print(args)
+
     if (VENT_MASK != ""):
-        args=[WarpImageMultiTransform, '3', VENT_MASK, OUT_VENT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
+        VM_im=itk.imread(VENT_MASK)
+        inv_filter=itk.InvertIntensityImageFilter.New(VM_im)
+        itk.imwrite(inv_filter,VENT_MASK_INV)
+
+        args=[WarpImageMultiTransform, '3', VENT_MASK_INV, OUT_VENT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
         call_and_print(args)
 
-        args=[ImageMath, TISSUE_SEG, '-mul', OUT_VENT_MASK, '-outfile', SEG_WithoutVent]
+        args=[ImageMath, SEG_WithoutVent, '-mul', OUT_VENT_MASK, '-outfile', SEG_WithoutVent]
         call_and_print(args)
 
 
@@ -89,7 +108,6 @@ if (__name__ == "__main__"):
     parser.add_argument('--t1Weight', type=str, help='T1 Weight', default="@T1_WEIGHT@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
     parser.add_argument('--ventricleMask', type=str, help='Ventricle mask', default="@VENTRICLE_MASK@")
-    parser.add_argument('--ventRegMask', type=str, help='Ventricle region mask', default="@VENT_REG_MASK@")
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@IMAGEMATH_PATH@')
     parser.add_argument('--ANTS', type=str, help='ANTS executable path', default='@ANTS_PATH@')
     parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WIMT_PATH@')

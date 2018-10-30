@@ -1,5 +1,5 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Han Bit Yoon (email: hanbit.yoon@gmail.com)
+##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
 #########################################################################################################
 from __future__ import print_function
 import argparse
@@ -99,6 +99,10 @@ def main(args):
     else:
         PRE_CEREBELLUM_MASK = args.cerebellumMask
     Segmentation = args.tissueSeg
+    if (Segmentation == "") :
+        CSFLabel=3
+    else:
+        CSFLabel=int(args.CSFLabel)
 
     ### Output path
     OUT_PATH = args.output
@@ -107,7 +111,7 @@ def main(args):
        print("######## Running rigid_align_script ########")
        sys.stdout.flush()
        OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
-       call([python, "rigid_align_script.py",'--output',OUT_RR])
+       call([python, "PythonScripts/rigid_align_script.py",'--output',OUT_RR])
        T1 = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
        if (T2_exists):
            T2=os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
@@ -119,8 +123,7 @@ def main(args):
        print("######## Running make_mask_script ########")
        sys.stdout.flush()
        OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
-       args=[python, "make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS]
-       print(args)
+       args=[python, "PythonScripts/make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS]
        call(args)
        BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
        print("######## Finished running make_mask_script ########")
@@ -130,19 +133,22 @@ def main(args):
     if (args.performTSeg == "true"):
        print("######## Running ABC Segmentation ########")
        sys.stdout.flush()
-       args=[ABC, 'ABCparam.xml']
+       OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
+       OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
+       args=[python, "PythonScripts/tissue_seg_script.py", '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS]
        call(args)
        print("######## Finished running ABC Segmentation ########")
+       Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
        sys.stdout.flush()
 
-    if (args.performVR == "true"):
-       print("######## Running vent_mask_script ########")
-       sys.stdout.flush()
-       OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-       call([python, "vent_mask_script.py", '--t1', T1, '--output',OUT_VR])
-       Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
-       print("######## Finished running vent_mask_script ########")
-       sys.stdout.flush()
+
+    print("######## Running vent_mask_script ########")
+    sys.stdout.flush()
+    OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
+    call([python, "PythonScripts/vent_mask_script.py", '--t1', T1, '--tissueSeg', Segmentation, '--output',OUT_VR])
+    Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
+    print("######## Finished running vent_mask_script ########")
+    sys.stdout.flush()
 
     BRAIN_MASK_dir = os.path.dirname(BRAIN_MASK)
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
@@ -151,8 +157,8 @@ def main(args):
     Segmentation_dir = os.path.dirname(Segmentation)
     Segmentation_base = os.path.splitext(os.path.basename(Segmentation))[0]
 
-    ######### Cutting lateral ventricle ######
-    print("#### Cutting lateral ventricle ####")
+    ######### Stripping the skull ######
+    print("#### Stripping the skull ####")
     MID_TEMP00 = os.path.join(OUT_PATH, "".join([T1_base,"_MID00.nrrd"]))
     args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mul', BRAIN_MASK]
     call_and_print(args)
@@ -226,13 +232,13 @@ if (__name__ == "__main__"):
     parser.add_argument('--brainMask', type=str, help='Brain mask', default="@BRAIN_MASK@")
     parser.add_argument('--cerebellumMask', type=str, help='Cereb Mask', default="@CEREB_MASK@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
+    parser.add_argument('--CSFLabel', type=str, help='CSF Label in segmentation', default="@CSF_LABEL@")
     parser.add_argument('--ACPCunit', type=str, help='ACPC unit (mm/index)', default="@ACPC_UNIT@")
     parser.add_argument('--ACPCval', type=str, help='ACPC value', default="@ACPC_VAL@")
     parser.add_argument('--useDfCerMask', type=str, help='Use the default cerebellum mask', default="@USE_DCM@")
     parser.add_argument('--performReg', type=str, help='Perform rigid registration', default="@PERFORM_REG@")
     parser.add_argument('--performSS', type=str, help='Perform skull stripping', default="@PERFORM_SS@")
     parser.add_argument('--performTSeg', type=str, help='Perform tissue segmentation', default="@PERFORM_TSEG@")
-    parser.add_argument('--performVR', type=str, help='Perform ventricle removal', default="@PERFORM_VR@")
     parser.add_argument('--python3', type=str, help='Python3 executable path', default='@PY3_PATH@')
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@IMAGEMATH_PATH@')
     parser.add_argument('--ImageStat', type=str, help='ImageStat executable path', default='@IMAGESTAT_PATH@')

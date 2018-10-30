@@ -1,5 +1,5 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Han Bit Yoon (email: hanbit.yoon@gmail.com)
+##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
 ######################################################################################################### 
 
 import sys
@@ -39,6 +39,8 @@ def main(args):
     ATLAS = args.atlas
     BRAINSFit=args.BRAINSFit
     OUTPUT_DIR = args.output
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
     T2_exists=True
     if (T2 == ""):

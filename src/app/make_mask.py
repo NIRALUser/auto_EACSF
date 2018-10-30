@@ -1,5 +1,5 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Hailey (Han Bit) Yoon (email: hanbit.yoon@gmail.com)
+##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
 #########################################################################################################  
 import sys
 import os
@@ -44,6 +44,8 @@ def main(args):
     ANTS = args.ANTS
     WarpImageMultiTransform = args.WarpImageMultiTransform
     output_dir = args.output
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     atlases_list = atlases_list.split(',')
 
@@ -220,7 +222,7 @@ def main(args):
 ##############################################################################################################
 
 if (__name__ == "__main__"):
-    parser = argparse.ArgumentParser(description='Makes Mask')
+    parser = argparse.ArgumentParser(description='Creates brain mask from template and T1&T2 images')
     parser.add_argument('--t1', nargs='?', type=str, help='T1 Image to calculate deformation field against atlas', const="@T1IMG@")
     parser.add_argument('--t2', nargs='?', type=str, help='T2 Image to calculate deformation field against atlas', const="@T2IMG@")
     parser.add_argument('--at_dir', nargs='?', type=str, help='atlases directory', const="@ATLASES_DIR@")
