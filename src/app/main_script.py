@@ -143,7 +143,7 @@ def main(main_args):
     print("######## Running vent_mask_script ########")
     sys.stdout.flush()
     OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-    call([python, "PythonScripts/vent_mask_script.py", '--t1', T1, '--tissueSeg', Segmentation, '--output',OUT_VR])
+    call([python, "PythonScripts/vent_mask_script.py", '--t1', T1, '--tissueSeg', Segmentation, '--atlas', '--output',OUT_VR])
     Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
     print("######## Finished running vent_mask_script ########")
     sys.stdout.flush()

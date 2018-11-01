@@ -32,7 +32,6 @@ def call_and_print(args):
         sys.stdout.flush()
 
 def main(args):
-    print(">>>>>>>>>>>>>>>>VENTMASK")
     sys.stdout.flush()
     T1 = args.t1
     ATLAS = args.atlas
