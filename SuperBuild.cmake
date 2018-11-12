@@ -140,21 +140,25 @@ if(verbose)
   endforeach()
 endif()
 
-set(proj ${PRIMARY_PROJECT_NAME}-inner)
+#Qt example------------------------------------
 
-ExternalProject_Add(${proj}
-  DOWNLOAD_COMMAND ""  
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  BINARY_DIR ${proj}-build
-  LOG_CONFIGURE 0  # Wrap configure in script to ignore log output from dashboards
-  LOG_BUILD     0  # Wrap build in script to to ignore log output from dashboards
-  LOG_TEST      0  # Wrap test in script to to ignore log output from dashboards
-  LOG_INSTALL   0  # Wrap install in script to to ignore log output from dashboards
-  ${cmakeversion_external_update} "${cmakeversion_external_update_value}"
-  CMAKE_GENERATOR ${gen}
-  CMAKE_ARGS
-    -Dauto_EACSF_SuperBuild:BOOL=OFF
-    ${CMAKE_OSX_EXTERNAL_PROJECT_ARGS}
-  DEPENDS
-    ${PRIMARY_PROJECT_NAME}_DEPENDENCIES
-)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR}/lib)
+
+# Find the QtWidgets library
+
+# find Qt5 headers
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+
+include_directories(${Qt5Widgets_INCLUDE_DIRS})
+add_definitions(${Qt5Widgets_DEFINITIONS})
+
+set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
+
+set(CMAKE_C_FLAGS "-std=c++11 -fPIC")
+set(CMAKE_CXX_FLAGS "-std=c++11 -fPIC")
+
+add_subdirectory(src)
