@@ -38,7 +38,7 @@ if(NOT DEFINED ABC_SOURCE_DIR)
     CMAKE_GENERATOR ${gen}
     "${cmakeversion_external_update}"
     CMAKE_ARGS
-      # -DUSE_SYSTEM_ITK:BOOL=ON
+      -DUSE_SYSTEM_ITK:BOOL=OFF
       # -DITK_DIR:PATH=/tools/ITK/ITKv4.8.2/ITKv4.8.2_THL64_stat_Release/lib/cmake/ITK-4.8/
       # -DABC_SUPERBUILD:BOOL=OFF
       -DABC_SUPERBUILD:BOOL=ON
