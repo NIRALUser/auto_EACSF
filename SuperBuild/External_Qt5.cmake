@@ -41,9 +41,9 @@ find_package(${proj} ${${extProjName}_REQUIRED_VERSION} COMPONENTS Core Gui Netw
 # project may depend on ${extProjName}, let's add an 'empty' one
 SlicerMacroEmptyExternalProject(${proj} "${${proj}_DEPENDENCIES}")
 
-list(APPEND ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS 
-    QT_QMAKE_EXECUTABLE:PATH    
-)
+# list(APPEND ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS 
+#     QT_QMAKE_EXECUTABLE:PATH    
+# )
 _expand_external_project_vars()
 set(COMMON_EXTERNAL_PROJECT_ARGS ${${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_ARGS})
 

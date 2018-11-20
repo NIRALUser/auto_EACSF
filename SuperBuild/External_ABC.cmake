@@ -13,9 +13,9 @@ endif()
 # Include dependent projects if any
 set(proj ABC)
 
-set(${proj}_DEPENDENCIES ITKv4)
+#set(${proj}_DEPENDENCIES ITKv4)
 
-SlicerMacroCheckExternalProjectDependency(ABC)
+#SlicerMacroCheckExternalProjectDependency(ABC)
 
 # Set CMake OSX variable to pass down the external project
 set(CMAKE_OSX_EXTERNAL_PROJECT_ARGS)
@@ -33,31 +33,34 @@ if(NOT DEFINED ABC_SOURCE_DIR)
     set(git_protocol "git")
   endif()
 
-  #message("VTK_DIR: ${VTK_DIR}")
-  #message("ITK_DIR: ${ITK_DIR}")
-  #message("SlicerExecutionModel_DIR: ${SlicerExecutionModel_DIR}")
   ExternalProject_Add(${proj}
-    GIT_REPOSITORY "${git_protocol}://github.com/NIRALUser/ABC.git"
+    #GIT_REPOSITORY "${git_protocol}://github.com/NIRALUser/ABC.git"
+    GIT_REPOSITORY "${git_protocol}://github.com/ArthurLeMaout/ABC.git"
     GIT_TAG master
     SOURCE_DIR ${proj}
     BINARY_DIR ${proj}-build
     CMAKE_GENERATOR ${gen}
     "${cmakeversion_external_update}"
     CMAKE_ARGS
-      -Wno-dev
-      --no-warn-unused-cli
+      -DUSE_SYSTEM_ITK:BOOL=ON
+      -DITK_DIR:PATH=/tools/ITK/ITKv4.8.2/ITKv4.8.2_THL64_stat_Release/lib/cmake/ITK-4.8/
+      -DABC_SUPERBUILD:BOOL=OFF
+      #-DABC_SUPERBUILD:BOOL=ON
+      -DCMAKE_C_FLAGS:STRING=-fPIC
+      -DCMAKE_CXX_FLAGS:STRING=-fPIC
       ${CMAKE_OSX_EXTERNAL_PROJECT_ARGS}
-      ${COMMON_EXTERNAL_PROJECT_ARGS}
-      -DCOMPILE_COMMANDLINE:BOOL=${COMPILE_COMMANDLINE}
+      #${COMMON_EXTERNAL_PROJECT_ARGS}
+      -DCOMPILE_COMMANDLINE:BOOL=ON
       -DCOMPILE_SLICER4COMMANDLINE:BOOL=OFF
-      -DITK_DIR:PATH=${ITK_DIR}
+      -DCMAKE_INSTALL_PREFIX:PATH=${EXTERNAL_BINARY_DIRECTORY}/${proj}-install
+      -DINSTALL_RUNTIME_DESTINATION=bin
 
       ${${proj}_CMAKE_OPTIONS}
-    DEPENDS
-      ${${proj}_DEPENDENCIES}
-    INSTALL_COMMAND ""
+    #DEPENDS
+     # ${${proj}_DEPENDENCIES}}
     )
-  set(ABC_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
-  set(ABCCommonLib_DIR    ${CMAKE_BINARY_DIR}/${proj}-build/ABC-build/ABCCommonLib)
+  set(${proj}_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
+  set(${proj}CommonLib_DIR    ${CMAKE_BINARY_DIR}/${proj}-build/ABC-build/ABCCommonLib)
+  set(${proj}_DIR ${CMAKE_BINARY_DIR}/${proj}-build)
 else()
 endif()

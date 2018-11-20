@@ -10,9 +10,7 @@ option(EXECUTABLES_ONLY "Build the tools and the tools' libraries statically" ON
 #------------------------------------------------------------------------------
 # ${PRIMARY_PROJECT_NAME} dependency list
 #------------------------------------------------------------------------------
-message(STATUS "${ITK_EXTERNAL_NAME}")
-#set(${PRIMARY_PROJECT_NAME}_DEPENDENCIES ${ITK_EXTERNAL_NAME} BRAINSTools)
-set(${PRIMARY_PROJECT_NAME}_DEPENDENCIES VTK ITKv4 Python3 SlicerExecutionModel ABC ANTS BRAINSTools niral_utilities)
+set(${PRIMARY_PROJECT_NAME}_DEPENDENCIES VTK ITKv4 Python3 SlicerExecutionModel ABC ANTs BRAINSTools niral_utilities)
 
 option(USE_SYSTEM_ITK "Build using an externally defined version of ITK" OFF)
 option(USE_SYSTEM_SlicerExecutionModel "Build using an externally defined version of SlicerExecutionModel"  OFF)
@@ -117,7 +115,6 @@ list(APPEND ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS
   EXTENSION_NAME:STRING
   MIDAS_PACKAGE_EMAIL:STRING
   MIDAS_PACKAGE_API_KEY:STRING
-  Slicer_DIR:PATH
   )
 
 _expand_external_project_vars()
@@ -141,20 +138,27 @@ if(verbose)
 endif()
 
 set(proj ${PRIMARY_PROJECT_NAME}-inner)
-
+set(${proj}_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/${proj}-install")
 ExternalProject_Add(${proj}
+  DEPENDS ${${PRIMARY_PROJECT_NAME}_DEPENDENCIES}
   DOWNLOAD_COMMAND ""  
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   BINARY_DIR ${proj}-build
-  LOG_CONFIGURE 0  # Wrap configure in script to ignore log output from dashboards
-  LOG_BUILD     0  # Wrap build in script to to ignore log output from dashboards
-  LOG_TEST      0  # Wrap test in script to to ignore log output from dashboards
-  LOG_INSTALL   0  # Wrap install in script to to ignore log output from dashboards
-  ${cmakeversion_external_update} "${cmakeversion_external_update_value}"
   CMAKE_GENERATOR ${gen}
   CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX:PATH=${${proj}_INSTALL_PATH}
     -Dauto_EACSF_SuperBuild:BOOL=OFF
+    -DINSTALL_RUNTIME_DESTINATION:PATH=${INSTALL_RUNTIME_DESTINATION}
+    -DINSTALL_LIBRARY_DESTINATION:PATH=${INSTALL_LIBRARY_DESTINATION}
+    -DQt5_DIR:PATH=${Qt5_DIR}
+    -DCMAKE_C_FLAGS:STRING=-std=c++11 -fPIC
+    -DCMAKE_CXX_FLAGS:STRING=-std=c++11 -fPIC
+    -DITK_DIR:PATH=${ITK_DIR}
+    -DVTK_DIR:PATH=${VTK_DIR}
+    -DSlicerExecutionModel_DIR:PATH=${SlicerExecutionModel_DIR}
+    -DANTs_DIR:PATH=${ANTs_DIR}
+    -Dniral_utilities_DIR:PATH=${niral_utilities_DIR}
+    -DABC_DIR:PATH=${ABC_DIR}
+    -DBRAINSTools_DIR:PATH=${BRAINSTools_DIR}
     ${CMAKE_OSX_EXTERNAL_PROJECT_ARGS}
-  DEPENDS
-    ${PRIMARY_PROJECT_NAME}_DEPENDENCIES
 )

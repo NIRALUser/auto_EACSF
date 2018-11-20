@@ -94,7 +94,7 @@ if(NOT ( DEFINED "USE_SYSTEM_${extProjName}" AND "${USE_SYSTEM_${extProjName}}" 
     DEPENDS
     ${${proj}_DEPENDENCIES}
   )
-  set(${extProjName}_EXECUTABLE ${CMAKE_BINARY_DIR}/${proj}-install/bin/ANTS)  
+  set(${extProjName}_DIR ${CMAKE_BINARY_DIR}/${proj}-install)  
 else()
   if(${USE_SYSTEM_${extProjName}})
     find_program (${proj}_EXECUTABLE ANTS

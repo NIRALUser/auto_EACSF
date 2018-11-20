@@ -5,6 +5,10 @@ if(${CMAKE_CURRENT_LIST_FILENAME}_FILE_INCLUDED)
 endif()
 set(${CMAKE_CURRENT_LIST_FILENAME}_FILE_INCLUDED 1)
 
+if( NOT EXTERNAL_BINARY_DIRECTORY )
+  set( EXTERNAL_BINARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+endif()
+
 # Sanity checks
 if(DEFINED BRAINSTools_SOURCE_DIR AND NOT EXISTS ${BRAINSTools_SOURCE_DIR})
   message(FATAL_ERROR "BRAINSTools_SOURCE_DIR variable is defined but corresponds to non-existing directory")
@@ -46,6 +50,7 @@ if(NOT DEFINED BRAINSTools_SOURCE_DIR)
       --no-warn-unused-cli
       ${CMAKE_OSX_EXTERNAL_PROJECT_ARGS}
       ${COMMON_EXTERNAL_PROJECT_ARGS}
+      -DCMAKE_INSTALL_PREFIX:PATH=${EXTERNAL_BINARY_DIRECTORY}/${proj}-install
       -D${proj}_SUPERBUILD:BOOL=OFF
       -DBUILD_EXAMPLES:BOOL=OFF
       -DBUILD_TESTING:BOOL=OFF
@@ -93,12 +98,12 @@ if(NOT DEFINED BRAINSTools_SOURCE_DIR)
       -DPYTHON_EXECUTABLE:PATH=${Python3_EXECUTABLE}
       -DPYTHON_LIBRARIES:PATH=${Python3_LIBRARIES}
       ${${proj}_CMAKE_OPTIONS}
-    INSTALL_COMMAND ""
     DEPENDS
       ${BRAINSTools_DEPENDENCIES}
     )
   set(BRAINSTools_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
   set(BRAINSCommonLib_DIR    ${CMAKE_BINARY_DIR}/${proj}-build/BRAINSTools-build/BRAINSCommonLib)
+  set(${proj}_DIR ${CMAKE_BINARY_DIR}/${proj}-install)
 else()
   # The project is provided using BRAINSTools_DIR, nevertheless since other project may depend on BRAINSTools,
   # let's add an 'empty' one
