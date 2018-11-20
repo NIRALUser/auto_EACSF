@@ -16,8 +16,8 @@
 using std::endl;
 using std::cout;
 
-CSFWindow::CSFWindow(QWidget *parent):
-    QMainWindow(parent),exec_names({"ABC","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3"})
+CSFWindow::CSFWindow(QWidget *m_parent):
+    QMainWindow(m_parent),exec_names({"ABC","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3"})
 {
     this->setupUi(this);
     this->initializeMenuBar();
@@ -163,8 +163,8 @@ void CSFWindow::readDataConfiguration_d(QString filename)
     settings = file.readAll();
     file.close();
 
-    QJsonDocument data = QJsonDocument::fromJson(settings.toUtf8());
-    dataFile = data.object();
+    QJsonDocument d_data = QJsonDocument::fromJson(settings.toUtf8());
+    dataFile = d_data.object();
 
     lineEdit_T1img->setText(dataFile.value(QString("T1img")).toString());
     lineEdit_T2img->setText(dataFile.value(QString("T2img")).toString());
@@ -187,8 +187,8 @@ void CSFWindow::readDataConfiguration_p(QString filename)
     settings = file.readAll();
     file.close();
 
-    QJsonDocument data = QJsonDocument::fromJson(settings.toUtf8());
-    paramFile = data.object();
+    QJsonDocument p_data = QJsonDocument::fromJson(settings.toUtf8());
+    paramFile = p_data.object();
 
     //PARAM
     spinBox_Index->setValue(paramFile.value(QString("ACPC_index")).toInt());
@@ -223,8 +223,8 @@ void CSFWindow::readDataConfiguration_sw(QString filename)
     settings = file.readAll();
     file.close();
 
-    QJsonDocument data = QJsonDocument::fromJson(settings.toUtf8());
-    swFile = data.object();
+    QJsonDocument sw_data = QJsonDocument::fromJson(settings.toUtf8());
+    swFile = sw_data.object();
 
     //PARAM
     lineEdit_ABC->setText(swFile.value(QString("ABC")).toString());
@@ -388,7 +388,7 @@ void CSFWindow::displayAtlases(QString folder_path)
     listWidget_SSAtlases->clear();
     const QString T1=QString("T1");
     const QString T2=QString("T2");
-    const QString mask=QString("brainmask");
+    const QString bmask=QString("brainmask");
     QDir folder(folder_path);
     QStringList itemsList=QStringList(QString("Select all"));
     QStringList invalidItems=QStringList();
@@ -431,9 +431,9 @@ void CSFWindow::displayAtlases(QString folder_path)
                 atlasName=QString(splittedName.join('_'));
 
 
-                if(fileType == mask)
+                if(fileType == bmask)
                 {
-                    atlases.insert(atlasName,{mask});
+                    atlases.insert(atlasName,{bmask});
                 }
                 else if((fileType == T1) && atlases.contains(atlasName))
                 {
@@ -478,9 +478,9 @@ void CSFWindow::displayAtlases(QString folder_path)
         item->setCheckState(Qt::Checked);
         if (i==0)
         {
-            QFont font=QFont();
-            font.setBold(true);
-            item->setFont(font);
+            QFont b_font=QFont();
+            b_font.setBold(true);
+            item->setFont(b_font);
         }
     }
     int count=listWidget_SSAtlases->count();
@@ -1026,7 +1026,7 @@ void CSFWindow::on_comboBox_RegType_currentTextChanged(const QString &val)
     Registration_Type=val;
 }
 
-void CSFWindow::on_doubleSpinBox_TransformationStep_valueChanged(const double val)
+void CSFWindow::on_doubleSpinBox_TransformationStep_valueChanged()
 {
 
 }

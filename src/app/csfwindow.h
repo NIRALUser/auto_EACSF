@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QtCore>
 #include <QMap>
+#include <QProcess>
 
 #include "ui_csfwindow.h"
 
@@ -21,7 +22,7 @@ class CSFWindow : public QMainWindow, public Ui::CSFWindow
     Q_OBJECT
 
 public:
-    explicit CSFWindow(QWidget *parent = 0);
+    explicit CSFWindow(QWidget *m_parent = 0);
     ~CSFWindow();
 
 private:
@@ -150,7 +151,7 @@ private slots:
 
     //ANTS Registration
     void on_comboBox_RegType_currentTextChanged(const QString &val);
-    void on_doubleSpinBox_TransformationStep_valueChanged(const double val);
+    void on_doubleSpinBox_TransformationStep_valueChanged();
     void on_comboBox_Metric_currentTextChanged(const QString &val);
     void on_spinBox_SimilarityParameter_valueChanged(const int val);
     void on_doubleSpinBox_GaussianSigma_valueChanged(const double val);
