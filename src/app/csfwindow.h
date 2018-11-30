@@ -26,17 +26,12 @@ public:
     ~CSFWindow();
 
 private:
-    void initializeMenuBar();
-    void check_exe_in_folder(QString name, QString path);
+    void check_exe_in_folder(QString name, QString path, QString tree_type);
     void find_executables();
-    void readDataConfiguration_d(QString filename);
-    void readDataConfiguration_p(QString filename);
-    void readDataConfiguration_sw(QString filename);
-    void writeDataConfiguration_d(QJsonObject &json);
-    void writeDataConfiguration_p(QJsonObject &json);
-    void writeDataConfiguration_sw(QJsonObject &json);
+    void readConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
+    QString SaveFile();
 
     bool lineEdit_isEmpty(QLineEdit*& le);
 
@@ -64,17 +59,8 @@ private:
     QString scripts_dir;
 
     //Executables
-    QStringList exec_names;
     QMap<QString,QString> executables;
-    QString ABC;
-    QString ANTS;
-    QString BRAINSFit;
-    QString FSLBET;
-    QString ImageMath;
-    QString ImageStat;
-    QString convertITKformats;
-    QString WarpImageMultiTransform;
-    QString Python;
+    QMap<QString,QStringList> script_exe;
 
     //ANTS Registration_Default
     QString Registration_Type;
@@ -96,12 +82,8 @@ private slots:
     void prc_finished(int exitCode, QProcess::ExitStatus exitStatus);
 
     //File
-    void OnLoadDataConfiguration();
-    bool OnSaveDataConfiguration();
-    void OnLoadParameterConfiguration();
-    bool OnSaveParameterConfiguration();
-    void OnLoadSoftwareConfiguration();
-    bool OnSaveSoftwareConfiguration();
+    void on_actionLoad_Configuration_File_triggered();
+    bool on_actionSave_Configuration_triggered();
 
     //1st Tab
     void on_pushButton_T1img_clicked();
@@ -120,15 +102,8 @@ private slots:
     void on_radioButton_mm_clicked(const bool checkState);
 
     //2nd Tab
-    void on_pushButton_ABC_clicked();
-    void on_pushButton_ANTS_clicked();
-    void on_pushButton_BRAINSFit_clicked();
-    void on_pushButton_FSLBET_clicked();
-    void on_pushButton_ImageMath_clicked();
-    void on_pushButton_ImageStat_clicked();
-    void on_pushButton_convertITKformats_clicked();
-    void on_pushButton_WarpImageMultiTransform_clicked();
-    void on_pushButton_Python_clicked();
+    void exe_qpb_triggered();
+    void exe_lined_textChanged(QString new_text);
 
     //3rd Tab
     void on_pushButton_ReferenceAtlasFile_clicked();

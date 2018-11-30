@@ -370,237 +370,16 @@
      <attribute name="title">
       <string>Executables</string>
      </attribute>
-     <widget class="QPushButton" name="pushButton_ABC">
+     <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>30</x>
-        <y>50</y>
-        <width>181</width>
-        <height>31</height>
+        <x>70</x>
+        <y>30</y>
+        <width>881</width>
+        <height>551</height>
        </rect>
       </property>
-      <property name="text">
-       <string>ABC</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_ANTS">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>100</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>ANTS</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_convertITKformats">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>350</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>convertITKformats</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_FSLBET">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>200</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>FSLBET</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_ImageMath">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>250</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>ImageMath</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_Python">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>450</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Python 3</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_ABC">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>50</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_ANTS">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>100</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_BRAINSFit">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>150</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_FSLBET">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>200</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_ImageMath">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>250</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_convertITKformats">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>350</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_executables">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>20</y>
-        <width>151</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Executables</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_BRAINSFit">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>150</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>BRAINSFit</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_Python">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>450</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_ImageStat">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>300</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_ImageStat">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>300</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>ImageStat</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_WarpImageMultiTransform">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>400</y>
-        <width>181</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>WarpImageMultiTransform</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_WarpImageMultiTransform">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>400</y>
-        <width>631</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_exe"/>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_RAandSS">
@@ -1362,61 +1141,23 @@ p, li { white-space: pre-wrap; }
      <height>19</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="action_LoadData"/>
-    <addaction name="action_SaveData"/>
-    <addaction name="separator"/>
-    <addaction name="action_LoadParameter"/>
-    <addaction name="action_SaveParameter"/>
-    <addaction name="separator"/>
-    <addaction name="action_LoadSoftware"/>
-    <addaction name="action_SaveSoftware"/>
-    <addaction name="separator"/>
-    <addaction name="action_Quit"/>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
-   <addaction name="menu"/>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad_Configuration_File"/>
+    <addaction name="actionSave_Configuration"/>
+   </widget>
+   <addaction name="menuFile"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action_LoadData">
-   <property name="text">
-    <string>Load  Data Configuration</string>
-   </property>
-  </action>
-  <action name="action_SaveData">
-   <property name="text">
-    <string>Save  Data Configuration</string>
-   </property>
-  </action>
-  <action name="action_LoadParameter">
-   <property name="text">
-    <string>Load  Parameter Configuration</string>
-   </property>
-  </action>
-  <action name="action_SaveParameter">
-   <property name="text">
-    <string>Save Parameter Configuration</string>
-   </property>
-  </action>
-  <action name="action_LoadSoftware">
-   <property name="text">
-    <string>Load  Software Configuration</string>
-   </property>
-  </action>
-  <action name="action_SaveSoftware">
-   <property name="text">
-    <string>Save  Software Configuration</string>
-   </property>
-  </action>
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
@@ -1425,6 +1166,16 @@ p, li { white-space: pre-wrap; }
   <action name="action_Quit">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionLoad_Configuration_File">
+   <property name="text">
+    <string>Load Configuration File</string>
+   </property>
+  </action>
+  <action name="actionSave_Configuration">
+   <property name="text">
+    <string>Save Configuration</string>
    </property>
   </action>
  </widget>

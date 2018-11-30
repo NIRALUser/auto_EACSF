@@ -17,42 +17,43 @@ using std::endl;
 using std::cout;
 
 CSFWindow::CSFWindow(QWidget *m_parent):
-    QMainWindow(m_parent),exec_names({"ABC","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3"})
+    QMainWindow(m_parent)
 {
     this->setupUi(this);
-    this->initializeMenuBar();
     checkBox_VentricleRemoval->setChecked(true);
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
     prc= new QProcess;
 
 #if DEFAULT_PARAM
-    readDataConfiguration_d(QDir::cleanPath(QDir::currentPath()+QString("/data_configuration_martin.json")));
-    readDataConfiguration_p(QDir::cleanPath(QDir::currentPath()+QString("/parameter_configuration_SH.json")));
-    //readDataConfiguration_sw(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-no-sb/auto_EACSF/data/software_ex.json"));
+    readConfig(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/default_config.json"));
 #endif
-    for (QString name : exec_names)
+    if (!executables.keys().isEmpty())
     {
-        executables[name]=QString();
-    }
+        find_executables();
 
-    find_executables();
-    /*
-    for (QString s : executables.keys())
-    {
-        cout<<s.toStdString()<<" : "<<executables[s].toStdString()<<endl;
+        for (QString exe_name : executables.keys()) //create the buttons/lineEdit for each executable
+        {
+            QWidget *containerWidget = new QWidget;
+            QLayout *horizontalLayout = new QHBoxLayout();
+            verticalLayout_exe->addWidget(containerWidget);
+            QPushButton *qpb =  new QPushButton();
+            qpb->setText(exe_name);
+            qpb->setMinimumWidth(181);
+            qpb->setMaximumWidth(181);
+            qpb->setMinimumHeight(31);
+            qpb->setMaximumHeight(31);
+            QObject::connect(qpb,SIGNAL(clicked()),this,SLOT(exe_qpb_triggered()));
+            QLineEdit *lined = new QLineEdit();
+            lined->setMinimumHeight(31);
+            lined->setMaximumHeight(31);
+            lined->setText(executables[exe_name]);
+            QObject::connect(lined,SIGNAL(textChanged(QString)),this,SLOT(exe_lined_textChanged(QString)));
+            horizontalLayout->addWidget(qpb);
+            horizontalLayout->addWidget(lined);
+            containerWidget->setLayout(horizontalLayout);
+        }
     }
-    */
-
-    lineEdit_ABC->setText(executables[exec_names[0]]);
-    lineEdit_ANTS->setText(executables[exec_names[1]]);
-    lineEdit_BRAINSFit->setText(executables[exec_names[2]]);
-    lineEdit_FSLBET->setText(executables[exec_names[3]]);
-    lineEdit_ImageMath->setText(executables[exec_names[4]]);
-    lineEdit_ImageStat->setText(executables[exec_names[5]]);
-    lineEdit_convertITKformats->setText(executables[exec_names[6]]);
-    lineEdit_WarpImageMultiTransform->setText(executables[exec_names[7]]);
-    lineEdit_Python->setText(executables[exec_names[8]]);
 }
 
 CSFWindow::~CSFWindow()
@@ -60,30 +61,21 @@ CSFWindow::~CSFWindow()
 
 }
 
-// File
-void CSFWindow::initializeMenuBar(){
-    //Load and Save
-    connect( action_LoadData, SIGNAL( triggered() ), SLOT( OnLoadDataConfiguration() ) );
-    connect( action_SaveData, SIGNAL( triggered() ), SLOT( OnSaveDataConfiguration() ) );
-
-    connect( action_LoadParameter, SIGNAL( triggered() ), SLOT( OnLoadParameterConfiguration() ) );
-    connect( action_SaveParameter, SIGNAL( triggered() ), SLOT( OnSaveParameterConfiguration() ) );
-
-    connect( action_LoadSoftware, SIGNAL( triggered() ), SLOT( OnLoadSoftwareConfiguration() ) );
-    connect( action_SaveSoftware, SIGNAL( triggered() ), SLOT( OnSaveSoftwareConfiguration() ) );
-}
-
-void CSFWindow::check_exe_in_folder(QString name, QString path)
+void CSFWindow::check_exe_in_folder(QString name, QString path, QString tree_type)
 {
     QFileInfo check_exe(path);
     if (check_exe.exists() && check_exe.isExecutable())
     {
-        //cout<<name.toStdString()<<" found"<<endl;
+        //cout<<name.toStdString()<<" found in "<<tree_type.toStdString()<<" tree"<<endl;
         executables[name]=path;
     }
     else
     {
-        //cout<<name.toStdString()<<" not found"<<endl;
+        if (tree_type==QString("superbuild"))
+        {
+            executables[name]=QString("");
+        }
+        //cout<<name.toStdString()<<" not found in "<<tree_type.toStdString()<<" tree"<<endl;
     }
 }
 
@@ -98,23 +90,23 @@ void CSFWindow::find_executables(){
 #ifdef Q_OS_LINUX
     QDir CD=QDir::current();
     CD.cdUp();
-    //cout<<CD.absolutePath().toStdString()<<endl;
-    //{"ABC", "ANTS", "BRAINSFit", "bet", "ImageMath", "ImageStat", "convertITKformats", "WarpImageMultiTransform", "python3"}
+    // If Auto_EACSF has not been installed, look in superbuild tree
 
-    // Manual checking for exe in superbuild
-    check_exe_in_folder(exec_names[0],QDir::cleanPath(CD.absolutePath()+QString("/ABC-build/StandAloneCLI/ABC_CLI")));
+    for (QString exe_name : executables.keys())
+    {
+        QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
+        check_exe_in_folder(exe_name,dirpath,QString("superbuild"));
+    }
 
-    check_exe_in_folder(exec_names[1],QDir::cleanPath(CD.absolutePath()+QString("/ANTs-build/bin/ANTS")));
+    // If it has been installed, look in install tree
+    CD=QDir::current();
+    for (QString exe_name : executables.keys())
+    {
+        QString dirpath = QDir::cleanPath(CD.absolutePath()+QString("/")+exe_name);
+        check_exe_in_folder(exe_name,dirpath,QString("install"));
+    }
 
-    check_exe_in_folder(exec_names[2],QDir::cleanPath(CD.absolutePath()+QString("/BRAINSTools-build/bin/BRAINSFit")));
 
-    check_exe_in_folder(exec_names[4],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/ImageMath")));
-
-    check_exe_in_folder(exec_names[5],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/ImageStat")));
-
-    check_exe_in_folder(exec_names[6],QDir::cleanPath(CD.absolutePath()+QString("/niral_utilities-build/bin/convertITKformats")));
-
-    check_exe_in_folder(exec_names[7],QDir::cleanPath(CD.absolutePath()+QString("/ANTs-build/bin/WarpImageMultiTransform")));
 
 
 #endif
@@ -153,141 +145,69 @@ void CSFWindow::find_executables(){
 
 }
 
-void CSFWindow::readDataConfiguration_d(QString filename)
+void CSFWindow::readConfig(QString filename)
 {
-    QString settings;
-    QFile file;
-    QJsonObject dataFile;
-    file.setFileName(filename);
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    settings = file.readAll();
-    file.close();
+    QString config_qstr;
+    QFile config_qfile;
+    config_qfile.setFileName(filename);
+    config_qfile.open(QIODevice::ReadOnly | QIODevice::Text);
+    config_qstr = config_qfile.readAll();
+    config_qfile.close();
 
-    QJsonDocument d_data = QJsonDocument::fromJson(settings.toUtf8());
-    dataFile = d_data.object();
+    QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
+    QJsonArray config_array = config_doc.array();
+    QJsonObject data_obj = config_array[0].toObject();
+    lineEdit_BrainMask->setText(data_obj.value(QString("BrainMask")).toString());
+    lineEdit_CerebellumMask->setText(data_obj.value(QString("CerebellumMask")).toString());
+    lineEdit_T1img->setText(data_obj.value(QString("T1img")).toString());
+    lineEdit_T2img->setText(data_obj.value(QString("T2img")).toString());
+    lineEdit_TissueSeg->setText(data_obj.value(QString("TissueSeg")).toString());
+    lineEdit_VentricleMask->setText(data_obj.value(QString("VentricleMask")).toString());
+    lineEdit_OutputDir->setText(data_obj.value(QString("output_dir")).toString());
 
-    lineEdit_T1img->setText(dataFile.value(QString("T1img")).toString());
-    lineEdit_T2img->setText(dataFile.value(QString("T2img")).toString());
-    lineEdit_BrainMask->setText(dataFile.value(QString("BrainMask")).toString());
-    lineEdit_VentricleMask->setText(dataFile.value(QString("VentricleMask")).toString());
-    lineEdit_TissueSeg->setText(dataFile.value(QString("TissueSeg")).toString());
-    lineEdit_CerebellumMask->setText(dataFile.value(QString("CerebellumMask")).toString());
-    lineEdit_OutputDir->setText(dataFile.value(QString("output_dir")).toString());
-}
-
-void CSFWindow::readDataConfiguration_p(QString filename)
-{
-    QString settings;
-    QFile file;
-    QJsonObject paramFile;
-
-
-    file.setFileName(filename);
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    settings = file.readAll();
-    file.close();
-
-    QJsonDocument p_data = QJsonDocument::fromJson(settings.toUtf8());
-    paramFile = p_data.object();
-
-    //PARAM
-    spinBox_Index->setValue(paramFile.value(QString("ACPC_index")).toInt());
-    doubleSpinBox_mm->setValue(paramFile.value(QString("ACPC_mm")).toDouble());
-
-    lineEdit_ReferenceAtlasFile->setText(paramFile.value(QString("Reference_Atlas_dir")).toString());
-    lineEdit_TissueSegAtlas->setText(paramFile.value(QString("TissueSeg_Atlas_dir")).toString());
-
-    lineEdit_SSAtlasFolder->setText(paramFile.value(QString("SkullStripping_Atlases_dir")).toString());
+    QJsonObject param_obj = config_array[1].toObject();
+    spinBox_Index->setValue(param_obj.value(QString("ACPC_index")).toInt());
+    doubleSpinBox_mm->setValue(param_obj.value(QString("ACPC_mm")).toDouble());
+    spinBox_T1Weight->setValue(param_obj.value(QString("ANTS_T1_weight")).toInt());
+    doubleSpinBox_GaussianSigma->setValue(param_obj.value(QString("ANTS_gaussian_sig")).toDouble());
+    lineEdit_Iterations->setText(param_obj.value(QString("ANTS_iterations_val")).toString());
+    comboBox_RegType->setCurrentText(param_obj.value(QString("ANTS_reg_type")).toString());
+    comboBox_Metric->setCurrentText(param_obj.value(QString("ANTS_sim_metric")).toString());
+    spinBox_SimilarityParameter->setValue(param_obj.value(QString("ANTS_sim_param")).toInt());
+    doubleSpinBox_TransformationStep->setValue(param_obj.value(QString("ANTS_transformation_step")).toDouble());
+    lineEdit_ROIAtlasT1->setText(param_obj.value(QString("ROI_Atlas_T1")).toString());
+    lineEdit_ReferenceAtlasFile->setText(param_obj.value(QString("Reference_Atlas_dir")).toString());
+    lineEdit_SSAtlasFolder->setText(param_obj.value(QString("SkullStripping_Atlases_dir")).toString());
+    lineEdit_TissueSegAtlas->setText(param_obj.value(QString("TissueSeg_Atlas_dir")).toString());
+    spinBox_CSFLabel->setValue(param_obj.value(QString("TissueSeg_csf")).toInt());
     displayAtlases(lineEdit_SSAtlasFolder->text());
 
-    lineEdit_ROIAtlasT1->setText(paramFile.value(QString("ROI_Atlas_T1")).toString());
+    QJsonObject exe_obj = config_array[2].toObject();
+    for (QString exe_name : exe_obj.keys())
+    {
+        executables[exe_name]=exe_obj[exe_name].toString();
+    }
 
-    comboBox_RegType->setCurrentText(paramFile.value(QString("ANTS_reg_type")).toString());
-    doubleSpinBox_TransformationStep->setValue(paramFile.value(QString("ANTS_transformation_step")).toDouble());
-    lineEdit_Iterations->setText(paramFile.value(QString("ANTS_iterations_val")).toString());
-    comboBox_Metric->setCurrentText(paramFile.value(QString("ANTS_sim_metric")).toString());
-    spinBox_SimilarityParameter->setValue(paramFile.value(QString("ANTS_sim_param")).toInt());
-    doubleSpinBox_GaussianSigma->setValue(paramFile.value("ANTS_gaussian_sig").toDouble());
-    spinBox_T1Weight->setValue(paramFile.value(QString("ANTS_T1_weight")).toInt());
+    QJsonObject script_obj = config_array[3].toObject();
+    for (QString script_name : script_obj.keys())
+    {
+        QJsonArray sc_array = script_obj[script_name].toArray();
+        for (QJsonValue exe_name : sc_array)
+        {
+            script_exe[script_name].append(exe_name.toString());
+        }
+    }
+
+//    for (QString script_name : script_exe.keys())
+//    {
+//        cout<<script_name.toStdString()<<" : [";
+//        for (QString exe_name : script_exe[script_name])
+//        {
+//            cout<<exe_name.toStdString()<<", ";
+//        }
+//        cout<<"]"<<endl;;
+//    }
 }
-
-void CSFWindow::readDataConfiguration_sw(QString filename)
-{
-    QString settings;
-    QFile file;
-    QJsonObject swFile;
-
-
-    file.setFileName(filename);
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    settings = file.readAll();
-    file.close();
-
-    QJsonDocument sw_data = QJsonDocument::fromJson(settings.toUtf8());
-    swFile = sw_data.object();
-
-    //PARAM
-    lineEdit_ABC->setText(swFile.value(QString("ABC")).toString());
-    lineEdit_ANTS->setText(swFile.value(QString("ANTS")).toString());
-    lineEdit_BRAINSFit->setText(swFile.value(QString("BRAINSFit")).toString());
-    lineEdit_FSLBET->setText(swFile.value(QString("FSLBET")).toString());
-    lineEdit_ImageMath->setText(swFile.value(QString("ImageMath")).toString());
-    lineEdit_ImageStat->setText(swFile.value(QString("ImageStat")).toString());
-    lineEdit_convertITKformats->setText(swFile.value(QString("convertITKformats")).toString());
-    lineEdit_WarpImageMultiTransform->setText(swFile.value(QString("WarpImageMultiTransform")).toString());
-    lineEdit_Python->setText(swFile.value(QString("Python")).toString());
-}
-
-void CSFWindow::writeDataConfiguration_d(QJsonObject &json)
-{
-    json["T1img"] = lineEdit_T1img->text();
-    json["T2img"] = lineEdit_T2img->text();
-    json["BrainMask"] = lineEdit_BrainMask->text();
-    json["VentricleMask"] = lineEdit_VentricleMask->text();
-    json["TissueSeg"] = lineEdit_TissueSeg->text();
-    json["CerebellumMask"] = lineEdit_CerebellumMask->text();
-    json["output_dir"] = lineEdit_OutputDir->text();
-
-    cout<<"Save Data Configuration"<<endl;
-}
-
-void CSFWindow::writeDataConfiguration_p(QJsonObject &json)
-{
-    json["ACPC_index"] = spinBox_Index->value();
-    json["ACPC_mm"] = doubleSpinBox_mm->value();
-
-    json["Reference_Atlas_dir"] = lineEdit_ReferenceAtlasFile->text();
-    json["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
-
-    json["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
-
-    json["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
-
-    json["ANTS_reg_type"] = comboBox_RegType->currentText();
-    json["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
-    json["ANTS_iterations_val"] = lineEdit_Iterations->text();
-    json["ANTS_sim_metric"] = comboBox_Metric->currentText();
-    json["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
-    json["ANTS_gaussian_sig"] = doubleSpinBox_GaussianSigma->value();
-    json["ANTS_T1_weight"] = spinBox_T1Weight->value();
-
-    cout<<"Save Parameter Configuration"<<endl;
-}
-
-void CSFWindow::writeDataConfiguration_sw(QJsonObject &json)
-{
-    json["ABC"] = lineEdit_ABC->text();
-    json["ANTS"] = lineEdit_ANTS->text();
-    json["BRAINSFit"] = lineEdit_BRAINSFit->text();
-    json["FSLBET"] = lineEdit_FSLBET->text();
-    json["ImageMath"] = lineEdit_ImageMath->text();
-    json["ImageStat"] = lineEdit_ImageStat->text();
-    json["ITK"] = lineEdit_convertITKformats->text();
-    json["WarpImageMultiTransform"] = lineEdit_WarpImageMultiTransform->text();
-    json["Python"] = lineEdit_Python->text();
-    cout<<"Save Software Configuration"<<endl;
-}
-
 
 QString CSFWindow::OpenFile(){
     QString filename = QFileDialog::getOpenFileName(
@@ -308,6 +228,16 @@ QString CSFWindow::OpenDir(){
                 );
     return dirname;
 }
+
+QString CSFWindow::SaveFile()
+  {
+    QString filename = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Document"),
+        QDir::currentPath(),
+        tr("JSON file (*.json)") );
+    return filename;
+  }
 
 bool CSFWindow::lineEdit_isEmpty(QLineEdit*& le)
 {
@@ -530,14 +460,20 @@ void CSFWindow::write_main_script()
         script.replace("@ACPC_VAL@", QString::number(doubleSpinBox_mm->value()));
     }
 
+    script.replace("@USE_DCM@", QString(lineEdit_isEmpty(lineEdit_CerebellumMask) ? "true" : "false"));
     script.replace("@PERFORM_REG@", QString(radioButton_rigidRegistration->isChecked() ? "true" : "false"));
     script.replace("@PERFORM_SS@", QString(checkBox_SkullStripping->isChecked() ? "true" : "false"));
     script.replace("@PERFORM_TSEG@", QString(checkBox_TissueSeg->isChecked() ? "true" : "false"));
     script.replace("@PERFORM_VR@", QString(checkBox_VentricleRemoval->isChecked() ? "true" : "false"));
-    script.replace("@PY3_PATH@", Python);
-    script.replace("@IMAGEMATH_PATH@",ImageMath);
-    script.replace("@IMAGESTAT_PATH@",ImageStat);
-    script.replace("@ABC@",ABC);
+
+    for (QString exe_name : script_exe[QString("main_script")])
+    {
+        QString str_code = QString("@")+exe_name+QString("_PATH@");
+        QString exe_path = executables[exe_name];
+        script.replace(str_code,exe_path);
+        cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
+    }
+
     script.replace("@OUTPUT_DIR@", output_dir);
 
     QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
@@ -567,7 +503,15 @@ void CSFWindow::write_rigid_align()
         rgd_script.replace(QString("@T2IMG@"), T2img);
     }
     rgd_script.replace("@ATLAS@", RefAtlasFile);
-    rgd_script.replace("@BRAINSFIT_PATH@", BRAINSFit);
+
+    for (QString exe_name : script_exe[QString("rigid_align")])
+    {
+        QString str_code = QString("@")+exe_name+QString("_PATH@");
+        QString exe_path = executables[exe_name];
+        rgd_script.replace(str_code,exe_path);
+        //cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
+    }
+
     rgd_script.replace("@OUTPUT_DIR@", output_dir);
 
     QString rigid_align_script = QDir::cleanPath(scripts_dir + QString("/rigid_align_script.py"));
@@ -626,11 +570,15 @@ void CSFWindow::write_make_mask()
     }
     msk_script.replace("@ATLASES_DIR@", SSAtlases_dir);
     msk_script.replace("@ATLASES_LIST@", SSAtlases_selected);
-    msk_script.replace("@IMAGEMATH_PATH@", ImageMath);
-    msk_script.replace("@BET_PATH@", FSLBET);
-    msk_script.replace("@CITKF_PATH@",convertITKformats);
-    msk_script.replace("@ANTS_PATH@",ANTS);
-    msk_script.replace("@WIMT_PATH@",WarpImageMultiTransform);
+
+    for (QString exe_name : script_exe[QString("make_mask")])
+    {
+        QString str_code = QString("@")+exe_name+QString("_PATH@");
+        QString exe_path = executables[exe_name];
+        msk_script.replace(str_code,exe_path);
+        //cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
+    }
+
     msk_script.replace("@OUTPUT_DIR@", output_dir);
 
     QString make_mask_script = QDir::cleanPath(scripts_dir + QString("/make_mask_script.py"));
@@ -652,10 +600,15 @@ void CSFWindow::write_tissue_seg()
     seg_script.replace("@T1IMG@", T1img);
     seg_script.replace("@T2IMG@", T2img);
     seg_script.replace("@ATLASES_DIR@", TS_Atlas_dir);
-    seg_script.replace("@BRAINSFIT_PATH@", BRAINSFit);
-    seg_script.replace("@ANTS_PATH@", ANTS);
-    seg_script.replace("@WIMT_PATH@", WarpImageMultiTransform);
-    seg_script.replace("@ABC_PATH@", ABC);
+
+    for (QString exe_name : script_exe[QString("tissue_seg")])
+    {
+        QString str_code = QString("@")+exe_name+QString("_PATH@");
+        QString exe_path = executables[exe_name];
+        seg_script.replace(str_code,exe_path);
+        //cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
+    }
+
     seg_script.replace("@OUTPUT_DIR@", output_dir);
 
     QString tissue_seg_script = QDir::cleanPath(scripts_dir + QString("/tissue_seg_script.py"));
@@ -709,9 +662,15 @@ void CSFWindow::write_vent_mask()
     v_script.replace("@T1_WEIGHT@", T1_Weight);
     v_script.replace("@TISSUE_SEG@", TissueSeg);
     v_script.replace("@VENTRICLE_MASK@" ,VentricleMask);
-    v_script.replace("@IMAGEMATH_PATH@",ImageMath);
-    v_script.replace("@ANTS_PATH@", ANTS);
-    v_script.replace("@WIMT_PATH@",WarpImageMultiTransform);
+
+    for (QString exe_name : script_exe[QString("vent_mask")])
+    {
+        QString str_code = QString("@")+exe_name+QString("_PATH@");
+        QString exe_path = executables[exe_name];
+        v_script.replace(str_code,exe_path);
+        //cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
+    }
+
     v_script.replace("@OUTPUT_DIR@", output_dir);
     v_script.replace("@OUTPUT_MASK@", "_AtlasToVent.nrrd");
 
@@ -743,63 +702,66 @@ void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
     cout<<exit_message.toStdString()<<endl;
 }
 
-void CSFWindow::OnLoadDataConfiguration(){
+void CSFWindow::on_actionLoad_Configuration_File_triggered()
+{
     QString filename= OpenFile();
-    readDataConfiguration_d(filename);
+    if (!filename.isEmpty())
+    {
+        readConfig(filename);
+    }
 }
 
-void CSFWindow::OnLoadParameterConfiguration(){
-    QString filename= OpenFile();
-    readDataConfiguration_p(filename);
-}
-
-void CSFWindow::OnLoadSoftwareConfiguration(){
-    QString filename= OpenFile();
-    readDataConfiguration_sw(filename);
-}
-
-bool CSFWindow::OnSaveDataConfiguration(){
-    QFile saveFile(QStringLiteral("data_configuration.json"));
-
+bool CSFWindow::on_actionSave_Configuration_triggered(){
+    QFile saveFile(SaveFile());
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
         return false;
     }
 
-    QJsonObject jsonObject;
-    writeDataConfiguration_d(jsonObject);
-    QJsonDocument saveDoc(jsonObject);
-    saveFile.write(saveDoc.toJson());
+    QJsonArray saved_array;
+    QJsonObject data_obj;
+    data_obj["BrainMask"] = lineEdit_BrainMask->text();
+    data_obj["T1img"] = lineEdit_T1img->text();
+    data_obj["T2img"] = lineEdit_T2img->text();
+    data_obj["CerebellumMask"] = lineEdit_CerebellumMask->text();
+    data_obj["VentricleMask"] = lineEdit_VentricleMask->text();
+    data_obj["TissueSeg"] = lineEdit_TissueSeg->text();
+    data_obj["output_dir"] = lineEdit_OutputDir->text();
+    cout<<"Save Data Configuration"<<endl;
+    saved_array.append(data_obj);
 
-    return true;
-}
+    QJsonObject param_obj;
+    param_obj["ACPC_index"] = spinBox_Index->value();
+    param_obj["ACPC_mm"] = doubleSpinBox_mm->value();
+    param_obj["ANTS_T1_weight"] = spinBox_T1Weight->value();
+    param_obj["ANTS_gaussian_sig"] = doubleSpinBox_GaussianSigma->value();
+    param_obj["ANTS_iterations_val"] = lineEdit_Iterations->text();
+    param_obj["ANTS_reg_type"] = comboBox_RegType->currentText();
+    param_obj["ANTS_sim_metric"] = comboBox_Metric->currentText();
+    param_obj["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
+    param_obj["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
+    param_obj["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
+    param_obj["Reference_Atlas_dir"] = lineEdit_ReferenceAtlasFile->text();
+    param_obj["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
+    param_obj["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
+    param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
+    cout<<"Save Parameter Configuration"<<endl;
+    saved_array.append(param_obj);
 
-bool CSFWindow::OnSaveParameterConfiguration(){
-    QFile saveFile(QStringLiteral("parameter_configuration.json"));
+    /*
+    json["ABC"] = lineEdit_ABC->text();
+    json["ANTS"] = lineEdit_ANTS->text();
+    json["BRAINSFit"] = lineEdit_BRAINSFit->text();
+    json["FSLBET"] = lineEdit_FSLBET->text();
+    json["ImageMath"] = lineEdit_ImageMath->text();
+    json["ImageStat"] = lineEdit_ImageStat->text();
+    json["ITK"] = lineEdit_convertITKformats->text();
+    json["WarpImageMultiTransform"] = lineEdit_WarpImageMultiTransform->text();
+    json["Python"] = lineEdit_Python->text();
+    cout<<"Save Software Configuration"<<endl;
+    */
 
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
-        return false;
-    }
-    QJsonObject jsonObject;
-    writeDataConfiguration_p(jsonObject);
-    QJsonDocument saveDoc(jsonObject);
-    saveFile.write(saveDoc.toJson());
-
-    return true;
-}
-
-bool CSFWindow::OnSaveSoftwareConfiguration(){
-    QFile saveFile(QStringLiteral("software_configuration.json"));
-
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
-        return false;
-    }
-
-    QJsonObject jsonObject;
-    writeDataConfiguration_sw(jsonObject);
-    QJsonDocument saveDoc(jsonObject);
+    QJsonDocument saveDoc(saved_array);
     saveFile.write(saveDoc.toJson());
 
     return true;
@@ -872,50 +834,39 @@ void CSFWindow::on_radioButton_mm_clicked(const bool checkState)
 }
 
 // 2nd Tab - Executables
-void CSFWindow::on_pushButton_ABC_clicked()
+
+void CSFWindow::exe_qpb_triggered()
 {
-     lineEdit_ABC->setText(OpenFile());
+    QObject *sd = QObject::sender();
+    QObject *par = sd->parent();
+    QLineEdit *le;
+    for (QObject *ch : par->children())
+    {
+        le = qobject_cast<QLineEdit*>(ch);
+        if (le)
+        {
+            break;
+        }
+    }
+    le->setText(OpenFile());
 }
 
-void CSFWindow::on_pushButton_ANTS_clicked()
+void CSFWindow::exe_lined_textChanged(QString new_text)
 {
-     lineEdit_ANTS->setText(OpenFile());
+    QObject *sd = QObject::sender();
+    QObject *par = sd->parent();
+    QPushButton *bt;
+    for (QObject *ch : par->children())
+    {
+        bt =qobject_cast<QPushButton*>(ch);
+        if (bt)
+        {
+            break;
+        }
+    }
+    executables[bt->text()] = new_text;
 }
 
-void CSFWindow::on_pushButton_BRAINSFit_clicked()
-{
-     lineEdit_BRAINSFit->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_FSLBET_clicked()
-{
-     lineEdit_FSLBET->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_ImageMath_clicked()
-{
-     lineEdit_ImageMath->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_ImageStat_clicked()
-{
-     lineEdit_ImageStat->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_convertITKformats_clicked()
-{
-     lineEdit_convertITKformats->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_WarpImageMultiTransform_clicked()
-{
-     lineEdit_WarpImageMultiTransform->setText(OpenFile());
-}
-
-void CSFWindow::on_pushButton_Python_clicked()
-{
-     lineEdit_Python->setText(OpenFile());
-}
 
 // 3rd Tab - 1.Reference Alignment, 2.Skull Stripping
 
@@ -1075,17 +1026,6 @@ void CSFWindow::on_pushButton_execute_clicked()
     QDir sc_dir=QDir();
     sc_dir.mkdir(scripts_dir);
 
-    //EXECUTABLES
-    ABC=lineEdit_ABC->text();
-    ANTS=lineEdit_ANTS->text();
-    BRAINSFit=lineEdit_BRAINSFit->text();
-    FSLBET=lineEdit_FSLBET->text();
-    ImageMath=lineEdit_ImageMath->text();
-    ImageStat=lineEdit_ImageStat->text();
-    convertITKformats=lineEdit_convertITKformats->text();
-    WarpImageMultiTransform=lineEdit_WarpImageMultiTransform->text();
-    Python=lineEdit_Python->text();
-
     //0. WRITE MAIN_SCRIPT
     write_main_script();
 
@@ -1121,5 +1061,5 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardOutput()), this, SLOT(disp_output()));
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
-    prc->start(Python, params);
+    //prc->start(Python, params);
 }

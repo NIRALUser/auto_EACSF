@@ -58,7 +58,7 @@ def main(args):
 
     AUTO_EACSF_PARENT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(OUTPUT_DIR))))
     MASKS_DIR = os.path.join(AUTO_EACSF_PARENT_DIR,'auto_EACSF/data/masks')
-    VENT_REGION_MASK = os.path.join(MASKS_DIR,'Vent_CSF-BIN-RAI-Fusion_INV.nrrd')
+    VENT_REGION_MASK =  os.path.join(MASKS_DIR,'Vent_CSF-BIN-RAI-Fusion_INV.nrrd')
 
     VENT_MASK_base=os.path.splitext(os.path.basename(VENT_MASK))[0]
     VENT_MASK_INV = os.path.join(OUTPUT_DIR,VENT_MASK_base+'_INV.nrrd')
@@ -107,9 +107,9 @@ if (__name__ == "__main__"):
     parser.add_argument('--t1Weight', type=str, help='T1 Weight', default="@T1_WEIGHT@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
     parser.add_argument('--ventricleMask', type=str, help='Ventricle mask', default="@VENTRICLE_MASK@")
-    parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@IMAGEMATH_PATH@')
+    parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--ANTS', type=str, help='ANTS executable path', default='@ANTS_PATH@')
-    parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WIMT_PATH@')
+    parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WarpImageMultiTransform_PATH@')
     parser.add_argument('--output', nargs='?', type=str, help='Output directory', const="@OUTPUT_DIR@")
     parser.add_argument('--outputName', type=str, help='Output masked tissue-seg', default="@OUTPUT_MASK@")
     args = parser.parse_args()

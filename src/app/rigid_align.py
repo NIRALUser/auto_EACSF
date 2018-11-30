@@ -79,7 +79,7 @@ if (__name__ == "__main__"):
     parser.add_argument('--t1', type=str, help='T1 Image to calculate deformation field against atlas', default="@T1IMG@")
     parser.add_argument('--t2', type=str, help='T2 Image to calculate deformation field against atlas', default="@T2IMG@")
     parser.add_argument('--atlas', type=str, help='Atlas image', default="@ATLAS@")
-    parser.add_argument('--BRAINSFit', type=str, help='BRAINSFit executable path', default="@BRAINSFIT_PATH@")
+    parser.add_argument('--BRAINSFit', type=str, help='BRAINSFit executable path', default="@BRAINSFit_PATH@")
     parser.add_argument('--output', type=str, help='Output directory', default="@OUTPUT_DIR@")
     args = parser.parse_args()
     main(args)
