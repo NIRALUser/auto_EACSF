@@ -1,0 +1,45 @@
+[
+    {
+	"BrainMask": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_brainmask.nrrd",
+	"CerebellumMask": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/CVS_MASK_RAI_Dilate.nrrd",
+	"T1img": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t1w_RAI.nrrd",
+	"T2img": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t2w_RAI.nrrd",
+	"TissueSeg": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd",
+	"VentricleMask": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
+	"output_dir": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/bin/Test_Output"
+    },
+    {
+	"ACPC_index": 70,
+	"ACPC_mm": 0,
+	"ANTS_T1_weight": 1,
+	"ANTS_gaussian_sig": 3,
+	"ANTS_iterations_val": "100x50x25",
+	"ANTS_reg_type": "GreedyDiffeo",
+	"ANTS_sim_metric": "CC",
+	"ANTS_sim_param": 4,
+	"ANTS_transformation_step": 0.25,
+	"ROI_Atlas_T1": "/NIRAL/tools/atlas/SHworkAtlas/tissueMultiAtlas/5075/atlas_5075_T1w.nii.gz",
+	"Reference_Atlas_dir": "/tools/atlas/BrainsegAtlas/pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
+	"SkullStripping_Atlases_dir": "/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/atlases/brainmaskingMultiatlas",
+	"TissueSeg_Atlas_dir": "/tools/atlas/BrainsegAtlas/pediatric-atlas-1year-T1-ABC/DeepGray5Class",
+	"TissueSeg_csf": 3
+    },
+    {
+	"ABC_CLI": "/ABC-build/StandAloneCLI/",
+	"ANTS": "/ANTs-build/bin",
+	"BRAINSFit": "/BRAINSTools-build/bin/",
+	"bet": "",
+	"ImageMath": "/niral_utilities-build/bin/",
+	"ImageStat": "/niral_utilities-build/bin/",
+	"convertITKformats": "/niral_utilities-build/bin/",
+	"WarpImageMultiTransform": "/ANTs-build/bin/",
+	"python3": ""
+    },
+    {
+	"main_script": ["python3","ImageMath","ImageStat","ABC_CLI"],
+	"rigid_align": ["BRAINSFit"],
+	"make_mask": ["ImageMath","bet","convertITKformats","ANTS","WarpImageMultiTransform"],
+	"tissue_seg": ["BRAINSFit","ANTS","WarpImageMultiTransform","ABC_CLI"],
+	"vent_mask": ["ImageMath","ANTS","WarpImageMultiTransform"]
+    }
+]
