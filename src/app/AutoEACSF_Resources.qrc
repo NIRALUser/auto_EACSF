@@ -4,5 +4,6 @@
         <file>vent_mask.py</file>
         <file>rigid_align.py</file>
         <file>make_mask.py</file>
+        <file>tissue_seg.py</file>
     </qresource>
 </RCC>
