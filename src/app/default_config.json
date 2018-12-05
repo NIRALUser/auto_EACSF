@@ -1,0 +1,35 @@
+{
+    "data":{
+	"BrainMask": "stx_noscale_718312_V24_brainmask.nrrd",
+	"CerebellumMask": "CVS_MASK_RAI_Dilate.nrrd",
+	"T1img": "stx_noscale_718312_V24_t1w_RAI.nrrd",
+	"T2img": "stx_noscale_718312_V24_t2w_RAI.nrrd",
+	"TissueSeg": "stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd",
+	"VentricleMask": "Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
+	"output_dir": "Test_Output"
+    },
+    "parameters":{
+	"ACPC_index": 70,
+	"ACPC_mm": 0,
+	"ANTS_T1_weight": 1,
+	"ANTS_gaussian_sig": 3,
+	"ANTS_iterations_val": "100x50x25",
+	"ANTS_reg_type": "GreedyDiffeo",
+	"ANTS_sim_metric": "CC",
+	"ANTS_sim_param": 4,
+	"ANTS_transformation_step": 0.25,
+	"ROI_Atlas_T1": "tissueMultiAtlas/5075/atlas_5075_T1w.nii.gz",
+	"Reference_Atlas": "pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
+	"SkullStripping_Atlases_dir": "brainmaskingMultiatlas",
+	"TissueSeg_Atlas_dir": "pediatric-atlas-1year-T1-ABC/DeepGray5Class",
+	"TissueSeg_csf": 3
+    },
+    "executables":{
+	"names":["ABC_CLI","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3","blbl","hehe"],
+	"hints": ["/ABC-build/StandAloneCLI/","/ANTs-build/bin","/BRAINSTools-build/bin/","","/niral_utilities-build/bin/","/niral_utilities-build/bin/","/niral_utilities-build/bin/","/ANTs-build/bin/","","",""]
+    },
+    "scripts":{
+	"names":["main_script","rigid_align","make_mask","tissue_seg","vent_mask"],
+	"executables": [["python3","ImageMath","ImageStat","ABC_CLI"],["BRAINSFit"],["ImageMath","bet","convertITKformats","ANTS","WarpImageMultiTransform"],["BRAINSFit","ANTS","WarpImageMultiTransform","ABC_CLI"],["ImageMath","ANTS","WarpImageMultiTransform"]]
+    }
+}

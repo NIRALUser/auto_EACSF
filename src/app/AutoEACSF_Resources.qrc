@@ -6,4 +6,7 @@
         <file>make_mask.py</file>
         <file>tissue_seg.py</file>
     </qresource>
+    <qresource prefix="/config">
+        <file>default_config.json</file>
+    </qresource>
 </RCC>
