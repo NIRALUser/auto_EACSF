@@ -16,7 +16,7 @@ def eprint(*args, **kwargs):
 
 def call_and_print(args):
     #external process calling function with output and errors printing
-    print(">>>ARGS: "+"\n\t".join(args)+'\n')
+    print("<b>>>>ARGS: "+"\n\t".join(args)+'\n</b>')
     sys.stdout.flush()
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -38,33 +38,6 @@ def main(main_args):
     print("Running main_script")
     sys.stdout.flush()
 
-    ### Coronal mask settings
-    ACPC_unit=main_args.ACPCunit
-    if(ACPC_unit == "index"):
-        ACPC_val=int(main_args.ACPCval)
-    else:
-        ACPC_mm=float(main_args.ACPCval)
-        im=itk.imread("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t1w_RAI.nrrd")
-        index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
-        ACPC_val=round(index_coord[0])
-
-    if(ACPC_val == 70):
-        Coronal_Mask = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/Coronal_70Mask.nrrd"
-    else:
-        im=itk.imread("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/stx_noscale_718312_V24_t1w_RAI.nrrd")
-        np_copy=itk.GetArrayFromImage(im)
-        if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
-            eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
-            sys.stderr.flush()
-            Coronal_Mask = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/Coronal_70Mask.nrrd"
-        else:
-            np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=np.iinfo(np_copy.dtype).max
-            np_copy[0:ACPC_val-1,:,:]=0
-            itk_np_copy=itk.GetImageViewFromArray(np_copy)
-            itk_outfile_name="Coronal_"+str(ACPC_val)+"Mask.nrrd"
-            itk.imwrite(itk_np_copy,itk_outfile_name)
-            Coronal_Mask = itk_outfile_name
-
     ### Inputs
     T1 = main_args.t1
     T2 = main_args.t2
@@ -84,6 +57,36 @@ def main(main_args):
             T2_base=os.path.splitext(T2_split[0])
         else:
             T2_base=T2_split[0]
+
+    ### Data directory
+    DATADIR = main_args.dataDir
+
+    ### Coronal mask settings
+    ACPC_unit=main_args.ACPCunit
+    if(ACPC_unit == "index"):
+        ACPC_val=int(main_args.ACPCval)
+    else:
+        ACPC_mm=float(main_args.ACPCval)
+        im=itk.imread(T1)
+        index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
+        ACPC_val=round(index_coord[0])
+
+    if(ACPC_val == 70):
+        Coronal_Mask = os.path.join(DATADIR,"masks","coronal_mask_70.nrrd")
+    else:
+        im=itk.imread(T1)
+        np_copy=itk.GetArrayFromImage(im)
+        if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
+            eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
+            sys.stderr.flush()
+            Coronal_Mask = os.path.join(DATADIR,"masks","coronal_mask_70.nrrd")
+        else:
+            np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=np.iinfo(np_copy.dtype).max
+            np_copy[0:ACPC_val-1,:,:]=0
+            itk_np_copy=itk.GetImageViewFromArray(np_copy)
+            itk_outfile_name="coronal_mask_"+str(ACPC_val)
+            itk.imwrite(itk_np_copy,itk_outfile_name)
+            Coronal_Mask = itk_outfile_name
 
     ### Executables
     python=main_args.python3
@@ -108,7 +111,7 @@ def main(main_args):
     OUT_PATH = main_args.output
 
     if (main_args.performReg == "true"):
-       print("######## Running rigid_align_script ########")
+       print("<b>######## Running rigid_align_script ########</b>")
        sys.stdout.flush()
        OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
        call([python, "PythonScripts/rigid_align_script.py",'--output',OUT_RR])
@@ -120,7 +123,7 @@ def main(main_args):
        sys.stdout.flush()
 
     if (main_args.performSS == "true"):
-       print("######## Running make_mask_script ########")
+       print("<b>######## Running make_mask_script ########</b>")
        sys.stdout.flush()
        OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
        call([python, "PythonScripts/make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
@@ -130,7 +133,7 @@ def main(main_args):
 
 
     if (main_args.performTSeg == "true"):
-       print("######## Running ABC Segmentation ########")
+       print("<b>######## Running ABC Segmentation ########</b>")
        sys.stdout.flush()
        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
@@ -140,7 +143,7 @@ def main(main_args):
        sys.stdout.flush()
 
 
-    print("######## Running vent_mask_script ########")
+    print("<b>######## Running vent_mask_script ########</b>")
     sys.stdout.flush()
     OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
     call([python, "PythonScripts/vent_mask_script.py", '--t1', T1, '--tissueSeg', Segmentation, '--atlas', '--output',OUT_VR])
@@ -241,6 +244,7 @@ if (__name__ == "__main__"):
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--ImageStat', type=str, help='ImageStat executable path', default='@ImageStat_PATH@')
     parser.add_argument('--ABC', type=str, help='ABC executable path', default='@ABC_CLI_PATH@')
+    parser.add_argument('--dataDir', type=str, help='data directory path', default='@DATADIR@')
     parser.add_argument('--output', type=str, help='Output directory', default="@OUTPUT_DIR@")
     args = parser.parse_args()
     main(args)

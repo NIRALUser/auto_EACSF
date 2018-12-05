@@ -26,8 +26,11 @@ public:
     ~CSFWindow();
 
 private:
-    void check_exe_in_folder(QString name, QString path, QString tree_type);
+    void check_tree_type();
+    bool find_data_dir_path();
+    void check_exe_in_folder(QString name, QString path);
     void find_executables();
+    void readDefaultConfig();
     void readConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
@@ -39,6 +42,7 @@ private:
     void setBestDataAlignmentOption();
 
     int questionMsgBox(bool checkState, QString maskType, QString action);
+    void errorMsgBox(QString message);
 
     void displayAtlases(QString folder_path);
 
@@ -71,10 +75,23 @@ private:
     QString Gaussian="3";
     QString T1_Weight="1";
 
+    //Data directory path
+    QString m_data_dir_path;
+    bool m_data_found;
+
     //Other
     bool dataSeemsAligned=false;
     bool script_running=false;
     bool outlog_file_created=false;
+
+    enum class TreeType
+    {
+        dev_superbuild,
+        release_superbuild,
+        install
+    };
+
+    TreeType m_tree_type;
 
 private slots:
     void disp_output();
@@ -84,6 +101,9 @@ private slots:
     //File
     void on_actionLoad_Configuration_File_triggered();
     bool on_actionSave_Configuration_triggered();
+
+    //Window
+    void on_actionShow_executables_toggled(bool toggled);
 
     //1st Tab
     void on_pushButton_T1img_clicked();

@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>6</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -1154,7 +1154,14 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLoad_Configuration_File"/>
     <addaction name="actionSave_Configuration"/>
    </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="actionShow_executables"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuWindow"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -1176,6 +1183,17 @@ p, li { white-space: pre-wrap; }
   <action name="actionSave_Configuration">
    <property name="text">
     <string>Save Configuration</string>
+   </property>
+  </action>
+  <action name="actionShow_executables">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show executables</string>
    </property>
   </action>
  </widget>

@@ -58,7 +58,7 @@ def main(args):
 
     AUTO_EACSF_PARENT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(OUTPUT_DIR))))
     MASKS_DIR = os.path.join(AUTO_EACSF_PARENT_DIR,'auto_EACSF/data/masks')
-    VENT_REGION_MASK =  os.path.join(MASKS_DIR,'Vent_CSF-BIN-RAI-Fusion_INV.nrrd')
+    VENT_REGION_MASK =  os.path.join(MASKS_DIR,'vent_region_mask_INV.nrrd')
 
     VENT_MASK_base=os.path.splitext(os.path.basename(VENT_MASK))[0]
     VENT_MASK_INV = os.path.join(OUTPUT_DIR,VENT_MASK_base+'_INV.nrrd')
@@ -66,6 +66,7 @@ def main(args):
     T1_dir=os.path.dirname(T1)
     T1_base=os.path.splitext(os.path.basename(T1))[0]
     OUT_VENT_MASK = os.path.join(OUTPUT_DIR, "".join([T1_base,"_AtlasToVent.nrrd"]))
+    OUT_VENT_REGION_MASK = os.path.join(OUTPUT_DIR, "".join([T1_base,"_AtlasToVentReg.nrrd"]))
     SEG_WithoutVent = os.path.join(OUTPUT_DIR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
     ANTs_MATRIX_NAME=os.path.join(OUTPUT_DIR, T1_base)
     ANTs_WARP = os.path.join(OUTPUT_DIR, "".join([T1_base,"Warp.nii.gz"]))

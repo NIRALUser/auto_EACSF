@@ -11,8 +11,6 @@
 #include <QScrollBar>
 #include <QRegExp>
 
-#define DEFAULT_PARAM 1
-
 using std::endl;
 using std::cout;
 
@@ -24,10 +22,15 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
     prc= new QProcess;
+    check_tree_type();
+    m_data_found=find_data_dir_path();
+    if(!m_data_found)
+    {
+        errorMsgBox(QString("Data folder not found, project building or installation might be incomplete."));
+    }
 
-#if DEFAULT_PARAM
-    readConfig(QString("/NIRAL/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/default_config.json"));
-#endif
+    readDefaultConfig();
+
     if (!executables.keys().isEmpty())
     {
         find_executables();
@@ -54,28 +57,73 @@ CSFWindow::CSFWindow(QWidget *m_parent):
             containerWidget->setLayout(horizontalLayout);
         }
     }
+    tabWidget->removeTab(1);
+    tabWidget->removeTab(5);
 }
 
 CSFWindow::~CSFWindow()
 {
-
 }
 
-void CSFWindow::check_exe_in_folder(QString name, QString path, QString tree_type)
+bool CSFWindow::find_data_dir_path()
+{
+    QDir CD = QDir::current();
+    CD.cdUp();
+    switch(m_tree_type)
+    {
+        case TreeType::dev_superbuild:
+            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
+            return (QDir(m_data_dir_path).exists());
+            break;
+        case TreeType::release_superbuild:
+            CD.cdUp();
+            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
+            return (QDir(m_data_dir_path).exists());
+            break;
+        case TreeType::install:
+            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
+            return (QDir(m_data_dir_path).exists());
+            break;
+        default:
+            return false;
+    }
+}
+
+void CSFWindow::check_tree_type()
+{
+    QDir CD=QDir::current();
+    CD.cdUp();
+    QString CMakeFiles_path = QDir::cleanPath(CD.absolutePath()+QString("/CMakeFiles"));
+    if (QDir(CMakeFiles_path).exists())
+    {
+        m_tree_type=TreeType::dev_superbuild;
+    }
+    else
+    {
+        CD.cdUp();
+        CMakeFiles_path = QDir::cleanPath(CD.absolutePath()+QString("/CMakeFiles"));
+        if (QDir(CMakeFiles_path).exists())
+        {
+            m_tree_type=TreeType::release_superbuild;
+        }
+        else{
+            m_tree_type=TreeType::install;
+        }
+    }
+
+    cout<<"tree type : "<<(int)(m_tree_type)<<endl;
+}
+
+void CSFWindow::check_exe_in_folder(QString name, QString path)
 {
     QFileInfo check_exe(path);
     if (check_exe.exists() && check_exe.isExecutable())
     {
-        //cout<<name.toStdString()<<" found in "<<tree_type.toStdString()<<" tree"<<endl;
         executables[name]=path;
     }
     else
     {
-        if (tree_type==QString("superbuild"))
-        {
-            executables[name]=QString("");
-        }
-        //cout<<name.toStdString()<<" not found in "<<tree_type.toStdString()<<" tree"<<endl;
+        executables[name]=QString("");
     }
 }
 
@@ -89,21 +137,35 @@ void CSFWindow::find_executables(){
     QStringList path_split=env_PATH.split(":");
 #ifdef Q_OS_LINUX
     QDir CD=QDir::current();
-    CD.cdUp();
-    // If Auto_EACSF has not been installed, look in superbuild tree
 
-    for (QString exe_name : executables.keys())
+    switch (m_tree_type)
     {
-        QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
-        check_exe_in_folder(exe_name,dirpath,QString("superbuild"));
-    }
-
-    // If it has been installed, look in install tree
-    CD=QDir::current();
-    for (QString exe_name : executables.keys())
-    {
-        QString dirpath = QDir::cleanPath(CD.absolutePath()+QString("/")+exe_name);
-        check_exe_in_folder(exe_name,dirpath,QString("install"));
+        case TreeType::dev_superbuild: // If Auto_EACSF has not been installed, look in superbuild tree
+            CD.cdUp(); //auto_EACSF-bin
+            for (QString exe_name : executables.keys())
+            {
+                QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
+                check_exe_in_folder(exe_name,dirpath);
+            }
+            break;
+        case TreeType::release_superbuild:
+            CD.cdUp(); //auto_EACSF-build/auto_EACSF-inner-build/
+            CD.cdUp(); //auto_EACSF-build/
+            for (QString exe_name : executables.keys())
+            {
+                QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
+                check_exe_in_folder(exe_name,dirpath);
+            }
+            break;
+        case TreeType::install: // If it has been installed, look in install tree
+            for (QString exe_name : executables.keys())
+            {
+                QString dirpath = QDir::cleanPath(CD.absolutePath()+QString("/")+exe_name);
+                check_exe_in_folder(exe_name,dirpath);
+            }
+            break;
+        default:
+            break;
     }
 
 
@@ -129,20 +191,105 @@ void CSFWindow::find_executables(){
                     executables[exe]=p_exe;
                     break;
                 }
-                if (exe==QString("ABC"))
-                {
-                    p_exe=QDir::cleanPath(p + QString("/ABC_CLI"));
-                    check_p_exe=QFileInfo(p_exe);
-                    if (check_p_exe.exists() && check_p_exe.isExecutable())
-                    {
-                        executables[exe]=p_exe;
-                        break;
-                    }
-                }
             }
         }
     }
 
+    QString unfoundExecMessage = QString ("Following executables unfound : ");
+    bool atLeastOneExeMissing;
+    for (QString exe : executables.keys())
+    {
+        if (executables[exe].isEmpty()) //if exe has not been found
+        {
+            unfoundExecMessage=unfoundExecMessage+QString("<b>")+exe+QString("</b>, ");
+            atLeastOneExeMissing=true;
+        }
+    }
+    if (atLeastOneExeMissing)
+    {
+        unfoundExecMessage.resize(unfoundExecMessage.size()-2);
+        unfoundExecMessage+=QString(". Toggle <b>\"Show executables\"</b> in <b>Window</b> menu to find the missing executable path.");
+        errorMsgBox(unfoundExecMessage);
+    }
+}
+
+void CSFWindow::readDefaultConfig()
+{
+    QString config_qstr;
+    QFile config_qfile;
+    config_qfile.setFileName(QString(":/config/default_config.json"));
+    config_qfile.open(QIODevice::ReadOnly | QIODevice::Text);
+    config_qstr = config_qfile.readAll();
+    config_qfile.close();
+
+    QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
+    QJsonObject root_obj = config_doc.object();
+
+    if (m_data_found)
+    {
+        QJsonObject data_obj = root_obj["data"].toObject();
+        lineEdit_BrainMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+data_obj["BrainMask"].toString()));
+        lineEdit_CerebellumMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+data_obj["CerebellumMask"].toString()));
+        lineEdit_T1img->setText(QDir::cleanPath(m_data_dir_path+QString("/inputs/")+data_obj["T1img"].toString()));
+        lineEdit_T2img->setText(QDir::cleanPath(m_data_dir_path+QString("/inputs/")+data_obj["T2img"].toString()));
+        lineEdit_TissueSeg->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+data_obj["TissueSeg"].toString()));
+        lineEdit_VentricleMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+data_obj["VentricleMask"].toString()));
+        lineEdit_OutputDir->setText(QDir::cleanPath(QDir::currentPath()+QString("/")+data_obj["output_dir"].toString()));
+    }
+
+    QJsonObject param_obj = root_obj["parameters"].toObject();
+    spinBox_Index->setValue(param_obj["ACPC_index"].toInt());
+    doubleSpinBox_mm->setValue(param_obj["ACPC_mm"].toDouble());
+    spinBox_T1Weight->setValue(param_obj["ANTS_T1_weight"].toInt());
+    doubleSpinBox_GaussianSigma->setValue(param_obj["ANTS_gaussian_sig"].toDouble());
+    lineEdit_Iterations->setText(param_obj["ANTS_iterations_val"].toString());
+    comboBox_RegType->setCurrentText(param_obj["ANTS_reg_type"].toString());
+    comboBox_Metric->setCurrentText(param_obj["ANTS_sim_metric"].toString());
+    spinBox_SimilarityParameter->setValue(param_obj["ANTS_sim_param"].toInt());
+    doubleSpinBox_TransformationStep->setValue(param_obj["ANTS_transformation_step"].toDouble());
+    lineEdit_ROIAtlasT1->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["ROI_Atlas_T1"].toString()));
+    lineEdit_ReferenceAtlasFile->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["Reference_Atlas"].toString()));
+    lineEdit_SSAtlasFolder->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["SkullStripping_Atlases_dir"].toString()));
+    lineEdit_TissueSegAtlas->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["TissueSeg_Atlas_dir"].toString()));
+    spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
+    displayAtlases(lineEdit_SSAtlasFolder->text());
+
+    QJsonObject exe_obj = root_obj["executables"].toObject();
+    QJsonArray exe_names = exe_obj["names"].toArray();
+    QJsonArray exe_hints = exe_obj["hints"].toArray();
+
+    if (exe_names.size()==exe_hints.size())
+    {
+        for (int i=0;i<exe_names.size();i++)
+        {
+            executables[exe_names[i].toString()]=exe_hints[i].toString();
+
+        }
+    }
+    else
+    {
+        errorMsgBox(QString("JSON config file parsing error (section executables)."));
+    }
+
+    QJsonObject script_obj = root_obj["scripts"].toObject();
+    QJsonArray jscript_names = script_obj["names"].toArray();
+    QJsonArray jscript_exe = script_obj["executables"].toArray();
+
+    if (jscript_names.size()==jscript_exe.size())
+    {
+        for (int i=0;i<jscript_names.size();i++)
+        {
+            QJsonArray jsc_array = jscript_exe[i].toArray();
+            for (QJsonValue exe_name : jsc_array)
+            {
+                script_exe[jscript_names[i].toString()].append(exe_name.toString());
+            }
+        }
+    }
+    else
+    {
+        errorMsgBox(QString("JSON config file parsing error (section scripts)."));
+    }
 }
 
 void CSFWindow::readConfig(QString filename)
@@ -156,6 +303,7 @@ void CSFWindow::readConfig(QString filename)
 
     QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
     QJsonArray config_array = config_doc.array();
+
     QJsonObject data_obj = config_array[0].toObject();
     lineEdit_BrainMask->setText(data_obj.value(QString("BrainMask")).toString());
     lineEdit_CerebellumMask->setText(data_obj.value(QString("CerebellumMask")).toString());
@@ -176,7 +324,7 @@ void CSFWindow::readConfig(QString filename)
     spinBox_SimilarityParameter->setValue(param_obj.value(QString("ANTS_sim_param")).toInt());
     doubleSpinBox_TransformationStep->setValue(param_obj.value(QString("ANTS_transformation_step")).toDouble());
     lineEdit_ROIAtlasT1->setText(param_obj.value(QString("ROI_Atlas_T1")).toString());
-    lineEdit_ReferenceAtlasFile->setText(param_obj.value(QString("Reference_Atlas_dir")).toString());
+    lineEdit_ReferenceAtlasFile->setText(param_obj.value(QString("Reference_Atlas")).toString());
     lineEdit_SSAtlasFolder->setText(param_obj.value(QString("SkullStripping_Atlases_dir")).toString());
     lineEdit_TissueSegAtlas->setText(param_obj.value(QString("TissueSeg_Atlas_dir")).toString());
     spinBox_CSFLabel->setValue(param_obj.value(QString("TissueSeg_csf")).toInt());
@@ -187,26 +335,6 @@ void CSFWindow::readConfig(QString filename)
     {
         executables[exe_name]=exe_obj[exe_name].toString();
     }
-
-    QJsonObject script_obj = config_array[3].toObject();
-    for (QString script_name : script_obj.keys())
-    {
-        QJsonArray sc_array = script_obj[script_name].toArray();
-        for (QJsonValue exe_name : sc_array)
-        {
-            script_exe[script_name].append(exe_name.toString());
-        }
-    }
-
-//    for (QString script_name : script_exe.keys())
-//    {
-//        cout<<script_name.toStdString()<<" : [";
-//        for (QString exe_name : script_exe[script_name])
-//        {
-//            cout<<exe_name.toStdString()<<", ";
-//        }
-//        cout<<"]"<<endl;;
-//    }
 }
 
 QString CSFWindow::OpenFile(){
@@ -311,6 +439,15 @@ int CSFWindow::questionMsgBox(bool checkState, QString maskType, QString action)
         msgBox.setDefaultButton(QMessageBox::Yes);
     }
     return msgBox.exec();
+}
+
+void CSFWindow::errorMsgBox(QString message)
+{
+    QMessageBox mb;
+    mb.setIcon(QMessageBox::Warning);
+    mb.setText(message);
+    mb.setStandardButtons(QMessageBox::Ok);
+    mb.exec();
 }
 
 void CSFWindow::displayAtlases(QString folder_path)
@@ -471,9 +608,9 @@ void CSFWindow::write_main_script()
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
         script.replace(str_code,exe_path);
-        cout<<"exe name : "<<exe_name.toStdString()<<" ; "<<str_code.toStdString()<<" ; "<<exe_path.toStdString()<<endl;
     }
 
+    script.replace("@DATADIR@", m_data_dir_path);
     script.replace("@OUTPUT_DIR@", output_dir);
 
     QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
@@ -683,6 +820,7 @@ void CSFWindow::write_vent_mask()
 }
 
 //SLOTS
+// Logs
 void CSFWindow::disp_output()
 {
     QString output(prc->readAllStandardOutput());
@@ -702,6 +840,7 @@ void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
     cout<<exit_message.toStdString()<<endl;
 }
 
+//File menu
 void CSFWindow::on_actionLoad_Configuration_File_triggered()
 {
     QString filename= OpenFile();
@@ -712,7 +851,12 @@ void CSFWindow::on_actionLoad_Configuration_File_triggered()
 }
 
 bool CSFWindow::on_actionSave_Configuration_triggered(){
-    QFile saveFile(SaveFile());
+    QString filename=SaveFile();
+    if (!filename.endsWith(QString(".json")))
+    {
+        filename+=QString(".json");
+    }
+    QFile saveFile(filename);
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
         return false;
@@ -727,7 +871,6 @@ bool CSFWindow::on_actionSave_Configuration_triggered(){
     data_obj["VentricleMask"] = lineEdit_VentricleMask->text();
     data_obj["TissueSeg"] = lineEdit_TissueSeg->text();
     data_obj["output_dir"] = lineEdit_OutputDir->text();
-    cout<<"Save Data Configuration"<<endl;
     saved_array.append(data_obj);
 
     QJsonObject param_obj;
@@ -741,47 +884,66 @@ bool CSFWindow::on_actionSave_Configuration_triggered(){
     param_obj["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
     param_obj["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
     param_obj["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
-    param_obj["Reference_Atlas_dir"] = lineEdit_ReferenceAtlasFile->text();
+    param_obj["Reference_Atlas"] = lineEdit_ReferenceAtlasFile->text();
     param_obj["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
     param_obj["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
     param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
-    cout<<"Save Parameter Configuration"<<endl;
     saved_array.append(param_obj);
 
-    /*
-    json["ABC"] = lineEdit_ABC->text();
-    json["ANTS"] = lineEdit_ANTS->text();
-    json["BRAINSFit"] = lineEdit_BRAINSFit->text();
-    json["FSLBET"] = lineEdit_FSLBET->text();
-    json["ImageMath"] = lineEdit_ImageMath->text();
-    json["ImageStat"] = lineEdit_ImageStat->text();
-    json["ITK"] = lineEdit_convertITKformats->text();
-    json["WarpImageMultiTransform"] = lineEdit_WarpImageMultiTransform->text();
-    json["Python"] = lineEdit_Python->text();
-    cout<<"Save Software Configuration"<<endl;
-    */
+    QJsonObject exe_obj;
+    for (QString exe_name : executables.keys())
+    {
+        exe_obj[exe_name]=executables[exe_name];
+    }
+    saved_array.append(exe_obj);
 
     QJsonDocument saveDoc(saved_array);
     saveFile.write(saveDoc.toJson());
 
+    cout<<"Saved configuration : "<<filename.toStdString()<<endl;
     return true;
 }
 
+//Window menu
+void CSFWindow::on_actionShow_executables_toggled(bool toggled)
+{
+    if (toggled)
+    {
+        tabWidget->insertTab(1,tab_executables,QString("Executables"));
+    }
+    else
+    {
+        tabWidget->removeTab(1);
+    }
+
+}
 
 // 1st Tab - Inputs
 void CSFWindow::on_pushButton_T1img_clicked()
 {
-    lineEdit_T1img->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_T1img->setText(path);
+    }
 }
 
 void CSFWindow::on_pushButton_T2img_clicked()
 {
-    lineEdit_T2img->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_T2img->setText(path);
+    }
 }
 
 void CSFWindow::on_pushButton_BrainMask_clicked()
 {
-    lineEdit_BrainMask->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_BrainMask->setText(path);
+    }
 }
 
 void CSFWindow::on_lineEdit_BrainMask_textChanged()
@@ -792,12 +954,20 @@ void CSFWindow::on_lineEdit_BrainMask_textChanged()
 
 void CSFWindow::on_pushButton_VentricleMask_clicked()
 {
-    lineEdit_VentricleMask->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_VentricleMask->setText(path);
+    }
 }
 
 void CSFWindow::on_pushButton_TissueSeg_clicked()
 {
-    lineEdit_TissueSeg->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_TissueSeg->setText(path);
+    }
 }
 
 void CSFWindow::on_lineEdit_TissueSeg_textChanged()
@@ -808,7 +978,11 @@ void CSFWindow::on_lineEdit_TissueSeg_textChanged()
 
 void CSFWindow::on_CerebellumMask_clicked()
 {
-    lineEdit_CerebellumMask->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_CerebellumMask->setText(path);
+    }
 }
 
 void CSFWindow::on_lineEdit_CerebellumMask_textChanged()
@@ -818,7 +992,11 @@ void CSFWindow::on_lineEdit_CerebellumMask_textChanged()
 
 void CSFWindow::on_pushButton_OutputDir_clicked()
 {
-     lineEdit_OutputDir->setText(OpenDir());
+    QString path=OpenDir();
+    if (!path.isEmpty())
+    {
+        lineEdit_OutputDir->setText(path);
+    }
 }
 
 void CSFWindow::on_radioButton_Index_clicked(const bool checkState)
@@ -848,7 +1026,11 @@ void CSFWindow::exe_qpb_triggered()
             break;
         }
     }
-    le->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        le->setText(path);
+    }
 }
 
 void CSFWindow::exe_lined_textChanged(QString new_text)
@@ -872,7 +1054,11 @@ void CSFWindow::exe_lined_textChanged(QString new_text)
 
 void CSFWindow::on_pushButton_ReferenceAtlasFile_clicked()
 {
-     lineEdit_ReferenceAtlasFile->setText(OpenFile());
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_ReferenceAtlasFile->setText(path);
+    }
 }
 
 
@@ -901,11 +1087,12 @@ void CSFWindow::on_checkBox_SkullStripping_stateChanged(int state)
 
 void CSFWindow::on_pushButton_SSAtlasFolder_clicked()
 {
-    lineEdit_SSAtlasFolder->setText(OpenDir());
-    if (!lineEdit_isEmpty(lineEdit_SSAtlasFolder))
+    QString path=OpenDir();
+    if (!path.isEmpty())
     {
-        displayAtlases(lineEdit_SSAtlasFolder->text());
+    lineEdit_SSAtlasFolder->setText(path);
     }
+    displayAtlases(lineEdit_SSAtlasFolder->text());
 }
 
 void CSFWindow::selectAtlases(QListWidgetItem *item)
@@ -951,7 +1138,11 @@ void CSFWindow::on_checkBox_TissueSeg_stateChanged(int state)
 
 void CSFWindow::on_pushButton_TissueSegAtlas_clicked()
 {
-     lineEdit_TissueSegAtlas->setText(OpenDir());
+    QString path=OpenDir();
+    if (!path.isEmpty())
+    {
+        lineEdit_TissueSegAtlas->setText(path);
+    }
 }
 
 // 5th Tab - 4.Ventricle Masking
@@ -967,8 +1158,11 @@ void CSFWindow::on_checkBox_VentricleRemoval_stateChanged(int state)
 }
 
 void CSFWindow::on_pushButton_ROIAtlasT1_clicked()
-{
-    lineEdit_ROIAtlasT1->setText(OpenFile());
+{QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_ROIAtlasT1->setText(path);
+    }
 }
 
 // 6th Tab - ANTS Registration
@@ -1061,5 +1255,5 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardOutput()), this, SLOT(disp_output()));
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
-    //prc->start(Python, params);
+    prc->start(executables[QString("python3")], params);
 }
