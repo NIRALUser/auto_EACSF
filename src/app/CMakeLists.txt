@@ -20,3 +20,7 @@ add_library(csflib ${${APP_NAME}_src})
 
 add_executable(Auto_EACSF Auto_EACSF.cxx)
 target_link_libraries(Auto_EACSF csflib ${QT_LIBRARIES})
+
+add_custom_command(TARGET Auto_EACSF POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR})
