@@ -1,5 +1,5 @@
 {
-    "data":{
+    "data": {
 	"BrainMask": "stx_noscale_718312_V24_brainmask.nrrd",
 	"CerebellumMask": "CVS_MASK_RAI_Dilate.nrrd",
 	"T1img": "stx_noscale_718312_V24_t1w_RAI.nrrd",
@@ -8,7 +8,7 @@
 	"VentricleMask": "Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
 	"output_dir": "Test_Output"
     },
-    "parameters":{
+    "parameters": {
 	"ACPC_index": 70,
 	"ACPC_mm": 0,
 	"ANTS_T1_weight": 1,
@@ -24,12 +24,66 @@
 	"TissueSeg_Atlas_dir": "pediatric-atlas-1year-T1-ABC/DeepGray5Class",
 	"TissueSeg_csf": 3
     },
-    "executables":{
-	"names":["ABC_CLI","ANTS","BRAINSFit","bet","ImageMath","ImageStat","convertITKformats","WarpImageMultiTransform","python3","blbl","hehe"],
-	"hints": ["/ABC-build/StandAloneCLI/","/ANTs-build/bin","/BRAINSTools-build/bin/","","/niral_utilities-build/bin/","/niral_utilities-build/bin/","/niral_utilities-build/bin/","/ANTs-build/bin/","","",""]
+    "executables": {
+	"names": [
+	    "ABC_CLI",
+     	    "ANTS",
+	    "BRAINSFit",
+	    "bet",
+	    "ImageMath",
+	    "ImageStat",
+	    "convertITKformats",
+	    "WarpImageMultiTransform",
+	    "python3"
+	],
+	"hints": [
+	    "/ABC-build/StandAloneCLI/",
+	    "/ANTs-build/bin",
+	    "/BRAINSTools-build/bin/",
+	    "",
+	    "/niral_utilities-build/bin/",
+	    "/niral_utilities-build/bin/",
+	    "/niral_utilities-build/bin/",
+	    "/ANTs-build/bin/",
+	    ""
+	]
     },
-    "scripts":{
-	"names":["main_script","rigid_align","make_mask","tissue_seg","vent_mask"],
-	"executables": [["python3","ImageMath","ImageStat","ABC_CLI"],["BRAINSFit"],["ImageMath","bet","convertITKformats","ANTS","WarpImageMultiTransform"],["BRAINSFit","ANTS","WarpImageMultiTransform","ABC_CLI"],["ImageMath","ANTS","WarpImageMultiTransform"]]
+    "scripts": {
+	"names": [
+	    "main_script",
+	    "rigid_align",
+	    "make_mask",
+	    "tissue_seg",
+	    "vent_mask"
+	],
+	"executables": [
+	    [
+		"python3",
+		"ImageMath",
+		"ImageStat",
+		"ABC_CLI"
+	    ],
+	    [
+		"BRAINSFit"
+	    ],
+	    [
+		"ImageMath",
+		"bet",
+		"convertITKformats",
+		"ANTS",
+		"WarpImageMultiTransform"
+	    ],
+	    [
+		"BRAINSFit",
+		"ANTS",
+		"WarpImageMultiTransform",
+		"ABC_CLI"
+	    ],
+	    [
+		"ImageMath",
+		"ANTS",
+		"WarpImageMultiTransform"
+	    ]
+	]
     }
 }
