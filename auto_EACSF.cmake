@@ -33,6 +33,24 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
+# get Auto_EACSF info
+FILE(READ src/app/Auto_EACSF.xml var)
+
+string(REGEX MATCH "<title>.*</title>" ext "${var}")
+string(REPLACE "<title>" "" title ${ext})
+string(REPLACE "</title>" "" title ${title})
+add_definitions(-DAuto_EACSF_TITLE="${title}")
+
+string(REGEX MATCH "<version>.*</version>" ext "${var}")
+string(REPLACE "<version>" "" version ${ext})
+string(REPLACE "</version>" "" version ${version})
+add_definitions(-DAuto_EACSF_VERSION="${version}")
+
+string(REGEX MATCH "<contributor>.*</contributor>" ext "${var}")
+string(REPLACE "<contributor>" "" contributors ${ext})
+string(REPLACE "</contributor>" "" contributors ${contributors})
+add_definitions(-DAuto_EACSF_CONTRIBUTORS="${contributors}")
+
 add_subdirectory(src)
 
 find_program(Auto_EACSF_LOCATION 
@@ -43,7 +61,6 @@ find_program(Auto_EACSF_LOCATION
         DESTINATION ${INSTALL_RUNTIME_DESTINATION}
         COMPONENT RUNTIME)
     endif()
-set (version "1.0")
 
 
 find_package(niral_utilities)
