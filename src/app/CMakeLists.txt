@@ -11,6 +11,8 @@ qt5_add_resources(${APP_NAME}_generated_rcc ${${APP_NAME}_rcc})
 list(APPEND ${APP_NAME}_src
 csfwindow.cxx
 csfwindow.h
+extexecutableswidget.cxx
+extexecutableswidget.h
 ${${APP_NAME}_generated_moc}
 ${${APP_NAME}_generated_ui}
 ${${APP_NAME}_generated_rcc}
