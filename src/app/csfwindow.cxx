@@ -1,4 +1,6 @@
 #include "csfwindow.h"
+#include "extexecutableswidget.h"
+
 #include <iostream>
 #include <QFile>
 #include <QTextStream>
@@ -11,8 +13,22 @@
 #include <QScrollBar>
 #include <QRegExp>
 
+#ifndef Auto_EACSF_TITLE
+#define Auto_EACSF_TITLE "Auto_EACSF"
+#endif
+
+#ifndef Auto_EACSF_CONTRIBUTORS
+#define Auto_EACSF_CONTRIBUTORS "Han Bit Yoon, Arthur Le Maout"
+#endif
+
+#ifndef Auto_EACSF_VERSION
+#define Auto_EACSF_VERSION ""
+#endif
+
 using std::endl;
 using std::cout;
+
+const QString CSFWindow::m_github_url = "https://github.com/ArthurLeMaout/auto_EACSF";
 
 CSFWindow::CSFWindow(QWidget *m_parent):
     QMainWindow(m_parent)
@@ -26,7 +42,7 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     m_data_found=find_data_dir_path();
     if(!m_data_found)
     {
-        errorMsgBox(QString("Data folder not found, project building or installation might be incomplete."));
+        infoMsgBox(QString("Data folder not found, project building or installation might be incomplete."),QMessageBox::Warning);
     }
 
     readDefaultConfig();
@@ -34,28 +50,13 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     if (!executables.keys().isEmpty())
     {
         find_executables();
-
-        for (QString exe_name : executables.keys()) //create the buttons/lineEdit for each executable
-        {
-            QWidget *containerWidget = new QWidget;
-            QLayout *horizontalLayout = new QHBoxLayout();
-            verticalLayout_exe->addWidget(containerWidget);
-            QPushButton *qpb =  new QPushButton();
-            qpb->setText(exe_name);
-            qpb->setMinimumWidth(181);
-            qpb->setMaximumWidth(181);
-            qpb->setMinimumHeight(31);
-            qpb->setMaximumHeight(31);
-            QObject::connect(qpb,SIGNAL(clicked()),this,SLOT(exe_qpb_triggered()));
-            QLineEdit *lined = new QLineEdit();
-            lined->setMinimumHeight(31);
-            lined->setMaximumHeight(31);
-            lined->setText(executables[exe_name]);
-            QObject::connect(lined,SIGNAL(textChanged(QString)),this,SLOT(exe_lined_textChanged(QString)));
-            horizontalLayout->addWidget(qpb);
-            horizontalLayout->addWidget(lined);
-            containerWidget->setLayout(horizontalLayout);
-        }
+        QBoxLayout* exe_layout = new QBoxLayout(QBoxLayout::LeftToRight, tab_executables);
+        ExtExecutablesWidget *exeWidget = new ExtExecutablesWidget();
+        //exeWidget->setParent(tab_executables);
+        exeWidget->setExeMap(&executables);
+        exeWidget->setExeDir(QDir::currentPath());
+        exeWidget->buildInterface();
+        exe_layout->addWidget(exeWidget,Qt::AlignCenter);
     }
     tabWidget->removeTab(1);
     tabWidget->removeTab(5);
@@ -209,7 +210,7 @@ void CSFWindow::find_executables(){
     {
         unfoundExecMessage.resize(unfoundExecMessage.size()-2);
         unfoundExecMessage+=QString(". Toggle <b>\"Show executables\"</b> in <b>Window</b> menu to find the missing executable path.");
-        errorMsgBox(unfoundExecMessage);
+        infoMsgBox(unfoundExecMessage,QMessageBox::Warning);
     }
 }
 
@@ -268,7 +269,7 @@ void CSFWindow::readDefaultConfig()
     }
     else
     {
-        errorMsgBox(QString("JSON config file parsing error (section executables)."));
+        infoMsgBox(QString("JSON config file parsing error (section executables)."),QMessageBox::Warning);
     }
 
     QJsonObject script_obj = root_obj["scripts"].toObject();
@@ -288,7 +289,7 @@ void CSFWindow::readDefaultConfig()
     }
     else
     {
-        errorMsgBox(QString("JSON config file parsing error (section scripts)."));
+        infoMsgBox(QString("JSON config file parsing error (section scripts)."),QMessageBox::Warning);
     }
 }
 
@@ -302,39 +303,94 @@ void CSFWindow::readConfig(QString filename)
     config_qfile.close();
 
     QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
-    QJsonArray config_array = config_doc.array();
+    QJsonObject root_obj = config_doc.object();
 
-    QJsonObject data_obj = config_array[0].toObject();
-    lineEdit_BrainMask->setText(data_obj.value(QString("BrainMask")).toString());
-    lineEdit_CerebellumMask->setText(data_obj.value(QString("CerebellumMask")).toString());
-    lineEdit_T1img->setText(data_obj.value(QString("T1img")).toString());
-    lineEdit_T2img->setText(data_obj.value(QString("T2img")).toString());
-    lineEdit_TissueSeg->setText(data_obj.value(QString("TissueSeg")).toString());
-    lineEdit_VentricleMask->setText(data_obj.value(QString("VentricleMask")).toString());
-    lineEdit_OutputDir->setText(data_obj.value(QString("output_dir")).toString());
+    QJsonObject data_obj = root_obj["data"].toObject();
+    lineEdit_BrainMask->setText(data_obj["BrainMask"].toString());
+    lineEdit_CerebellumMask->setText(data_obj["CerebellumMask"].toString());
+    lineEdit_T1img->setText(data_obj["T1img"].toString());
+    lineEdit_T2img->setText(data_obj["T2img"].toString());
+    lineEdit_TissueSeg->setText(data_obj["TissueSeg"].toString());
+    lineEdit_VentricleMask->setText(data_obj["VentricleMask"].toString());
+    lineEdit_OutputDir->setText(data_obj["output_dir"].toString());
 
-    QJsonObject param_obj = config_array[1].toObject();
-    spinBox_Index->setValue(param_obj.value(QString("ACPC_index")).toInt());
-    doubleSpinBox_mm->setValue(param_obj.value(QString("ACPC_mm")).toDouble());
-    spinBox_T1Weight->setValue(param_obj.value(QString("ANTS_T1_weight")).toInt());
-    doubleSpinBox_GaussianSigma->setValue(param_obj.value(QString("ANTS_gaussian_sig")).toDouble());
-    lineEdit_Iterations->setText(param_obj.value(QString("ANTS_iterations_val")).toString());
-    comboBox_RegType->setCurrentText(param_obj.value(QString("ANTS_reg_type")).toString());
-    comboBox_Metric->setCurrentText(param_obj.value(QString("ANTS_sim_metric")).toString());
-    spinBox_SimilarityParameter->setValue(param_obj.value(QString("ANTS_sim_param")).toInt());
-    doubleSpinBox_TransformationStep->setValue(param_obj.value(QString("ANTS_transformation_step")).toDouble());
-    lineEdit_ROIAtlasT1->setText(param_obj.value(QString("ROI_Atlas_T1")).toString());
-    lineEdit_ReferenceAtlasFile->setText(param_obj.value(QString("Reference_Atlas")).toString());
-    lineEdit_SSAtlasFolder->setText(param_obj.value(QString("SkullStripping_Atlases_dir")).toString());
-    lineEdit_TissueSegAtlas->setText(param_obj.value(QString("TissueSeg_Atlas_dir")).toString());
-    spinBox_CSFLabel->setValue(param_obj.value(QString("TissueSeg_csf")).toInt());
+    QJsonObject param_obj = root_obj["parameters"].toObject();
+    spinBox_Index->setValue(param_obj["ACPC_index"].toInt());
+    doubleSpinBox_mm->setValue(param_obj["ACPC_mm"].toDouble());
+    spinBox_T1Weight->setValue(param_obj["ANTS_T1_weight"].toInt());
+    doubleSpinBox_GaussianSigma->setValue(param_obj["ANTS_gaussian_sig"].toDouble());
+    lineEdit_Iterations->setText(param_obj["ANTS_iterations_val"].toString());
+    comboBox_RegType->setCurrentText(param_obj["ANTS_reg_type"].toString());
+    comboBox_Metric->setCurrentText(param_obj["ANTS_sim_metric"].toString());
+    spinBox_SimilarityParameter->setValue(param_obj["ANTS_sim_param"].toInt());
+    doubleSpinBox_TransformationStep->setValue(param_obj["ANTS_transformation_step"].toDouble());
+    lineEdit_ROIAtlasT1->setText(param_obj["ROI_Atlas_T1"].toString());
+    lineEdit_ReferenceAtlasFile->setText(param_obj["Reference_Atlas"].toString());
+    lineEdit_SSAtlasFolder->setText(param_obj["SkullStripping_Atlases_dir"].toString());
+    lineEdit_TissueSegAtlas->setText(param_obj["TissueSeg_Atlas_dir"].toString());
+    spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
     displayAtlases(lineEdit_SSAtlasFolder->text());
 
-    QJsonObject exe_obj = config_array[2].toObject();
+    QJsonObject exe_obj = root_obj["executables"].toObject();
     for (QString exe_name : exe_obj.keys())
     {
         executables[exe_name]=exe_obj[exe_name].toString();
     }
+}
+
+bool CSFWindow::writeConfig(QString filename)
+{
+    QFile saveFile(filename);
+    if (!saveFile.open(QIODevice::WriteOnly)) {
+        cout<<"Couldn't open save file."<<endl;
+        return false;
+    }
+
+    QJsonObject root_obj;
+    QJsonObject data_obj;
+    data_obj["BrainMask"] = lineEdit_BrainMask->text();
+    data_obj["T1img"] = lineEdit_T1img->text();
+    data_obj["T2img"] = lineEdit_T2img->text();
+    data_obj["CerebellumMask"] = lineEdit_CerebellumMask->text();
+    data_obj["VentricleMask"] = lineEdit_VentricleMask->text();
+    data_obj["TissueSeg"] = lineEdit_TissueSeg->text();
+    data_obj["output_dir"] = lineEdit_OutputDir->text();
+    root_obj["data"]=data_obj;
+
+    QJsonObject param_obj;
+    param_obj["ACPC_index"] = spinBox_Index->value();
+    param_obj["ACPC_mm"] = doubleSpinBox_mm->value();
+    param_obj["ANTS_T1_weight"] = spinBox_T1Weight->value();
+    param_obj["ANTS_gaussian_sig"] = doubleSpinBox_GaussianSigma->value();
+    param_obj["ANTS_iterations_val"] = lineEdit_Iterations->text();
+    param_obj["ANTS_reg_type"] = comboBox_RegType->currentText();
+    param_obj["ANTS_sim_metric"] = comboBox_Metric->currentText();
+    param_obj["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
+    param_obj["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
+    param_obj["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
+    param_obj["Reference_Atlas"] = lineEdit_ReferenceAtlasFile->text();
+    param_obj["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
+    param_obj["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
+    param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
+    root_obj["parameters"]=param_obj;
+
+    QJsonObject exe_obj;
+    QJsonArray jexe_names;
+    QJsonArray jexe_paths;
+    for (QString exe_name : executables.keys())
+    {
+        jexe_names.append(exe_name);
+        jexe_paths.append(executables[exe_name]);
+    }
+    exe_obj["names"]=jexe_names;
+    exe_obj["hints"]=jexe_paths;
+    root_obj["executables"]=exe_obj;
+
+    QJsonDocument saveDoc(root_obj);
+    saveFile.write(saveDoc.toJson());
+
+    cout<<"Saved configuration : "<<filename.toStdString()<<endl;
+    return true;
 }
 
 QString CSFWindow::OpenFile(){
@@ -441,10 +497,10 @@ int CSFWindow::questionMsgBox(bool checkState, QString maskType, QString action)
     return msgBox.exec();
 }
 
-void CSFWindow::errorMsgBox(QString message)
+void CSFWindow::infoMsgBox(QString message, QMessageBox::Icon type)
 {
     QMessageBox mb;
-    mb.setIcon(QMessageBox::Warning);
+    mb.setIcon(type);
     mb.setText(message);
     mb.setStandardButtons(QMessageBox::Ok);
     mb.exec();
@@ -830,12 +886,30 @@ void CSFWindow::disp_output()
 void CSFWindow::disp_err()
 {
     QString errors(prc->readAllStandardError());
+    errors="<font color=\"red\"><b>While running : </b></font>"+executables["python3"]+"<br><font color=\"red\"><b>Following error(s) occured : </b></font><br>"+errors;
+    for (QString sc_name : script_exe.keys())
+    {
+        if (sc_name!="main_script")
+        {
+            sc_name=sc_name+"_script";
+        }
+        sc_name=sc_name+".py";
+        errors.replace(sc_name,"<b>"+sc_name+"</b>");
+    }
     err_log->append(errors);
 }
 
 void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
     QString exit_message;
     exit_message = QString("Auto_EACSF pipeline ") + ((exitStatus == QProcess::NormalExit) ? QString("exited with code ") + QString::number(exitCode) : QString("crashed"));
+    if (exitCode==0)
+    {
+        exit_message="<font color=\"green\"><b>"+exit_message+"</b></font>";
+    }
+    else
+    {
+        exit_message="<font color=\"red\"><b>"+exit_message+"</b></font>";
+    }
     out_log->append(exit_message);
     cout<<exit_message.toStdString()<<endl;
 }
@@ -850,58 +924,25 @@ void CSFWindow::on_actionLoad_Configuration_File_triggered()
     }
 }
 
-bool CSFWindow::on_actionSave_Configuration_triggered(){
+void CSFWindow::on_actionSave_Configuration_triggered(){
     QString filename=SaveFile();
-    if (!filename.endsWith(QString(".json")))
+    if (!filename.isEmpty())
     {
-        filename+=QString(".json");
+        if (!filename.endsWith(QString(".json")))
+        {
+            filename+=QString(".json");
+        }
+        bool success=writeConfig(filename);
+        if (success)
+        {
+            infoMsgBox(QString("Configuration saved with success : ")+filename,QMessageBox::Information);
+        }
+        else
+        {
+            infoMsgBox(QString("Couldn't save configuration file at this location. Try somewhere else."),QMessageBox::Warning);
+        }
     }
-    QFile saveFile(filename);
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
-        return false;
-    }
 
-    QJsonArray saved_array;
-    QJsonObject data_obj;
-    data_obj["BrainMask"] = lineEdit_BrainMask->text();
-    data_obj["T1img"] = lineEdit_T1img->text();
-    data_obj["T2img"] = lineEdit_T2img->text();
-    data_obj["CerebellumMask"] = lineEdit_CerebellumMask->text();
-    data_obj["VentricleMask"] = lineEdit_VentricleMask->text();
-    data_obj["TissueSeg"] = lineEdit_TissueSeg->text();
-    data_obj["output_dir"] = lineEdit_OutputDir->text();
-    saved_array.append(data_obj);
-
-    QJsonObject param_obj;
-    param_obj["ACPC_index"] = spinBox_Index->value();
-    param_obj["ACPC_mm"] = doubleSpinBox_mm->value();
-    param_obj["ANTS_T1_weight"] = spinBox_T1Weight->value();
-    param_obj["ANTS_gaussian_sig"] = doubleSpinBox_GaussianSigma->value();
-    param_obj["ANTS_iterations_val"] = lineEdit_Iterations->text();
-    param_obj["ANTS_reg_type"] = comboBox_RegType->currentText();
-    param_obj["ANTS_sim_metric"] = comboBox_Metric->currentText();
-    param_obj["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
-    param_obj["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
-    param_obj["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
-    param_obj["Reference_Atlas"] = lineEdit_ReferenceAtlasFile->text();
-    param_obj["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
-    param_obj["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
-    param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
-    saved_array.append(param_obj);
-
-    QJsonObject exe_obj;
-    for (QString exe_name : executables.keys())
-    {
-        exe_obj[exe_name]=executables[exe_name];
-    }
-    saved_array.append(exe_obj);
-
-    QJsonDocument saveDoc(saved_array);
-    saveFile.write(saveDoc.toJson());
-
-    cout<<"Saved configuration : "<<filename.toStdString()<<endl;
-    return true;
 }
 
 //Window menu
@@ -916,6 +957,18 @@ void CSFWindow::on_actionShow_executables_toggled(bool toggled)
         tabWidget->removeTab(1);
     }
 
+}
+
+//About
+void CSFWindow::on_actionAbout_triggered()
+{
+    QString messageBoxTitle = "About " + QString( Auto_EACSF_TITLE );
+        QString aboutFADTTS;
+        aboutFADTTS = "<b>Version:</b> " + QString( Auto_EACSF_VERSION ) + "<br>"
+                "<b>Contributor(s):</b> " + QString( Auto_EACSF_CONTRIBUTORS ) + "<br>"
+                "<b>License:</b> Apache 2.0<br>" +
+                "<b>Github:</b> <a href=" + m_github_url + ">Click here</a><br>";
+    QMessageBox::information( this, tr( qPrintable( messageBoxTitle ) ), tr( qPrintable( aboutFADTTS ) ), QMessageBox::Ok );
 }
 
 // 1st Tab - Inputs
@@ -1010,45 +1063,6 @@ void CSFWindow::on_radioButton_mm_clicked(const bool checkState)
     doubleSpinBox_mm->setEnabled(checkState);
     spinBox_Index->setEnabled(!checkState);
 }
-
-// 2nd Tab - Executables
-
-void CSFWindow::exe_qpb_triggered()
-{
-    QObject *sd = QObject::sender();
-    QObject *par = sd->parent();
-    QLineEdit *le;
-    for (QObject *ch : par->children())
-    {
-        le = qobject_cast<QLineEdit*>(ch);
-        if (le)
-        {
-            break;
-        }
-    }
-    QString path=OpenFile();
-    if (!path.isEmpty())
-    {
-        le->setText(path);
-    }
-}
-
-void CSFWindow::exe_lined_textChanged(QString new_text)
-{
-    QObject *sd = QObject::sender();
-    QObject *par = sd->parent();
-    QPushButton *bt;
-    for (QObject *ch : par->children())
-    {
-        bt =qobject_cast<QPushButton*>(ch);
-        if (bt)
-        {
-            break;
-        }
-    }
-    executables[bt->text()] = new_text;
-}
-
 
 // 3rd Tab - 1.Reference Alignment, 2.Skull Stripping
 

@@ -8,6 +8,7 @@
 #include <QtCore>
 #include <QMap>
 #include <QProcess>
+#include <QMessageBox>
 
 #include "ui_csfwindow.h"
 
@@ -32,6 +33,7 @@ private:
     void find_executables();
     void readDefaultConfig();
     void readConfig(QString filename);
+    bool writeConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
     QString SaveFile();
@@ -42,7 +44,7 @@ private:
     void setBestDataAlignmentOption();
 
     int questionMsgBox(bool checkState, QString maskType, QString action);
-    void errorMsgBox(QString message);
+    void infoMsgBox(QString message, QMessageBox::Icon type);
 
     void displayAtlases(QString folder_path);
 
@@ -53,6 +55,7 @@ private:
     void write_ABCxmlfile(bool T2provided);
     void write_vent_mask();
 
+    static const QString m_github_url;
     QProcess *prc;
 
     //Inputs
@@ -100,10 +103,13 @@ private slots:
 
     //File
     void on_actionLoad_Configuration_File_triggered();
-    bool on_actionSave_Configuration_triggered();
+    void on_actionSave_Configuration_triggered();
 
     //Window
     void on_actionShow_executables_toggled(bool toggled);
+
+    //About
+    void on_actionAbout_triggered();
 
     //1st Tab
     void on_pushButton_T1img_clicked();
@@ -120,10 +126,6 @@ private slots:
 
     void on_radioButton_Index_clicked(const bool checkState);
     void on_radioButton_mm_clicked(const bool checkState);
-
-    //2nd Tab
-    void exe_qpb_triggered();
-    void exe_lined_textChanged(QString new_text);
 
     //3rd Tab
     void on_pushButton_ReferenceAtlasFile_clicked();

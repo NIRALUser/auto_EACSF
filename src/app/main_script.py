@@ -10,14 +10,22 @@ from subprocess import call
 import itk
 import numpy as np
 
+def print_main_info(info):
+    info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="blue">'+info+"</font></b>"
+    print(info)
+
 def eprint(*args, **kwargs):
     #print errors function
     print(*args, file=sys.stderr, **kwargs)
 
 def call_and_print(args):
     #external process calling function with output and errors printing
-    print("<b>>>>ARGS: "+"\n\t".join(args)+'\n</b>')
+    exe_path=args.pop(0)
+    exe_dir=os.path.dirname(exe_path)
+    exe_name=os.path.basename(exe_path)
+    print("<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="blue">Running: </font></b>'+exe_dir+'/<b><font color="blue">'+exe_name+'</font></b> '+" ".join(args)+'\n')
     sys.stdout.flush()
+    args.insert(0,exe_path)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     out=out.decode('utf-8')
@@ -26,16 +34,18 @@ def call_and_print(args):
         print(out+"\n")
         sys.stdout.flush()
     if(err!=''):
+        eprint('<font color="red"><b>While running : </b></font>'+exe_dir+'/<b><font color="red">'+exe_name+'</font></b> '+" ".join(args)+'\n')
+        eprint('<font color="red"><b>Following error(s) occured : </b></font>\n')
         eprint(err+'\n')
         sys.stderr.flush()
-        print('\n'+args[0]+' : errors occured, see errors log for more details\n\n')
+        print('\n<font color="blue"><b>'+args[0]+' :</b></font> <font color="red">errors occured, see errors log for more details</font>\n\n')
         sys.stdout.flush()
     else:
-        print('\n'+args[0]+' : exit with success\n\n')
+        print('\n<font color="blue"><b>'+args[0]+' :</b></font> <font color="green">exit with success</font>\n\n')
         sys.stdout.flush()
 
 def main(main_args):
-    print("Running main_script")
+    print("<b>>>> Running "+os.path.basename(sys.argv[0])+"</b>\n")
     sys.stdout.flush()
 
     ### Inputs
@@ -110,45 +120,51 @@ def main(main_args):
     ### Output path
     OUT_PATH = main_args.output
 
+    ### Scripts
+    scripts_prefix="PythonScripts/"
+
     if (main_args.performReg == "true"):
-       print("<b>######## Running rigid_align_script ########</b>")
+       rigid_align="rigid_align_script.py"
+       print_main_info("Running "+rigid_align)
        sys.stdout.flush()
        OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
-       call([python, "PythonScripts/rigid_align_script.py",'--output',OUT_RR])
+       call([python, scripts_prefix+rigid_align,'--output',OUT_RR])
        T1 = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
        if (T2_exists):
            T2=os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
 
-       print("######## Finished running rigid_align_script ########")
+       print_main_info("Finished running "+rigid_align)
        sys.stdout.flush()
 
     if (main_args.performSS == "true"):
-       print("<b>######## Running make_mask_script ########</b>")
+       make_mask="make_mask_script.py"
+       print_main_info("Running "+make_mask)
        sys.stdout.flush()
        OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
-       call([python, "PythonScripts/make_mask_script.py", '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
+       call([python, scripts_prefix+make_mask, '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
        BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
-       print("######## Finished running make_mask_script ########")
+       print_main_info("Finished running "+make_mask)
        sys.stdout.flush()
 
 
     if (main_args.performTSeg == "true"):
-       print("<b>######## Running ABC Segmentation ########</b>")
+       tissue_seg="tissue_seg_script.py"
+       print_main_info("Running tissue_seg_script.py")
        sys.stdout.flush()
        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-       call([python, "PythonScripts/tissue_seg_script.py", '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
-       print("######## Finished running ABC Segmentation ########")
+       call([python, scripts_prefix+tissue_seg, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
+       print_main_info("Finished running tissue_seg_script.py")
        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
        sys.stdout.flush()
 
-
-    print("<b>######## Running vent_mask_script ########</b>")
+    vent_mask="vent_mask_script.py"
+    print_main_info("Running "+vent_mask)
     sys.stdout.flush()
     OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-    call([python, "PythonScripts/vent_mask_script.py", '--t1', T1, '--tissueSeg', Segmentation, '--atlas', '--output',OUT_VR])
+    call([python, scripts_prefix+vent_mask, '--t1', T1, '--tissueSeg', Segmentation, '--atlas', '--output',OUT_VR])
     Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
-    print("######## Finished running vent_mask_script ########")
+    print_main_info("Finished running "+vent_mask)
     sys.stdout.flush()
 
     BRAIN_MASK_dir = os.path.dirname(BRAIN_MASK)
@@ -159,13 +175,13 @@ def main(main_args):
     Segmentation_base = os.path.splitext(os.path.basename(Segmentation))[0]
 
     ######### Stripping the skull ######
-    print("#### Stripping the skull ####")
+    print_main_info("Stripping the skull")
     MID_TEMP00 = os.path.join(OUT_PATH, "".join([T1_base,"_MID00.nrrd"]))
     args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mul', BRAIN_MASK]
     call_and_print(args)
 
     ######### Cutting below AC-PC line #######
-    print("#### Cutting below AC-PC line ####")
+    print_main_info("Cutting below AC-PC line")
     MID_TEMP01 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID01.nrrd"]))
     MID_TEMP02 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID02.nrrd"]))
     MID_TEMP03 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID03.nrrd"]))
@@ -186,7 +202,7 @@ def main(main_args):
     call_and_print(args)
 
     ######### Make thin mask for preserving outter 2nd or 3rd fracrtion csf ##########
-    print("#### Make thin mask for preserving outter 2nd or 3rd fracrtion csf ####")
+    print_main_info("Make thin mask for preserving outter 2nd or 3rd fracrtion csf")
     BRAIN_MASK = os.path.join(OUT_PATH,'Brain_Mask.nrrd')
     BRAIN_MASK_ERODE = os.path.join(OUT_PATH,'Brain_Mask_Erode.nrrd')
     THIN_MASK = os.path.join(OUT_PATH,'Brain_Thin_Mask.nrrd')
@@ -204,7 +220,7 @@ def main(main_args):
     call_and_print(args)
 
     ########## Find outer CSF in thin mask and added this csf to extra CSF #############
-    print("#### Find outer CSF in thin mask and added this csf to extra CSF ####")
+    print_main_info("Find outer CSF in thin mask and added this csf to extra CSF")
     PRESERVED_OUTERCSF = os.path.join(OUT_PATH,'Preserved_OuterCSF.nrrd')
     FINAL_OUTERCSF = os.path.join(OUT_PATH, "".join([Segmentation_base,"_extCSF.nrrd"]))
     FINAL_OUTERCSF_dir = os.path.dirname(FINAL_OUTERCSF)
@@ -222,7 +238,7 @@ def main(main_args):
     args=[ImageStat, FINAL_OUTERCSF, '-label', FINAL_OUTERCSF]
     call_and_print(args)
 
-    print("######## Auto_EACSF finished ########")
+    print_main_info("Auto_EACSF finished")
 
     sys.exit(0);
 

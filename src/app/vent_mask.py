@@ -6,30 +6,9 @@ import os
 import argparse
 import subprocess
 import itk
-
-def eprint(*args, **kwargs):
-    #print errors function
-    print(*args, file=sys.stderr, **kwargs)
-
-def call_and_print(args):
-    #external process calling function with output and errors printing
-    print(">>>ARGS: "+"\n\t".join(args)+'\n')
-    sys.stdout.flush()
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    out=out.decode('utf-8')
-    err=err.decode('utf-8')
-    if(out!=''):
-        print(out+"\n")
-        sys.stdout.flush()
-    if(err!=''):
-        eprint(err+'\n')
-        sys.stderr.flush()
-        print('\n'+args[0]+' : errors occured, see errors log for more details\n\n')
-        sys.stdout.flush()
-    else:
-        print('\n'+args[0]+' : exit with success\n\n')
-        sys.stdout.flush()
+from main_script import eprint
+from main_script import call_and_print
+from main_script import print_main_info
 
 def main(args):
     sys.stdout.flush()
