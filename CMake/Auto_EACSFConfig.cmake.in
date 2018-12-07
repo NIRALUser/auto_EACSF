@@ -8,7 +8,6 @@
 
 get_filename_component(Auto_EACSF_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-
 file(TO_CMAKE_PATH "${Auto_EACSF_CMAKE_DIR}/../../../include" Auto_EACSF_INCLUDE_DIRS)
 file(TO_CMAKE_PATH "${Auto_EACSF_CMAKE_DIR}/../../" Auto_EACSF_LIBRARY_DIRS)
 
