@@ -1,1 +1,0 @@
-rm: cannot remove ‘/NIRAL/work/hbyoon/source/auto_EACSF-bin/bin/Test_Output*MID*’: No such file or directory
