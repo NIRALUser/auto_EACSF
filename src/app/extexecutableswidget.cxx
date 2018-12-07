@@ -8,26 +8,15 @@
 
 ExtExecutablesWidget::ExtExecutablesWidget(QWidget *m_parent) :
     QWidget(m_parent),
-    m_exeMap(nullptr),
     m_exeDir("")
 {
     this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
-void ExtExecutablesWidget::setExeMap(QMap<QString, QString> *map)
-{
-    m_exeMap = map;
-}
-
-void ExtExecutablesWidget::setExeDir(QString dir)
-{
-    m_exeDir = dir;
-}
-
-void ExtExecutablesWidget::buildInterface()
+void ExtExecutablesWidget::buildInterface(QMap<QString,QString> exeMap)
 {
     QLayout *verticalLayout = new QVBoxLayout();
-    for (QString exeName : m_exeMap->keys()) //create the buttons/lineEdit for each executable
+    for (QString exeName : exeMap.keys()) //create the buttons/lineEdit for each executable
     {
         QWidget *containerWidget = new QWidget;
         QLayout *horizontalLayout = new QHBoxLayout();
@@ -38,14 +27,14 @@ void ExtExecutablesWidget::buildInterface()
         qpb->setMinimumHeight(31);
         qpb->setMaximumHeight(31);
         qpb->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
-        QObject::connect(qpb,SIGNAL(clicked()),this,SLOT(exe_qpb_triggered()));
+        QObject::connect(qpb,SIGNAL(clicked()),this,SLOT(exeQpbTriggered()));
         QLineEdit *lined = new QLineEdit();
         lined->setMinimumWidth(521);
         lined->setMinimumHeight(31);
         lined->setMaximumHeight(31);
         lined->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        lined->setText(m_exeMap->value(exeName));
-        QObject::connect(lined,SIGNAL(textChanged(QString)),this,SLOT(exe_lined_textChanged(QString)));
+        lined->setText(exeMap.value(exeName));
+        QObject::connect(lined,SIGNAL(textChanged(QString)),this,SLOT(exeLinedTextChanged(QString)));
         horizontalLayout->addWidget(qpb);
         horizontalLayout->addWidget(lined);
         containerWidget->setLayout(horizontalLayout);
@@ -53,9 +42,13 @@ void ExtExecutablesWidget::buildInterface()
     this->setLayout(verticalLayout);
 }
 
+void ExtExecutablesWidget::setExeDir(QString dir)
+{
+    m_exeDir = dir;
+}
 
 //SLOTS
-void ExtExecutablesWidget::exe_qpb_triggered()
+void ExtExecutablesWidget::exeQpbTriggered()
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
@@ -77,7 +70,7 @@ void ExtExecutablesWidget::exe_qpb_triggered()
     }
 }
 
-void ExtExecutablesWidget::exe_lined_textChanged(QString new_text)
+void ExtExecutablesWidget::exeLinedTextChanged(QString new_text)
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
@@ -90,5 +83,5 @@ void ExtExecutablesWidget::exe_lined_textChanged(QString new_text)
             break;
         }
     }
-    m_exeMap->operator [](bt->text()) = new_text;
+    emit newExePath(bt->text(),new_text);
 }

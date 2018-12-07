@@ -127,6 +127,9 @@ private slots:
     void on_radioButton_Index_clicked(const bool checkState);
     void on_radioButton_mm_clicked(const bool checkState);
 
+    //2nd Tab
+    void updateExecutables(QString exeName, QString path);
+
     //3rd Tab
     void on_pushButton_ReferenceAtlasFile_clicked();
 

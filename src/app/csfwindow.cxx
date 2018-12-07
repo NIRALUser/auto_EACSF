@@ -52,11 +52,10 @@ CSFWindow::CSFWindow(QWidget *m_parent):
         find_executables();
         QBoxLayout* exe_layout = new QBoxLayout(QBoxLayout::LeftToRight, tab_executables);
         ExtExecutablesWidget *exeWidget = new ExtExecutablesWidget();
-        //exeWidget->setParent(tab_executables);
-        exeWidget->setExeMap(&executables);
+        exeWidget->buildInterface(executables);
         exeWidget->setExeDir(QDir::currentPath());
-        exeWidget->buildInterface();
         exe_layout->addWidget(exeWidget,Qt::AlignCenter);
+        connect(exeWidget, SIGNAL(newExePath(QString,QString)), this, SLOT(updateExecutables(QString,QString)));
     }
     tabWidget->removeTab(1);
     tabWidget->removeTab(5);
@@ -1064,6 +1063,12 @@ void CSFWindow::on_radioButton_mm_clicked(const bool checkState)
     spinBox_Index->setEnabled(!checkState);
 }
 
+// Executables tab
+void CSFWindow::updateExecutables(QString exeName, QString path)
+{
+    executables[exeName]=path;
+}
+
 // 3rd Tab - 1.Reference Alignment, 2.Skull Stripping
 
 void CSFWindow::on_pushButton_ReferenceAtlasFile_clicked()
@@ -1269,5 +1274,6 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardOutput()), this, SLOT(disp_output()));
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
-    prc->start(executables[QString("python3")], params);
+    //prc->start(executables[QString("python3")], params);
+    cout<<executables["python3"].toStdString()<<endl;
 }
