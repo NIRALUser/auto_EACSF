@@ -34,7 +34,7 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
 # get Auto_EACSF info
-FILE(READ src/app/Auto_EACSF.xml var)
+FILE(READ src/Auto_EACSF.xml var)
 
 string(REGEX MATCH "<title>.*</title>" ext "${var}")
 string(REPLACE "<title>" "" title ${ext})
