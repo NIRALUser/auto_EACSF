@@ -24,66 +24,86 @@
 	"TissueSeg_Atlas_dir": "pediatric-atlas-1year-T1-ABC/DeepGray5Class",
 	"TissueSeg_csf": 3
     },
-    "executables": {
-	"names": [
-	    "ABC_CLI",
-     	    "ANTS",
-	    "BRAINSFit",
-	    "bet",
-	    "ImageMath",
-	    "ImageStat",
-	    "convertITKformats",
-	    "WarpImageMultiTransform",
-	    "python3"
-	],
-	"hints": [
-	    "/ABC-build/StandAloneCLI/",
-	    "/ANTs-build/bin",
-	    "/BRAINSTools-build/bin/",
-	    "",
-	    "/niral_utilities-build/bin/",
-	    "/niral_utilities-build/bin/",
-	    "/niral_utilities-build/bin/",
-	    "/ANTs-build/bin/",
-	    ""
-	]
-    },
-    "scripts": {
-	"names": [
-	    "main_script",
-	    "rigid_align",
-	    "make_mask",
-	    "tissue_seg",
-	    "vent_mask"
-	],
-	"executables": [
-	    [
+    "executables": [
+        {
+            "name": "ABC_CLI",
+            "path": "/ABC-build/StandAloneCLI/"
+        },
+        {
+            "name": "ANTS",
+            "path": "/ANTs-build/bin"
+        },
+        {
+            "name": "BRAINSFit",
+            "path": "/BRAINSTools-build/bin/"
+        },
+        {
+            "name": "ImageMath",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "ImageStat",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "WarpImageMultiTransform",
+            "path": "/ANTs-build/bin"
+        },
+        {
+            "name": "bet",
+            "path": ""
+        },
+        {
+            "name": "convertITKformats",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "python3",
+            "path": ""
+        }
+    ],
+    "scripts": [
+	{
+            "name": "main_script",
+            "executables": [
 		"python3",
 		"ImageMath",
 		"ImageStat",
 		"ABC_CLI"
-	    ],
-	    [
+	    ]
+        },
+	{
+            "name": "rigid_align",
+            "executables": [
 		"BRAINSFit"
-	    ],
-	    [
+	    ]
+        },
+	{
+            "name": "make_mask",
+            "executables": [
 		"ImageMath",
 		"bet",
 		"convertITKformats",
 		"ANTS",
 		"WarpImageMultiTransform"
-	    ],
-	    [
+	    ]
+        },
+	{
+            "name": "tissue_seg",
+            "executables": [
 		"BRAINSFit",
 		"ANTS",
 		"WarpImageMultiTransform",
 		"ABC_CLI"
-	    ],
-	    [
+	    ]
+        },
+	{
+            "name": "vent_mask",
+            "executables": [
 		"ImageMath",
 		"ANTS",
 		"WarpImageMultiTransform"
 	    ]
-	]
-    }
+        }
+    ]
 }

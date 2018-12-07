@@ -110,8 +110,6 @@ void CSFWindow::check_tree_type()
             m_tree_type=TreeType::install;
         }
     }
-
-    cout<<"tree type : "<<(int)(m_tree_type)<<endl;
 }
 
 void CSFWindow::check_exe_in_folder(QString name, QString path)
@@ -254,41 +252,21 @@ void CSFWindow::readDefaultConfig()
     spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
     displayAtlases(lineEdit_SSAtlasFolder->text());
 
-    QJsonObject exe_obj = root_obj["executables"].toObject();
-    QJsonArray exe_names = exe_obj["names"].toArray();
-    QJsonArray exe_hints = exe_obj["hints"].toArray();
-
-    if (exe_names.size()==exe_hints.size())
+    QJsonArray exe_array = root_obj["executables"].toArray();
+    for (QJsonValue exe_val : exe_array)
     {
-        for (int i=0;i<exe_names.size();i++)
+        QJsonObject exe_obj = exe_val.toObject();
+        executables[exe_obj["name"].toString()] = exe_obj["path"].toString();
+    }
+
+    QJsonArray script_array = root_obj["scripts"].toArray();
+    for (QJsonValue script_val : script_array)
+    {
+        QJsonObject script_obj = script_val.toObject();
+        for (QJsonValue exe_name : script_obj["executables"].toArray())
         {
-            executables[exe_names[i].toString()]=exe_hints[i].toString();
-
+            script_exe[script_obj["name"].toString()].append(exe_name.toString());
         }
-    }
-    else
-    {
-        infoMsgBox(QString("JSON config file parsing error (section executables)."),QMessageBox::Warning);
-    }
-
-    QJsonObject script_obj = root_obj["scripts"].toObject();
-    QJsonArray jscript_names = script_obj["names"].toArray();
-    QJsonArray jscript_exe = script_obj["executables"].toArray();
-
-    if (jscript_names.size()==jscript_exe.size())
-    {
-        for (int i=0;i<jscript_names.size();i++)
-        {
-            QJsonArray jsc_array = jscript_exe[i].toArray();
-            for (QJsonValue exe_name : jsc_array)
-            {
-                script_exe[jscript_names[i].toString()].append(exe_name.toString());
-            }
-        }
-    }
-    else
-    {
-        infoMsgBox(QString("JSON config file parsing error (section scripts)."),QMessageBox::Warning);
     }
 }
 
@@ -330,10 +308,11 @@ void CSFWindow::readConfig(QString filename)
     spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
     displayAtlases(lineEdit_SSAtlasFolder->text());
 
-    QJsonObject exe_obj = root_obj["executables"].toObject();
-    for (QString exe_name : exe_obj.keys())
+    QJsonArray exe_array = root_obj["executables"].toArray();
+    for (QJsonValue exe_val : exe_array)
     {
-        executables[exe_name]=exe_obj[exe_name].toString();
+        QJsonObject exe_obj = exe_val.toObject();
+        executables[exe_obj["name"].toString()] = exe_obj["path"].toString();
     }
 }
 
@@ -373,17 +352,15 @@ bool CSFWindow::writeConfig(QString filename)
     param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
     root_obj["parameters"]=param_obj;
 
-    QJsonObject exe_obj;
-    QJsonArray jexe_names;
-    QJsonArray jexe_paths;
+    QJsonArray exe_array;
     for (QString exe_name : executables.keys())
     {
-        jexe_names.append(exe_name);
-        jexe_paths.append(executables[exe_name]);
+        QJsonObject exe_obj;
+        exe_obj["name"]=exe_name;
+        exe_obj["path"]=executables[exe_name];
+        exe_array.append(exe_obj);
     }
-    exe_obj["names"]=jexe_names;
-    exe_obj["hints"]=jexe_paths;
-    root_obj["executables"]=exe_obj;
+    root_obj["executables"]=exe_array;
 
     QJsonDocument saveDoc(root_obj);
     saveFile.write(saveDoc.toJson());
@@ -1274,6 +1251,5 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardOutput()), this, SLOT(disp_output()));
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
-    //prc->start(executables[QString("python3")], params);
-    cout<<executables["python3"].toStdString()<<endl;
+    prc->start(executables[QString("python3")], params);
 }
