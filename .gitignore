@@ -1,5 +1,5 @@
 CMakeLists.txt.user
 data/
 .gitignore.swp
-/src/app/default_config.json~
+/src/default_config.json~
 
