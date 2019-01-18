@@ -556,12 +556,54 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, v
 	return performStreamTracerPostProcessing(streamLines, inputSeedPoints, destSurf);
 }
 
-void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs) {
+void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
     for (/*size_t*/int j = 0; j < cell->GetNumberOfPoints(); j++) {
         vtkIdType cellPt = cell->GetPointId(j);
         if (pid != cellPt) {
             nbrs.insert(cellPt);
         }
+    }
+}
+
+void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds){
+    // identify broken points
+    vector<vtkIdType> brokenPoints;
+    vtkIdType z = 0;
+    for (/*size_t*/int j = 0; j < seedIds->GetNumberOfTuples(); j++,z++) {
+        vtkIdType y = seedIds->GetTuple1(j);
+        while (z < y) {
+            brokenPoints.push_back(z++);
+        }
+    }
+
+    // find neighbors and compute interpolatead points
+    vtkNew<vtkIdList> cellIds;
+    set<vtkIdType> nbrs;
+    for (size_t j = 0; j < brokenPoints.size(); j++) {
+        vtkIdType pid = brokenPoints[j];
+        cellIds->Reset();
+        surf->GetPointCells(pid, cellIds.GetPointer());
+        nbrs.clear();
+        // find neighbor points
+        for (/*size_t*/int k = 0; k < cellIds->GetNumberOfIds(); k++) {
+            vtkCell* cell = surf->GetCell(k);
+            findNeighborPoints(cell, pid, nbrs);
+        }
+        // average neighbor points
+        double p[3] = {0,}, q[3] = {0,};
+        set<vtkIdType>::iterator it = nbrs.begin();
+        for (; it != nbrs.end(); it++) {
+            if (find(brokenPoints.begin(), brokenPoints.end(), *it) == brokenPoints.end()) {
+                warpedPoints->GetPoint(*it, q);
+                vtkMath::Add(p, q, p);
+            } else {
+                cout << "broken neighbor!! " << pid << "," << *it << endl;
+            }
+        }
+        p[0]/=nbrs.size();
+        p[1]/=nbrs.size();
+        p[2]/=nbrs.size();
+        warpedPoints->SetPoint(pid, p);
     }
 }
 
@@ -656,55 +698,10 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, st
 
 	}
 	
-	srcmesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
-
-    struct InterpolateBrokenPoints {
-		InterpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds) {
-			// identify broken points
-			vector<vtkIdType> brokenPoints;
-			vtkIdType z = 0;
-            for (/*size_t*/int j = 0; j < seedIds->GetNumberOfTuples(); j++,z++) {
-				vtkIdType y = seedIds->GetTuple1(j);
-				while (z < y) {
-					brokenPoints.push_back(z++);
-				}
-			}
-			
-			// find neighbors and compute interpolatead points
-			vtkNew<vtkIdList> cellIds;
-			set<vtkIdType> nbrs;
-			for (size_t j = 0; j < brokenPoints.size(); j++) {
-				vtkIdType pid = brokenPoints[j];
-				cellIds->Reset();
-				surf->GetPointCells(pid, cellIds.GetPointer());
-				nbrs.clear();
-				// find neighbor points
-                for (/*size_t*/int k = 0; k < cellIds->GetNumberOfIds(); k++) {
-					vtkCell* cell = surf->GetCell(k);
-                    findNeighborPoints(cell, pid, nbrs);
-				}
-				// average neighbor points
-				double p[3] = {0,}, q[3] = {0,};
-				set<vtkIdType>::iterator it = nbrs.begin();
-				for (; it != nbrs.end(); it++) {
-					if (find(brokenPoints.begin(), brokenPoints.end(), *it) == brokenPoints.end()) {
-						warpedPoints->GetPoint(*it, q);
-						vtkMath::Add(p, q, p);
-					} else {
-						cout << "broken neighbor!! " << pid << "," << *it << endl;
-					}
-				}
-				p[0]/=nbrs.size();
-				p[1]/=nbrs.size();
-				p[2]/=nbrs.size();
-				warpedPoints->SetPoint(pid, p);
-			}
-		}
-
-	};
+    srcmesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
 	
 	warpedMesh->SetPoints(warpedPoints.GetPointer());
-	InterpolateBrokenPoints(warpedMesh.GetPointer(), warpedPoints.GetPointer(), seedIds);
+    interpolateBrokenPoints(warpedMesh.GetPointer(), warpedPoints.GetPointer(), seedIds);
 	
 	//	warpedMesh->Print(cout);
 //	warpedMesh->GetPointData()->SetVectors(pointArr.GetPointer());

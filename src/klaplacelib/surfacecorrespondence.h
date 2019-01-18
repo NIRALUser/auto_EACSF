@@ -6,8 +6,6 @@
 
 using namespace std;
 
-void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
-
 class SurfaceCorrespondance{
     typedef std::vector<std::string> StringVector;
 
@@ -21,6 +19,8 @@ private:
     bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length);
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
     vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);
+    void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
+    void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
     void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, string outputWarpedMeshName, vtkPolyData* srcmesh = NULL);
 
     string m_inputObj1; //white matter surface
