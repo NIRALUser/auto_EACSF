@@ -5,6 +5,8 @@ list(APPEND klaplace_src
     geometry.h
     vtkio.cxx
     vtkio.h
+    gridcreate.cxx
+    gridcreate.h
 )
 
 #add_library(klaplacelib ${klaplace_src})
