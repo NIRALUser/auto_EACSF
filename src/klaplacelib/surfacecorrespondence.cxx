@@ -7,9 +7,9 @@ using namespace std;
 
 #include "surfacecorrespondence.h"
 #include "vtkio.h"
-#include "geometry.h"
 #include "gridcreate.h"
 #include "boundarycheck.h"
+#include "laplacegrid.h"
 
 #include <vtkCellData.h>
 #include <vtkCellDerivatives.h>
@@ -96,215 +96,7 @@ void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low
 		cout << "Data input is NULL" << endl;
 		return;
 	}
-	
-	class LaplaceGrid {
-	public:
-		double low;
-		double high;
-		double dt;
-		vtkDataSet* dataSet;
-		vtkPolyData* samplePoints;
-		
-		vector<vtkIdType> solutionDomain;
-		vtkIntArray* boundaryCond;
-		vtkPolyData* boundarySurface;
-		
-		vtkDoubleArray* solution;
-		vtkDoubleArray* tmpSolution;
-		vtkDataArray* laplaceGradient;
-		vtkDoubleArray* laplaceGradientNormals;
-		
-		
-		Geometry geom;
-		Geometry::NeighborList nbrs;
-		
-		
-		
-		LaplaceGrid(double l, double h, double d, vtkDataSet* ds, vtkPolyData* pd= NULL): low(l), high(h), dt(d), dataSet(ds), boundarySurface(pd) {
-			cout << "geometry edge extraction ... " << flush;
-			geom.extractNeighbors(ds, nbrs);
-			cout << " done " << endl;
-			
-			// check boundary points
-			boundaryCond = vtkIntArray::SafeDownCast(ds->GetPointData()->GetArray("SampledValue"));
-			if (boundaryCond == NULL) {
-				throw runtime_error("No scalar values for BoundaryPoints");
-			}
-			
-			initializeSolution();
-		}
-		
-		void initializeSolution() {
-			cout << "initializing solution grid ... " << flush;
-			// low-value 2
-			// high-value 1
-			solution = vtkDoubleArray::New();
-			solution->SetName("LaplacianSolution");
-			solution->SetNumberOfComponents(1);
-			solution->SetNumberOfTuples(boundaryCond->GetNumberOfTuples());
-			solution->FillComponent(0, 0);
-			
-			tmpSolution = vtkDoubleArray::New();
-			tmpSolution->SetName("LaplacianSolution");
-			tmpSolution->SetNumberOfComponents(1);
-			tmpSolution->SetNumberOfTuples(boundaryCond->GetNumberOfTuples());
-			tmpSolution->FillComponent(0, 0);
-			
-			const size_t nPts = boundaryCond->GetNumberOfTuples();
-			for (size_t j = 0; j < nPts; j++) {
-				int domain = boundaryCond->GetValue(j);
-				double uValue = 0;
-				if (domain == 700) {
-					// high
-					uValue = high;
-				} else if (domain == 300){
-					// low
-					uValue = low;
-				} else if (domain == 1) {
-					uValue = 0;
-					solutionDomain.push_back(j);
-				}
-				solution->SetValue(j, uValue);
-				tmpSolution->SetValue(j, uValue);
-			}
-			cout << "# of points: " << solutionDomain.size() << endl;
-		}
-		
-		void computeStep() {
-			const size_t nPts = solutionDomain.size();
-			for (size_t j = 0; j < nPts; j++) {
-				vtkIdType centerId = solutionDomain[j];
-				Geometry::Neighbors& edgeMap = nbrs[centerId];
-				Geometry::Neighbors::iterator iter = edgeMap.begin();
-				
-				double u = 0;
-				double nNbrs = 0;
-				for (; iter != edgeMap.end(); iter++) {
-					const double du = solution->GetValue(*iter);
-					u += du;
-					nNbrs ++;
 
-					//                    cout << iter->second.axisAligned << endl;
-				}
-				u = u / nNbrs;
-				tmpSolution->SetValue(centerId, u);
-			}
-			
-			vtkDoubleArray* swapTmp = tmpSolution;
-			tmpSolution = solution;
-			solution = swapTmp;
-//			memcpy(solution->WritePointer(0, nPts), tmpSolution->GetVoidPointer(0), sizeof(double) * nTuples);
-//			solution->DeepCopy(tmpSolution);
-		}
-		
-		
-		void computeNormals(vtkDataSet* data) {
-			/*
-			 vtkNew<vtkCellDerivatives> deriv;
-			 deriv->SetInput(data);
-			 deriv->SetVectorModeToComputeGradient();
-			 deriv->Update();
-			 vtkDataSet* derivOut = deriv->GetOutput();
-			 derivOut->GetCellData()->SetActiveVectors("ScalarGradient");
-			 vtkDataArray* scalarGradient = deriv->GetOutput()->GetCellData()->GetArray("ScalarGradient");
-			 scalarGradient->SetName("LaplacianGradient");
-			 */
-			
-			vtkNew<vtkGradientFilter> gradFilter;
-			gradFilter->SetInputData(data);
-			gradFilter->SetInputScalars(vtkDataSet::FIELD_ASSOCIATION_POINTS, "LaplacianSolution");
-			gradFilter->SetResultArrayName("LaplacianGradient");
-			gradFilter->Update();
-			laplaceGradient = gradFilter->GetOutput()->GetPointData()->GetArray("LaplacianGradient");
-			laplaceGradient->Register(NULL);
-			
-			laplaceGradientNormals = vtkDoubleArray::New();
-			laplaceGradientNormals->SetName("LaplacianGradientNorm");
-			laplaceGradientNormals->SetNumberOfComponents(3);
-			laplaceGradientNormals->SetNumberOfTuples(laplaceGradient->GetNumberOfTuples());
-			
-			const size_t nPts = laplaceGradientNormals->GetNumberOfTuples();
-			for (size_t j = 0; j < nPts; j++) {
-				double* vec = laplaceGradient->GetTuple3(j);
-				double norm = vtkMath::Norm(vec);
-				if (norm > 1e-10) {
-					laplaceGradientNormals->SetTuple3(j, vec[0]/norm, vec[1]/norm, vec[2]/norm);
-				} else {
-					laplaceGradientNormals->SetTuple3(j, 0, 0, 0);
-
-				}
-			}
-			
-			data->GetPointData()->AddArray(laplaceGradient);
-			data->GetPointData()->SetVectors(laplaceGradientNormals);
-		}
-		
-		void computeExteriorNormals(vtkPolyData* boundarySurface, const double radius = .1) {
-			if (boundarySurface == NULL) {
-				return;
-			}
-			vtkNew<vtkPolyDataNormals> normalsFilter;
-			normalsFilter->SetInputData(boundarySurface);
-			normalsFilter->ComputeCellNormalsOn();
-			normalsFilter->ComputePointNormalsOn();
-			normalsFilter->Update();
-			vtkFloatArray* cellNormals = vtkFloatArray::SafeDownCast(normalsFilter->GetOutput()->GetCellData()->GetNormals());
-			
-			vtkNew<vtkCellLocator> cloc;
-			cloc->SetDataSet(boundarySurface);
-			cloc->AutomaticOn();
-			cloc->BuildLocator();
-			
-			dataSet->GetPointData()->SetActiveScalars("SampledValue");
-			
-			vtkNew<vtkThresholdPoints> threshold;
-			threshold->SetInputData(dataSet);
-			threshold->ThresholdByUpper(250);
-			threshold->Update();
-			vtkDataSet* inoutBoundary = threshold->GetOutput();
-			vtkIntArray* inoutBoundaryCond = vtkIntArray::SafeDownCast(inoutBoundary->GetPointData()->GetArray("SampledValue"));
-			
-			
-			vtkNew<vtkPointLocator> ploc;
-			ploc->SetDataSet(inoutBoundary);
-			ploc->AutomaticOn();
-			ploc->BuildLocator();
-			
-			const size_t nPts = dataSet->GetNumberOfPoints();
-			for (size_t j = 0; j < nPts; j++) {
-				int domain = boundaryCond->GetValue(j);
-				if (domain == 700 || domain == 300 || domain == 0) {
-					double x[3] = { 0, }, closestPoint[3] = { 0, };
-					vtkIdType cellId = -1;
-					int subId = 0;
-					double dist2 = -1;
-					dataSet->GetPoint(j, x);
-					vtkNew<vtkGenericCell> closestCell;
-					cloc->FindClosestPointWithinRadius(x, radius, closestPoint, cellId, subId, dist2);
-					
-					float cellNormal[3];
-					cellNormals->GetTypedTuple(cellId, cellNormal);
-					cellNormal[0] = 0;
-					vtkMath::Normalize(cellNormal);
-					
-					if (domain == 0) {
-						vtkIdType xId = ploc->FindClosestPoint(x);
-						domain = inoutBoundaryCond->GetValue(xId);
-						assert(domain == 300 || domain == 700);
-					}
-					
-					
-					if (domain == 300) {
-						laplaceGradientNormals->SetTuple3(j, -cellNormal[0], -cellNormal[1], -cellNormal[2]);
-					} else {
-						laplaceGradientNormals->SetTuple3(j, cellNormal[0], cellNormal[1], cellNormal[2]);
-					}
-				}
-			}
-		}
-	};
-	
-	
 	LaplaceGrid grid(low, high, dt, data, surfaceData);
 	
 	clock_t t1 = clock();
@@ -324,7 +116,7 @@ void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low
 	
 	
 	// return the solution
-	data->GetPointData()->AddArray(grid.solution);
+    data->GetPointData()->AddArray(grid.solution());
 	grid.computeNormals(data);
 //	grid.computeExteriorNormals(surfaceData);
 }

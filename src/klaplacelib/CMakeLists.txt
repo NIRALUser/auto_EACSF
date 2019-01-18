@@ -9,6 +9,8 @@ list(APPEND klaplace_src
     gridcreate.h
     boundarycheck.cxx
     boundarycheck.h
+    laplacegrid.cxx
+    laplacegrid.h
 )
 
 #add_library(klaplacelib ${klaplace_src})
