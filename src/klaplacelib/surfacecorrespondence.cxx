@@ -477,7 +477,7 @@ void computeLaplacePDE(vtkDataSet* data, const double low, const double high, co
 //	grid.computeExteriorNormals(surfaceData);
 }
 
-bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, int lineId, vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
+bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
 	
 	/// - Iterate over all points in a line
 	vtkIdList* ids = lineToClip->GetPointIds();
@@ -596,7 +596,7 @@ vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPoly
 			if (pid > -1) {
 				vtkCell* line = streamLines->GetCell(i);
 				/// - Assume that a line starts from a point on the input mesh and must meet at the opposite surface of the starting point.
-				bool lineAdded = performLineClipping(streamLines, tree, i, line, outputPoints, outputCells, length);
+                bool lineAdded = performLineClipping(streamLines, tree, /*i,*/ line, outputPoints, outputCells, length);
 				
 				if (lineAdded) {
 					pointIds->InsertNextValue(pid);
@@ -777,7 +777,7 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 		vtkIdType s = cell->GetPointId(0);
 		vtkIdType e = cell->GetPointId(nPts-1);
 		
-		double qs[3], qe[3], pj[3], spj[3], npj[3];
+        double qs[3], qe[3],/* pj[3], spj[3],*/ npj[3];
 		strmesh->GetPoint(s, qs);
 		strmesh->GetPoint(e, qe);
 		
@@ -787,19 +787,19 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 		vtkMath::Subtract(qe, center, npj);
 		double warpedPointNorm = vtkMath::Norm(npj);
 		
-		sphereRadiusArr->SetValue(j, warpedPointNorm);
+        sphereRadiusArr->SetValue(j, warpedPointNorm);
 
 //		cout << "cell " << j << ": " << nPts << ", " << s << " => " << e << endl;
 //		cout << "cell " << j << ": " << qe[0] << "," << qe[1] << "," << qe[2] << endl;
-		
+
 //
 //		srcmesh->GetPoint(seedId, pj);
 //		pointArr->SetTupleValue(seedId, pj);
-//		
+//
 //		vtkMath::Subtract(pj, sphereCenter, npj);
 //		sphTxf->TransformPoint(npj, spj);
 //		sphrCoord->SetTupleValue(seedId, spj);
-//		
+//
 //		destPointArr->SetTupleValue(seedId, qe);
 
 	}
@@ -879,9 +879,16 @@ int main(int argc, char* argv[]) {
 
     cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
 
+    /*
     if (inputObj1 == "" || inputObj2 == "") {
         cout << "-surfaceCorrespondence option needs two inputs" << endl;
     }
+    */
+
+    if (argc != 5) {
+        cout << "-surfaceCorrespondence option needs two inputs, one prefix and the number of dims" << endl;
+    }
+
     if (prefix == "") {
         prefix = "surface_correspondence";
     }
@@ -890,7 +897,7 @@ int main(int argc, char* argv[]) {
 	string outputField = prefix + "_field.vts";
 	string outputStream = prefix + "_stream.vtp";
 	string outputMesh = prefix + "_warpedMesh.vtp";
-	string outputObj = prefix + "_object.vtp";
+    string outputObj = prefix + "_object.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
