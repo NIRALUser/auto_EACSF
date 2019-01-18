@@ -9,18 +9,18 @@
 using namespace std;
 
 size_t Geometry::extractNeighbors(vtkDataSet *ds, NeighborList &nbrs) {
-	const size_t nPoints = ds->GetNumberOfPoints();
+    const /*size_t*/vtkIdType nPoints = ds->GetNumberOfPoints();
 	nbrs.resize(nPoints);
 	
 	vtkNew<vtkIdList> cellIds;
-	for (size_t j = 0; j < nPoints; j++) {
+    for (/*size_t*/int j = 0; j < nPoints; j++) {
 		Neighbors& nbrPts = nbrs[j];
 		cellIds->Reset();
 		ds->GetPointCells(j, cellIds.GetPointer());
-		for (size_t k = 0; k < cellIds->GetNumberOfIds(); k++) {
+        for (/*size_t*/int k = 0; k < cellIds->GetNumberOfIds(); k++) {
 			vtkIdType cellId = cellIds->GetId(k);
 			vtkCell* cell = ds->GetCell(cellId);
-			for (size_t l = 0; l < cell->GetNumberOfEdges(); l++) {
+            for (/*size_t*/int l = 0; l < cell->GetNumberOfEdges(); l++) {
 				vtkCell* edge = cell->GetEdge(l);
 				vtkIdType s = edge->GetPointId(0);
 				vtkIdType e = edge->GetPointId(1);
