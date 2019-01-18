@@ -154,7 +154,7 @@ vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, s
 			vtkDataArray* barr = bim->GetPointData()->GetScalars();
 			
 			size_t insideCount = 0;
-            for (size_t j = 0; j < aim->GetNumberOfPoints(); j++) {
+            for (/*size_t*/int j = 0; j < aim->GetNumberOfPoints(); j++) {
 				int p = aarr->GetTuple1(j);
 				int q = barr->GetTuple1(j);
 				int o = 700;
@@ -458,7 +458,7 @@ void computeLaplacePDE(vtkDataSet* data, const double low, const double high, co
 	clock_t t1 = clock();
 	
 	// main iteration loop
-    for (size_t i = 1; i <= nIters; i++) {
+    for (/*size_t*/int i = 1; i <= nIters; i++) {
 		if (i%500 == 0) {
 			cout << "iteration: " << i << "\t";
 			clock_t t2 = clock();
@@ -705,7 +705,7 @@ vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPo
 }
 
 void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs) {
-    for (size_t j = 0; j < cell->GetNumberOfPoints(); j++) {
+    for (/*size_t*/int j = 0; j < cell->GetNumberOfPoints(); j++) {
         vtkIdType cellPt = cell->GetPointId(j);
         if (pid != cellPt) {
             nbrs.insert(cellPt);
@@ -811,7 +811,7 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 			// identify broken points
 			vector<vtkIdType> brokenPoints;
 			vtkIdType z = 0;
-			for (size_t j = 0; j < seedIds->GetNumberOfTuples(); j++,z++) {
+            for (/*size_t*/int j = 0; j < seedIds->GetNumberOfTuples(); j++,z++) {
 				vtkIdType y = seedIds->GetTuple1(j);
 				while (z < y) {
 					brokenPoints.push_back(z++);
@@ -827,7 +827,7 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 				surf->GetPointCells(pid, cellIds.GetPointer());
 				nbrs.clear();
 				// find neighbor points
-				for (size_t k = 0; k < cellIds->GetNumberOfIds(); k++) {
+                for (/*size_t*/int k = 0; k < cellIds->GetNumberOfIds(); k++) {
 					vtkCell* cell = surf->GetCell(k);
 					findNeighborPoints(cell, pid, nbrs);
 				}
@@ -897,7 +897,7 @@ int main(int argc, char* argv[]) {
 	string outputField = prefix + "_field.vts";
 	string outputStream = prefix + "_stream.vtp";
 	string outputMesh = prefix + "_warpedMesh.vtp";
-    string outputObj = prefix + "_object.vtp";
+    //string outputObj = prefix + "_object.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
