@@ -15,7 +15,6 @@ using namespace std;
 #include <vtkCellLocator.h>
 #include <vtkCleanPolyData.h>
 #include <vtkDataArray.h>
-#include <vtkDataSet.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
 #include <vtkGenericCell.h>
@@ -28,7 +27,6 @@ using namespace std;
 #include <vtkMath.h>
 #include <vtkModifiedBSPTree.h>
 #include <vtkNew.h>
-#include <vtkPolyData.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPolyDataToImageStencil.h>
 #include <vtkPointData.h>
@@ -41,7 +39,20 @@ using namespace std;
 #include <vtkImageWriter.h>
 #include <vtkMetaImageWriter.h>
 
-vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
+SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, string prefix, int dims):
+    m_inputObj1(inputObj1),
+    m_inputObj2(inputObj2),
+    m_prefix(prefix),
+    m_dims(dims)
+{
+    /*
+    if (m_inputObj1 == "" || m_inputObj2 == "") {
+        cout << "-surfaceCorrespondence option needs two inputs" << endl;
+    }
+    */
+}
+
+vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
 	GridCreate gc(osurf->GetBounds(), dims);
 	
 	vtkNew<vtkImageData> gim;
@@ -129,7 +140,7 @@ vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, s
 	return goim;
 }
 
-void runFillGrid(StringVector& args, int dims) {
+void SurfaceCorrespondance::runFillGrid(StringVector& args, int dims) {
 // create a structured grid with the size of input
 // convert the grid to polydata
 // create the intersection between the grid and the polydata
@@ -147,7 +158,7 @@ void runFillGrid(StringVector& args, int dims) {
 	
 }
 
-void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters, const double dt, vtkPolyData* surfaceData = NULL) {
+void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters, const double dt, vtkPolyData* surfaceData /*= NULL*/) {
 // Compute Laplace PDE based on the adjacency list and border
 	if (data == NULL) {
 		cout << "Data input is NULL" << endl;
@@ -386,7 +397,7 @@ void computeLaplacePDE(vtkDataSet* data, const double low, const double high, co
 //	grid.computeExteriorNormals(surfaceData);
 }
 
-bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
+bool SurfaceCorrespondance::performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
 	
 	/// - Iterate over all points in a line
 	vtkIdList* ids = lineToClip->GetPointIds();
@@ -447,7 +458,7 @@ bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*i
 	return false;
 }
 
-vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface) {
+vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface) {
 	
 	const size_t nInputPoints = seedPoints->GetNumberOfPoints();
 	
@@ -542,7 +553,7 @@ vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPoly
 	}
 }
 
-vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false) {
+vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate /*= false*/) {
     if (inputData == NULL || inputSeedPoints == NULL) {
         cout << "input vector field or seed points is null!" << endl;
         return NULL;
@@ -622,7 +633,7 @@ void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs) {
     }
 }
 
-void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, string outputWarpedMeshName, vtkPolyData* srcmesh = NULL) {
+void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, string outputWarpedMeshName, vtkPolyData* srcmesh /*= NULL*/) {
 	vtkIO vio;
 	
 	if (srcmesh == NULL) {
@@ -715,7 +726,7 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 	
 	srcmesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
 
-	struct InterpolateBrokenPoints {
+    struct InterpolateBrokenPoints {
 		InterpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds) {
 			// identify broken points
 			vector<vtkIdType> brokenPoints;
@@ -738,7 +749,7 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 				// find neighbor points
                 for (/*size_t*/int k = 0; k < cellIds->GetNumberOfIds(); k++) {
 					vtkCell* cell = surf->GetCell(k);
-					findNeighborPoints(cell, pid, nbrs);
+                    findNeighborPoints(cell, pid, nbrs);
 				}
 				// average neighbor points
 				double p[3] = {0,}, q[3] = {0,};
@@ -775,58 +786,34 @@ void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, s
 //	}
 }
 
+void SurfaceCorrespondance::run(){
+    vtkIO vio;
 
-int main(int argc, char* argv[]) {
-
-	vtkIO vio;
-
-	// runEnclosingSphere
-	string inputObj1 = argv[1]; //WM
-    string inputObj2 = argv[2]; //GM
-    string prefix = argv[3];
-    int dims = atoi(argv[4]);
-
-    cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
-
-    /*
-    if (inputObj1 == "" || inputObj2 == "") {
-        cout << "-surfaceCorrespondence option needs two inputs" << endl;
-    }
-    */
-
-    if (argc != 5) {
-        cout << "-surfaceCorrespondence option needs two inputs, one prefix and the number of dims" << endl;
-    }
-
-    if (prefix == "") {
-        prefix = "surface_correspondence";
-    }
-
-	string outputGrid = prefix + "_grid.vts";
-	string outputField = prefix + "_field.vts";
-	string outputStream = prefix + "_stream.vtp";
-	string outputMesh = prefix + "_warpedMesh.vtp";
-    //string outputObj = prefix + "_object.vtp";
+    string outputGrid = m_prefix + "_grid.vts";
+    string outputField = m_prefix + "_field.vts";
+    string outputStream = m_prefix + "_stream.vtp";
+    string outputMesh = m_prefix + "_warpedMesh.vtp";
+    //string outputObj = m_prefix + "_object.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
     cout << "Output streamlines: " << outputStream << endl;
     cout << "Output warped mesh: " << outputMesh << endl;
-	
+
 
     // create uniform grid for a FDM model
     StringVector fillGridArgs;
-    fillGridArgs.push_back(inputObj2);
-    fillGridArgs.push_back(inputObj1);
+    fillGridArgs.push_back(m_inputObj2);
+    fillGridArgs.push_back(m_inputObj1);
     fillGridArgs.push_back(outputGrid);
 
-    runFillGrid(fillGridArgs,dims);
-    
-    
+    runFillGrid(fillGridArgs,m_dims);
+
+
     // compute laplace map
     vtkDataSet* laplaceField = NULL;
     laplaceField = vio.readDataFile(outputGrid);
-    
+
     //visualiseDataSet(laplaceField);
 
     const double dt = 0.125;
@@ -834,25 +821,42 @@ int main(int argc, char* argv[]) {
     const int numIter = 1000;
     computeLaplacePDE(laplaceField, 0, 10000, numIter, dt);
     vio.writeFile(outputField, laplaceField);
-	
+
     /*
-	vtkPolyData* inputData = vio.readFile(inputObj1);
-    vtkPolyData* inputData2 = vio.readFile(inputObj2);
+    vtkPolyData* inputData = vio.readFile(m_inputObj1);
+    vtkPolyData* inputData2 = vio.readFile(m_inputObj2);
 
     if (inputData == NULL) {
-        cout << inputObj1 << " is null" << endl;
+        cout << m_inputObj1 << " is null" << endl;
         return 1;
     }
     if (inputData2 == NULL) {
-        cout << inputObj2 << " is null" << endl;
+        cout << m_inputObj2 << " is null" << endl;
         return 1;
     }
 
-	vtkPolyData* streams = performStreamTracer(laplaceField, inputData, inputData2);
-	vio.writeFile(outputStream, streams);
-	runPrintTraceCorrespondence(inputObj1, outputStream, outputMesh, inputData);
-	
+    vtkPolyData* streams = performStreamTracer(laplaceField, inputData, inputData2);
+    vio.writeFile(outputStream, streams);
+    runPrintTraceCorrespondence(m_inputObj1, outputStream, outputMesh, inputData);
 
-	vio.writeFile(outputObj, inputData);
-	*/
+
+    vio.writeFile(outputObj, inputData);
+    */
+}
+
+int main(int argc, char* argv[]) {
+    //cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
+
+    if (argc != 5) {
+        cout << "-surfaceCorrespondence option needs two inputs, one prefix and the number of dims" << endl;
+    }
+
+    string inputObj1 = argv[1];
+    string inputObj2 = argv[2];
+    string prefix = argv[3];
+    int dims = atoi(argv[4]);
+
+    SurfaceCorrespondance sCorr(inputObj1,inputObj2,prefix,dims);
+
+    sCorr.run();
 }
