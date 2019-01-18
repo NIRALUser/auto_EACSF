@@ -1,5 +1,6 @@
 #include "csfwindow.h"
 #include "extexecutableswidget.h"
+#include "automaticinterface.h"
 
 #include <iostream>
 #include <QFile>
@@ -44,9 +45,23 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     {
         infoMsgBox(QString("Data folder not found, project building or installation might be incomplete."),QMessageBox::Warning);
     }
-
     readDefaultConfig();
 
+#if 1
+    QString config_qstr;
+    QFile config_qfile;
+    config_qfile.setFileName("/work/alemaout/sources/Projects/auto_EACSF-Project/test1.json");
+    config_qfile.open(QIODevice::ReadOnly | QIODevice::Text);
+    config_qstr = config_qfile.readAll();
+    config_qfile.close();
+
+    QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
+    QJsonObject root_obj = config_doc.object();
+
+    AutomaticInterface *TW = new AutomaticInterface();
+    TW->buildTabs(root_obj["tabs"].toArray());
+    tabWidget->addTab(TW->widget(0),TW->tabText(0));
+#else
     if (!executables.keys().isEmpty())
     {
         find_executables();
@@ -57,8 +72,11 @@ CSFWindow::CSFWindow(QWidget *m_parent):
         exe_layout->addWidget(exeWidget,Qt::AlignCenter);
         connect(exeWidget, SIGNAL(newExePath(QString,QString)), this, SLOT(updateExecutables(QString,QString)));
     }
+
+
     tabWidget->removeTab(1);
     tabWidget->removeTab(5);
+#endif
 }
 
 CSFWindow::~CSFWindow()
@@ -68,6 +86,7 @@ CSFWindow::~CSFWindow()
 bool CSFWindow::find_data_dir_path()
 {
     QDir CD = QDir::current();
+    CD.cdUp();
     CD.cdUp();
     switch(m_tree_type)
     {

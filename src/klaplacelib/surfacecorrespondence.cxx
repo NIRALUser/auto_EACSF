@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#include "surfaceCorrespondence.h"
+#include "surfacecorrespondence.h"
 #include "vtkio.h"
 #include "geometry.h"
 
@@ -48,7 +48,6 @@ using namespace std;
 
 #include <vtkImageWriter.h>
 #include <vtkMetaImageWriter.h>
-
 
 vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
 	
@@ -155,7 +154,7 @@ vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, s
 			vtkDataArray* barr = bim->GetPointData()->GetScalars();
 			
 			size_t insideCount = 0;
-			for (size_t j = 0; j < aim->GetNumberOfPoints(); j++) {
+            for (size_t j = 0; j < aim->GetNumberOfPoints(); j++) {
 				int p = aarr->GetTuple1(j);
 				int q = barr->GetTuple1(j);
 				int o = 700;
@@ -459,7 +458,7 @@ void computeLaplacePDE(vtkDataSet* data, const double low, const double high, co
 	clock_t t1 = clock();
 	
 	// main iteration loop
-	for (size_t i = 1; i <= nIters; i++) {
+    for (size_t i = 1; i <= nIters; i++) {
 		if (i%500 == 0) {
 			cout << "iteration: " << i << "\t";
 			clock_t t2 = clock();

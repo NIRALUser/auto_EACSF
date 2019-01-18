@@ -34,11 +34,11 @@
 #include <vtkPointData.h>
 
 static bool endswith(std::string file, std::string ext) {
-    int epos = file.length() - ext.length();
+   int epos = file.length() - ext.length();
     if (epos < 0) {
         return false;
     }
-    return file.rfind(ext) == epos;
+    return file.rfind(ext) == (unsigned int)epos;
 }
 
 //void vtkIO::zrotate(vtkPolyData* p) {
