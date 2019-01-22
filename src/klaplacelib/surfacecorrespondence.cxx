@@ -55,14 +55,9 @@ SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2,
 
 vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
 	GridCreate gc(osurf->GetBounds(), dims);
-	
-	vtkNew<vtkImageData> gim;
-	vtkNew<vtkImageData> wim;
-	
-	vtkStructuredGrid* goim = gc.createStencil(gim.GetPointer(), osurf);
-	vtkStructuredGrid* woim = gc.createStencil(wim.GetPointer(), isurf);
 
-	//visualiseTwoDataSets(goim,woim);
+    vtkStructuredGrid* goim = gc.createStencil(osurf);
+    vtkStructuredGrid* woim = gc.createStencil(isurf);
 	
 	BoundaryCheck bc;
 	insideCountOut = bc.subtract(goim, woim);
@@ -73,9 +68,6 @@ vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* i
 }
 
 void SurfaceCorrespondance::runFillGrid(StringVector& args, int dims) {
-// create a structured grid with the size of input
-// convert the grid to polydata
-// create the intersection between the grid and the polydata
 	string outputFile = args[2];
 	
 	vtkIO vio;    

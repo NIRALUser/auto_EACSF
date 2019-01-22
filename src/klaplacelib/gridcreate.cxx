@@ -43,8 +43,9 @@ void GridCreate::createImage(vtkImageData* im) {
     im->GetPointData()->GetScalars()->FillComponent(0, 255);
 }
 
-vtkStructuredGrid* GridCreate::createStencil(vtkImageData* im, vtkPolyData* surf) {
-    createImage(im);
+vtkStructuredGrid* GridCreate::createStencil(vtkPolyData* surf) {
+    vtkNew<vtkImageData> im;
+    createImage(im.GetPointer());
 
     vtkNew<vtkPolyDataToImageStencil> psten;
     psten->SetInputData(surf);
@@ -60,13 +61,11 @@ vtkStructuredGrid* GridCreate::createStencil(vtkImageData* im, vtkPolyData* surf
     isten->SetBackgroundValue(0);
     isten->Update();
 
-
     vtkImageData* imgGrid = isten->GetOutput();
-    // visualiseDataSet(imgGrid);
-    vtkNew<vtkMetaImageWriter> imageWriter;
-    imageWriter->SetInputData(imgGrid);
-    imageWriter->SetFileName("testimage.mhd");
-    imageWriter->Write();
+//    vtkNew<vtkMetaImageWriter> imageWriter;
+//    imageWriter->SetInputData(imgGrid);
+//    imageWriter->SetFileName("testimage.mhd");
+//    imageWriter->Write();
     imgGrid->GetPointData()->GetScalars()->SetName("SampledValue");
 
 
