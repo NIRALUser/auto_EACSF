@@ -8,24 +8,24 @@ BoundaryCheck::BoundaryCheck(){
 
 }
 
-size_t BoundaryCheck::subtract(vtkDataSet *aim, vtkDataSet *bim){
-    if (aim->GetNumberOfPoints() != bim->GetNumberOfPoints()) {
+size_t BoundaryCheck::subtract(vtkDataSet *gim, vtkDataSet *wim){
+    if (gim->GetNumberOfPoints() != wim->GetNumberOfPoints()) {
         cout << "can't process: the number of points are different!" << endl;
         return 0;
     }
 
-    vtkDataArray* aarr = aim->GetPointData()->GetScalars();
-    vtkDataArray* barr = bim->GetPointData()->GetScalars();
+    vtkDataArray* aarr = gim->GetPointData()->GetScalars();
+    vtkDataArray* barr = wim->GetPointData()->GetScalars();
 
     size_t insideCount = 0;
-    for (/*size_t*/int j = 0; j < aim->GetNumberOfPoints(); j++) {
+    for (int j = 0; j < gim->GetNumberOfPoints(); j++) {
         int p = aarr->GetTuple1(j);
         int q = barr->GetTuple1(j);
         int o = 700;
-        if (p == 255 && q != 255) {
+        if (p == 255 && q != 255) { // if voxel only in grey matter
             o = 1;
             insideCount ++;
-        } else if (p == 255 && q == 255){
+        } else if (p == 255 && q == 255){ // if voxel in both regions
             o = 300;
         }
         aarr->SetTuple1(j, o);

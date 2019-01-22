@@ -56,12 +56,13 @@ SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2,
 vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
 	GridCreate gc(osurf->GetBounds(), dims);
 
+    // Creating the binary grids of the WM and the WM+GM structures
     vtkStructuredGrid* goim = gc.createStencil(osurf);
     vtkStructuredGrid* woim = gc.createStencil(isurf);
 	
 	BoundaryCheck bc;
-	insideCountOut = bc.subtract(goim, woim);
-	bc.checkSurface(goim, isurf, osurf);
+    insideCountOut = bc.subtract(goim, woim); // subtraction of both structures to botain a three region map
+    bc.checkSurface(goim, isurf, osurf); // boundary errors correction
 	woim->Delete();
 	
 	return goim;
@@ -526,8 +527,6 @@ void SurfaceCorrespondance::run(){
     // compute laplace map
     vtkDataSet* laplaceField = NULL;
     laplaceField = vio.readDataFile(outputGrid);
-
-    //visualiseDataSet(laplaceField);
 
     const double dt = 0.125;
     //const int numIter = 10000;
