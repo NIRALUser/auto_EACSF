@@ -4,6 +4,8 @@ list(APPEND klaplace_src
     surfacecorrespondence.h
     geometry.cxx
     geometry.h
+    edge.cxx
+    edge.h
     vtkio.cxx
     vtkio.h
     gridcreate.cxx

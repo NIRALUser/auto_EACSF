@@ -7,40 +7,12 @@
 #include <vtkPolyData.h>
 #include <vtkTransform.h>
 
+#include "edge.h"
+
 class Geometry {
 public:
     vtkNew<vtkTransform> txfm;
-	
-	struct Edge {
-		vtkIdType u;
-		vtkIdType v;
-		bool boundary;
-        size_t axisAligned;
-		
-		bool operator==(const Edge& e) const {
-			return (u == e.u && v == e.v) || (u == e.v && v == e.u);
-		}
-		
-		bool operator<(const Edge& e) const {
-			return (u == e.u ? v < e.v : u < e.u);
-		}
-		
-		bool operator<=(const Edge& e) const {
-			return (u == e.u ? v <= e.v : u <= e.u);
-		}
-		
-		Edge(): u(-1), v(-1), boundary(false) {}
-		Edge(vtkIdType s, vtkIdType e): u(s), v(e), boundary(false), axisAligned(0) {}
-		Edge(vtkIdType s, vtkIdType e, bool b): u(s), v(e), boundary(b), axisAligned(0) {}
-		Edge(const Edge& e): u(e.u), v(e.v), boundary(e.boundary), axisAligned(0) {}
-		
-		void operator=(const Edge& e) {
-			u = e.u;
-			v = e.v;
-            boundary = e.boundary;
-            axisAligned = e.axisAligned;
-		}
-	};
+
 	typedef std::map<vtkIdType, Edge> EdgeMap;
     typedef std::vector<EdgeMap> EdgeList;
 	typedef std::vector<vtkIdType> Neighbors;
