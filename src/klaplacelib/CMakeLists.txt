@@ -1,4 +1,5 @@
 list(APPEND klaplace_src
+    klaplace.cxx
     surfacecorrespondence.cxx
     surfacecorrespondence.h
     geometry.cxx

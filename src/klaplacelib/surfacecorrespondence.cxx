@@ -514,7 +514,7 @@ void SurfaceCorrespondance::run(){
     string outputField = m_prefix + "_field.vts";
     string outputStream = m_prefix + "_stream.vtp";
     string outputMesh = m_prefix + "_warpedMesh.vtp";
-    //string outputObj = m_prefix + "_object.vtp";
+    string outputObj = m_prefix + "_object.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
@@ -543,17 +543,16 @@ void SurfaceCorrespondance::run(){
     computeLaplacePDE(laplaceField, 0, 10000, numIter, dt);
     vio.writeFile(outputField, laplaceField);
 
-    /*
     vtkPolyData* inputData = vio.readFile(m_inputObj1);
     vtkPolyData* inputData2 = vio.readFile(m_inputObj2);
 
     if (inputData == NULL) {
         cout << m_inputObj1 << " is null" << endl;
-        return 1;
+        return;
     }
     if (inputData2 == NULL) {
         cout << m_inputObj2 << " is null" << endl;
-        return 1;
+        return;
     }
 
     vtkPolyData* streams = performStreamTracer(laplaceField, inputData, inputData2);
@@ -562,22 +561,4 @@ void SurfaceCorrespondance::run(){
 
 
     vio.writeFile(outputObj, inputData);
-    */
-}
-
-int main(int argc, char* argv[]) {
-    //cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
-
-    if (argc != 5) {
-        cout << "-surfaceCorrespondence option needs two inputs, one prefix and the number of dims" << endl;
-    }
-
-    string inputObj1 = argv[1];
-    string inputObj2 = argv[2];
-    string prefix = argv[3];
-    int dims = atoi(argv[4]);
-
-    SurfaceCorrespondance sCorr(inputObj1,inputObj2,prefix,dims);
-
-    sCorr.run();
 }

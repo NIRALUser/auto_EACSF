@@ -1,5 +1,7 @@
 #ifndef __SURFACECORRESPONDENCE_H__
 
+#include <set>
+
 #include <vtkDataSet.h>
 #include <vtkModifiedBSPTree.h>
 #include <vtkPolyData.h>
