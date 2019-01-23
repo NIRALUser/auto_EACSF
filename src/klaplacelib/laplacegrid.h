@@ -22,6 +22,7 @@ public:
     /*** Compute the normals of the gradient of the solution */
     void computeNormals();
 
+    /*** Returns the solution */
     vtkDoubleArray* solution();
 
 private:
