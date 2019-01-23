@@ -16,6 +16,10 @@ int main(int argc, char* argv[]) {
     string prefix = argv[3];
     int dims = atoi(argv[4]);
 
-    SurfaceCorrespondance sCorr(inputObj1,inputObj2,prefix,dims);
+    SurfaceCorrespondance sCorr(inputObj1,inputObj2,dims);
+    if (prefix != "")
+    {
+        sCorr.setPrefix(prefix);
+    }
     sCorr.run();
 }

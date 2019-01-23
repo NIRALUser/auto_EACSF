@@ -12,7 +12,10 @@ class SurfaceCorrespondance{
     typedef std::vector<std::string> StringVector;
 
 public:
-    SurfaceCorrespondance(string inputObj1, string inputObj2, string prefix = "surface_correspondence", int dims = 300);
+    SurfaceCorrespondance(string inputObj1, string inputObj2, int dims = 300);
+
+    void setPrefix(string prefix);
+    void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
 
 private:
     vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut);
@@ -30,17 +33,18 @@ private:
     vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
-    void runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
+    vtkPolyData* runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
 
     string m_inputObj1; //white matter surface
     string m_inputObj2; //grey matter surface
-    string m_prefix;
+    string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
 
-    bool m_writeGridFile;
-    bool m_writeLaplaceFieldFile;
-    bool m_writeStreamFile;
-    bool m_writeWarpedMeshFile;
+    bool m_writeGridFile = false;
+    bool m_writeLaplaceFieldFile = false;
+    bool m_writeStreamFile = false;
+    bool m_writeWarpedMeshFile = false;
+    bool m_writeObjFile = false;
 
 public:
     void run();

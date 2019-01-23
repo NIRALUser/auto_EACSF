@@ -40,10 +40,9 @@ using namespace std;
 #include <vtkImageWriter.h>
 #include <vtkMetaImageWriter.h>
 
-SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, string prefix, int dims):
+SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, int dims /* = 300*/):
     m_inputObj1(inputObj1),
     m_inputObj2(inputObj2),
-    m_prefix(prefix),
     m_dims(dims)
 {
     /*
@@ -51,6 +50,18 @@ SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2,
         cout << "-surfaceCorrespondence option needs two inputs" << endl;
     }
     */
+}
+
+void SurfaceCorrespondance::setPrefix(string prefix){
+    m_prefix = prefix;
+}
+
+void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile){
+    m_writeGridFile = writeGridFile;
+    m_writeLaplaceFieldFile = writeLaplaceFieldFile;
+    m_writeStreamFile = writeStreamFile;
+    m_writeWarpedMeshFile = writeWarpedMeshFile;
+    m_writeObjFile = writeObjFile;
 }
 
 vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
@@ -365,7 +376,7 @@ void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
-void SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet *streamMesh) {
+vtkPolyData* SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet *streamMesh) {
 	vtkNew<vtkPolyData> warpedMesh;
     warpedMesh->DeepCopy(srcMesh);
 	
@@ -387,7 +398,6 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vt
 	vtkNew<vtkSphericalTransform> sphTxf;
 	sphTxf->Inverse();
 	
-	
 	vtkNew<vtkDoubleArray> destPointArr;
 	destPointArr->SetName("DestinationPoints");
 	destPointArr->SetNumberOfComponents(3);
@@ -405,8 +415,6 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vt
     ploc->SetDataSet(srcMesh);
 	ploc->SetTolerance(0);
 	ploc->BuildLocator();
-	
-	
 	
     const size_t nCells = streamMesh->GetNumberOfCells();
     vtkDataArray* seedIds = streamMesh->GetCellData()->GetArray("PointIds");
@@ -432,40 +440,14 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vt
 		double warpedPointNorm = vtkMath::Norm(npj);
 		
         sphereRadiusArr->SetValue(j, warpedPointNorm);
-
-//		cout << "cell " << j << ": " << nPts << ", " << s << " => " << e << endl;
-//		cout << "cell " << j << ": " << qe[0] << "," << qe[1] << "," << qe[2] << endl;
-
-//
-//		srcmesh->GetPoint(seedId, pj);
-//		pointArr->SetTupleValue(seedId, pj);
-//
-//		vtkMath::Subtract(pj, sphereCenter, npj);
-//		sphTxf->TransformPoint(npj, spj);
-//		sphrCoord->SetTupleValue(seedId, spj);
-//
-//		destPointArr->SetTupleValue(seedId, qe);
-
 	}
 	
     srcMesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
 	
 	warpedMesh->SetPoints(warpedPoints.GetPointer());
     interpolateBrokenPoints(warpedMesh.GetPointer(), warpedPoints.GetPointer(), seedIds);
-	
-	//	warpedMesh->Print(cout);
-//	warpedMesh->GetPointData()->SetVectors(pointArr.GetPointer());
-//	warpedMesh->GetPointData()->AddArray(sphrCoord.GetPointer());
-    if (m_writeWarpedMeshFile)
-    {
-        vio.writeFile(outputWarpedMeshName, warpedMesh.GetPointer());
-    }
 
-//	if (args.size() > 3) {
-//		srcmesh->GetPointData()->SetVectors(destPointArr.GetPointer());
-//		srcmesh->GetPointData()->AddArray(sphrCoord.GetPointer());
-//		vio.writeFile(args[3], srcmesh);
-//	}
+    return warpedMesh.GetPointer();
 }
 
 void SurfaceCorrespondance::run(){
@@ -512,8 +494,13 @@ void SurfaceCorrespondance::run(){
         vio.writeFile(outputStream, streams);
     }
 
-    runPrintTraceCorrespondence(isurf,streams);
-
-
-    vio.writeFile(outputObj, isurf);
+    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(isurf,streams);
+    if (m_writeWarpedMeshFile)
+    {
+        vio.writeFile(outputMesh, warpedMesh);
+    }
+    if (m_writeObjFile)
+    {
+        vio.writeFile(outputObj, isurf);
+    }
 }
