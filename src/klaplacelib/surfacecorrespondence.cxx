@@ -275,12 +275,10 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, v
 		for (int i = 0; i < nInputPoints; i++) {
 			double p[3];
 			points->GetPoint(i, p);
-			// FixMe: Do not use a specific scaling factor
-			if (zRotate) {
-				p[0] = -p[0];
-				p[1] = -p[1];
-				p[2] = p[2];
-			}
+            // FixMe: Do not use a specific scaling factor
+            p[0] = -p[0];
+            p[1] = -p[1];
+            p[2] = p[2];
 			points->SetPoint(i, p);
 		}
 		inputSeedPoints->SetPoints(points);
@@ -297,13 +295,10 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, v
 	tracer->SetIntegrationDirectionToForward();
 	cout << "Forward Integration" << endl;
 
-//    tracer->SetInterpolatorTypeToDataSetPointLocator();
 	tracer->SetInterpolatorTypeToCellLocator();
 	tracer->SetMaximumPropagation(5000);
-	tracer->SetInitialIntegrationStep(0.01);
-//    tracer->SetMaximumIntegrationStep(0.1);
+    tracer->SetInitialIntegrationStep(0.01);
     tracer->SetIntegratorTypeToRungeKutta45();
-//    tracer->SetIntegratorTypeToRungeKutta2();
 
     cout << "Integration Direction: " << tracer->GetIntegrationDirection() << endl;
     cout << "Initial Integration Step: " << tracer->GetInitialIntegrationStep() << endl;
@@ -312,14 +307,9 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, v
     cout << "Maximum Error: " << tracer->GetMaximumError() << endl;
     cout << "IntegratorType: " << tracer->GetIntegratorType() << endl;
 
-    
     tracer->Update();
-
 	
-	vtkPolyData* streamLines = tracer->GetOutput();
-//	streamLines->Print(cout);
-	
-//	vio.writeFile("streamlines.vtp", streamLines);
+    vtkPolyData* streamLines = tracer->GetOutput();
 	
 	return performStreamTracerPostProcessing(streamLines, inputSeedPoints, destSurf);
 }
@@ -375,32 +365,24 @@ void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
-void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, string outputWarpedMeshName, vtkPolyData* srcmesh /*= NULL*/) {
-	vtkIO vio;
-	
-	if (srcmesh == NULL) {
-		srcmesh = vio.readFile(inputMeshName);
-	}
-	
+void SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet *streamMesh) {
 	vtkNew<vtkPolyData> warpedMesh;
-	warpedMesh->DeepCopy(srcmesh);
+    warpedMesh->DeepCopy(srcMesh);
 	
-	srcmesh->ComputeBounds();
+    srcMesh->ComputeBounds();
 	
 	double center[3];
-	srcmesh->GetCenter(center);
-	
-	vtkDataSet* strmesh = vio.readDataFile(inputStreamName);
+    srcMesh->GetCenter(center);
 	
 	vtkNew<vtkDoubleArray> pointArr;
 	pointArr->SetName("SourcePoints");
 	pointArr->SetNumberOfComponents(3);
-	pointArr->SetNumberOfTuples(srcmesh->GetNumberOfPoints());
+    pointArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
 	
 	vtkNew<vtkDoubleArray> sphrCoord;
 	sphrCoord->SetName("SphericalCoordinates");
 	sphrCoord->SetNumberOfComponents(3);
-	sphrCoord->SetNumberOfTuples(srcmesh->GetNumberOfPoints());
+    sphrCoord->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
 	
 	vtkNew<vtkSphericalTransform> sphTxf;
 	sphTxf->Inverse();
@@ -409,29 +391,29 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, st
 	vtkNew<vtkDoubleArray> destPointArr;
 	destPointArr->SetName("DestinationPoints");
 	destPointArr->SetNumberOfComponents(3);
-	destPointArr->SetNumberOfTuples(srcmesh->GetNumberOfPoints());
+    destPointArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
 	
 	vtkNew<vtkDoubleArray> sphereRadiusArr;
 	sphereRadiusArr->SetName("SphereRadius");
 	sphereRadiusArr->SetNumberOfComponents(1);
-	sphereRadiusArr->SetNumberOfTuples(srcmesh->GetNumberOfPoints());
+    sphereRadiusArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
 	
 	vtkNew<vtkPoints> warpedPoints;
-	warpedPoints->DeepCopy(srcmesh->GetPoints());
+    warpedPoints->DeepCopy(srcMesh->GetPoints());
 	
 	vtkNew<vtkPointLocator> ploc;
-	ploc->SetDataSet(srcmesh);
+    ploc->SetDataSet(srcMesh);
 	ploc->SetTolerance(0);
 	ploc->BuildLocator();
 	
 	
 	
-	const size_t nCells = strmesh->GetNumberOfCells();
-	vtkDataArray* seedIds = strmesh->GetCellData()->GetArray("PointIds");
+    const size_t nCells = streamMesh->GetNumberOfCells();
+    vtkDataArray* seedIds = streamMesh->GetCellData()->GetArray("PointIds");
 	
 	
 	for (size_t j = 0; j < nCells; j++) {
-		vtkCell* cell = strmesh->GetCell(j);
+        vtkCell* cell = streamMesh->GetCell(j);
 		const size_t nPts = cell->GetNumberOfPoints();
 		if (nPts < 2) {
 			continue;
@@ -440,8 +422,8 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, st
 		vtkIdType e = cell->GetPointId(nPts-1);
 		
         double qs[3], qe[3],/* pj[3], spj[3],*/ npj[3];
-		strmesh->GetPoint(s, qs);
-		strmesh->GetPoint(e, qe);
+        streamMesh->GetPoint(s, qs);
+        streamMesh->GetPoint(e, qe);
 		
 		vtkIdType seedId = (vtkIdType) seedIds->GetTuple1(j);
 		warpedPoints->SetPoint(seedId, qe);
@@ -466,7 +448,7 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, st
 
 	}
 	
-    srcmesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
+    srcMesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
 	
 	warpedMesh->SetPoints(warpedPoints.GetPointer());
     interpolateBrokenPoints(warpedMesh.GetPointer(), warpedPoints.GetPointer(), seedIds);
@@ -474,8 +456,11 @@ void SurfaceCorrespondance::runPrintTraceCorrespondence(string inputMeshName, st
 	//	warpedMesh->Print(cout);
 //	warpedMesh->GetPointData()->SetVectors(pointArr.GetPointer());
 //	warpedMesh->GetPointData()->AddArray(sphrCoord.GetPointer());
-	vio.writeFile(outputWarpedMeshName, warpedMesh.GetPointer());
-	
+    if (m_writeWarpedMeshFile)
+    {
+        vio.writeFile(outputWarpedMeshName, warpedMesh.GetPointer());
+    }
+
 //	if (args.size() > 3) {
 //		srcmesh->GetPointData()->SetVectors(destPointArr.GetPointer());
 //		srcmesh->GetPointData()->AddArray(sphrCoord.GetPointer());
@@ -522,8 +507,12 @@ void SurfaceCorrespondance::run(){
     }
 
     vtkPolyData* streams = performStreamTracer(laplaceField, isurf, osurf);
-    vio.writeFile(outputStream, streams);
-    runPrintTraceCorrespondence(m_inputObj1, outputStream, outputMesh, isurf);
+    if (m_writeStreamFile)
+    {
+        vio.writeFile(outputStream, streams);
+    }
+
+    runPrintTraceCorrespondence(isurf,streams);
 
 
     vio.writeFile(outputObj, isurf);

@@ -30,7 +30,7 @@ private:
     vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
-    void runPrintTraceCorrespondence(string inputMeshName, string inputStreamName, string outputWarpedMeshName, vtkPolyData* srcmesh = NULL);
+    void runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
 
     string m_inputObj1; //white matter surface
     string m_inputObj2; //grey matter surface
@@ -39,6 +39,8 @@ private:
 
     bool m_writeGridFile;
     bool m_writeLaplaceFieldFile;
+    bool m_writeStreamFile;
+    bool m_writeWarpedMeshFile;
 
 public:
     void run();
