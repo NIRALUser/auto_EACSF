@@ -16,13 +16,16 @@ public:
 
 private:
     vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut);
-    void runFillGrid(StringVector& args, int dims);
-    // create a structured grid with the size of input
-    // convert the grid to polydata
-    // create the intersection between the grid and the polydata
+
+    /*** create a structured grid with the size of input
+     * convert the grid to polydata
+     * create the intersection between the grid and the polydata
+     * outputs the resulting grid */
+    vtkDataSet *runFillGrid(StringVector& args, int dims, bool writeGridFile);
 
 
-    void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters, const double dt, vtkPolyData* surfaceData = NULL);
+
+    void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters);
     bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length);
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
     vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);

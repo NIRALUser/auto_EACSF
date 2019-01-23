@@ -68,7 +68,7 @@ vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* i
 	return goim;
 }
 
-void SurfaceCorrespondance::runFillGrid(StringVector& args, int dims) {
+vtkDataSet* SurfaceCorrespondance::runFillGrid(StringVector& args, int dims, bool writeGridFile) {
 	string outputFile = args[2];
 	
 	vtkIO vio;    
@@ -77,25 +77,30 @@ void SurfaceCorrespondance::runFillGrid(StringVector& args, int dims) {
 	
 	size_t insideCountOut = 0;
 	vtkDataSet* grid = createGrid(osurf, isurf, dims, insideCountOut);
-	vio.writeFile(outputFile, grid);
+
+    if (writeGridFile)
+    {
+        vio.writeFile(outputFile, grid);
+    }
 	
 	cout << "Inside Voxels: " << insideCountOut << endl;
-	
+
+    return grid;
 }
 
-void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters, const double dt, vtkPolyData* surfaceData /*= NULL*/) {
+void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters) {
 // Compute Laplace PDE based on the adjacency list and border
 	if (data == NULL) {
 		cout << "Data input is NULL" << endl;
 		return;
 	}
 
-	LaplaceGrid grid(low, high, dt, data, surfaceData);
+    LaplaceGrid grid(low, high, data);
 	
 	clock_t t1 = clock();
 	
 	// main iteration loop
-    for (/*size_t*/int i = 1; i <= nIters; i++) {
+    for (int i = 1; i <= nIters; i++) {
 		if (i%500 == 0) {
 			cout << "iteration: " << i << "\t";
 			clock_t t2 = clock();
@@ -107,11 +112,9 @@ void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low
 	clock_t t2 = clock();
 	cout << (double) (t2-t1) / CLOCKS_PER_SEC * 1000 << " ms;" << endl;
 	
-	
 	// return the solution
     data->GetPointData()->AddArray(grid.solution());
-	grid.computeNormals(data);
-//	grid.computeExteriorNormals(surfaceData);
+    grid.computeNormals();
 }
 
 bool SurfaceCorrespondance::performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
@@ -521,17 +524,12 @@ void SurfaceCorrespondance::run(){
     fillGridArgs.push_back(m_inputObj1);
     fillGridArgs.push_back(outputGrid);
 
-    runFillGrid(fillGridArgs,m_dims);
-
+    vtkDataSet* laplaceField = runFillGrid(fillGridArgs, m_dims, false);
 
     // compute laplace map
-    vtkDataSet* laplaceField = NULL;
-    laplaceField = vio.readDataFile(outputGrid);
-
-    const double dt = 0.125;
     //const int numIter = 10000;
     const int numIter = 1000;
-    computeLaplacePDE(laplaceField, 0, 10000, numIter, dt);
+    computeLaplacePDE(laplaceField, 0, 10000, numIter);
     vio.writeFile(outputField, laplaceField);
 
     vtkPolyData* inputData = vio.readFile(m_inputObj1);

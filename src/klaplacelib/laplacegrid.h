@@ -12,36 +12,34 @@ using namespace std;
 
 class LaplaceGrid{
 public:
-    LaplaceGrid(double low, double high, double dt, vtkDataSet* dataSet, vtkPolyData* boundarySurface= NULL);
+    /*** Sets the bounds of the temperature map (low, high) and the grid
+     * Also, extract the neighborlist for each point of the data set */
+    LaplaceGrid(double low, double high, vtkDataSet* dataSet);
 
+    /*** For each point in the data set, sets its value to the average of the values its neighbors */
     void computeStep();
 
-    void computeNormals(vtkDataSet* data);
-
-    void computeExteriorNormals(vtkPolyData* boundarySurface, const double radius = .1);
+    /*** Compute the normals of the gradient of the solution */
+    void computeNormals();
 
     vtkDoubleArray* solution();
 
 private:
+    /*** initialize the solution by setting the inner region to low, the outter region to high and the in between solution domain to 0 */
     void initializeSolution();
 
     double m_low;
     double m_high;
-    double m_dt;
     vtkDataSet* m_dataSet;
-    vtkPolyData* m_samplePoints;
 
     vector<vtkIdType> m_solutionDomain;
     vtkIntArray* m_boundaryCond;
-    vtkPolyData* m_boundarySurface;
 
     vtkDoubleArray* m_solution;
     vtkDoubleArray* m_tmpSolution;
     vtkDataArray* m_laplaceGradient;
     vtkDoubleArray* m_laplaceGradientNormals;
 
-
-    Geometry m_geom;
     Geometry::NeighborList m_nbrs;
 };
 
