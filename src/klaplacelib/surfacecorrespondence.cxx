@@ -68,26 +68,6 @@ vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* i
 	return goim;
 }
 
-vtkDataSet* SurfaceCorrespondance::runFillGrid(StringVector& args, int dims, bool writeGridFile) {
-	string outputFile = args[2];
-	
-	vtkIO vio;    
-	vtkPolyData* osurf = vio.readFile(args[0]);
-	vtkPolyData* isurf = vio.readFile(args[1]);    
-	
-	size_t insideCountOut = 0;
-	vtkDataSet* grid = createGrid(osurf, isurf, dims, insideCountOut);
-
-    if (writeGridFile)
-    {
-        vio.writeFile(outputFile, grid);
-    }
-	
-	cout << "Inside Voxels: " << insideCountOut << endl;
-
-    return grid;
-}
-
 void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters) {
 // Compute Laplace PDE based on the adjacency list and border
 	if (data == NULL) {
@@ -517,37 +497,34 @@ void SurfaceCorrespondance::run(){
     cout << "Output streamlines: " << outputStream << endl;
     cout << "Output warped mesh: " << outputMesh << endl;
 
+    vtkPolyData* isurf = vio.readFile(m_inputObj1);
+    vtkPolyData* osurf = vio.readFile(m_inputObj2);
 
     // create uniform grid for a FDM model
-    StringVector fillGridArgs;
-    fillGridArgs.push_back(m_inputObj2);
-    fillGridArgs.push_back(m_inputObj1);
-    fillGridArgs.push_back(outputGrid);
+    size_t insideCountOut = 0;
+    vtkDataSet* laplaceField = createGrid(osurf, isurf, m_dims, insideCountOut);
+    cout << "Inside Voxels: " << insideCountOut << endl;
 
-    vtkDataSet* laplaceField = runFillGrid(fillGridArgs, m_dims, false);
+    if (m_writeGridFile)
+    {
+        vio.writeFile(outputGrid, laplaceField);
+    }
+
 
     // compute laplace map
     //const int numIter = 10000;
     const int numIter = 1000;
     computeLaplacePDE(laplaceField, 0, 10000, numIter);
-    vio.writeFile(outputField, laplaceField);
 
-    vtkPolyData* inputData = vio.readFile(m_inputObj1);
-    vtkPolyData* inputData2 = vio.readFile(m_inputObj2);
-
-    if (inputData == NULL) {
-        cout << m_inputObj1 << " is null" << endl;
-        return;
-    }
-    if (inputData2 == NULL) {
-        cout << m_inputObj2 << " is null" << endl;
-        return;
+    if (m_writeLaplaceFieldFile)
+    {
+        vio.writeFile(outputField, laplaceField);
     }
 
-    vtkPolyData* streams = performStreamTracer(laplaceField, inputData, inputData2);
+    vtkPolyData* streams = performStreamTracer(laplaceField, isurf, osurf);
     vio.writeFile(outputStream, streams);
-    runPrintTraceCorrespondence(m_inputObj1, outputStream, outputMesh, inputData);
+    runPrintTraceCorrespondence(m_inputObj1, outputStream, outputMesh, isurf);
 
 
-    vio.writeFile(outputObj, inputData);
+    vio.writeFile(outputObj, isurf);
 }

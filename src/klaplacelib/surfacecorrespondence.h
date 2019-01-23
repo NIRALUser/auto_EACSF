@@ -21,7 +21,6 @@ private:
      * convert the grid to polydata
      * create the intersection between the grid and the polydata
      * outputs the resulting grid */
-    vtkDataSet *runFillGrid(StringVector& args, int dims, bool writeGridFile);
 
 
 
@@ -37,6 +36,9 @@ private:
     string m_inputObj2; //grey matter surface
     string m_prefix;
     int m_dims; //number of subdivision of the grid in each dimensions
+
+    bool m_writeGridFile;
+    bool m_writeLaplaceFieldFile;
 
 public:
     void run();
