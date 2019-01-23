@@ -18,21 +18,23 @@ public:
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
 
 private:
-    vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut);
-
     /*** create a structured grid with the size of input
      * convert the grid to polydata
      * create the intersection between the grid and the polydata
      * outputs the resulting grid */
+    vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut);
 
-
-
+    /*** computes the Laplace field from the previous grid */
     void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters);
     bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length);
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
+
+    /*** computes the stream lines */
     vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
+
+    /*** computes the correspondence between surfaces from stream lines */
     vtkPolyData* runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
 
     string m_inputObj1; //white matter surface
