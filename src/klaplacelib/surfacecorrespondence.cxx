@@ -42,8 +42,8 @@ using namespace std;
 SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, int dims /* = 300*/):
     m_dims(dims)
 {
-    m_isurf = m_vio.readFile(inputObj1);
-    m_osurf = m_vio.readFile(inputObj2);
+    m_whiteMatterSurface = m_vio.readFile(inputObj1);
+    m_whiteMatterSurface = m_vio.readFile(inputObj2);
 }
 
 void SurfaceCorrespondance::setPrefix(string prefix){
@@ -68,23 +68,23 @@ vtkPolyData* SurfaceCorrespondance::streams(){
     return m_streams;
 }
 
-vtkPolyData* SurfaceCorrespondance::isurf(){
-    return m_isurf;
+vtkPolyData* SurfaceCorrespondance::whiteMatterSurface(){
+    return m_whiteMatterSurface;
 }
 
 void SurfaceCorrespondance::createGrid() {
-    GridCreate gc(m_osurf->GetBounds(), m_dims);
+    GridCreate gc(m_whiteMatterSurface->GetBounds(), m_dims);
 
     // Creating the binary grids of the WM and the WM+GM structures
-    vtkStructuredGrid* goim = gc.createStencil(m_osurf);
-    vtkStructuredGrid* woim = gc.createStencil(m_isurf);
+    vtkStructuredGrid* goim = gc.createStencil(m_whiteMatterSurface);
+    vtkStructuredGrid* woim = gc.createStencil(m_whiteMatterSurface);
 	
 	BoundaryCheck bc;
     size_t insideCountOut = 0;
     insideCountOut = bc.subtract(goim, woim); // subtraction of both structures to botain a three region map
     cout << "Inside Voxels: " << insideCountOut << endl;
 
-    bc.checkSurface(goim, m_isurf, m_osurf); // boundary errors correction
+    bc.checkSurface(goim, m_whiteMatterSurface, m_whiteMatterSurface); // boundary errors correction
 	woim->Delete();
 	
     m_laplaceField = goim;
@@ -276,12 +276,12 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyDat
 }
 
 void SurfaceCorrespondance::performStreamTracer() {
-    if (m_laplaceField == NULL || m_isurf == NULL) {
+    if (m_laplaceField == NULL || m_whiteMatterSurface == NULL) {
         cout << "input vector field or seed points is null!" << endl;
         return;
     }
     
-    if (m_osurf == NULL) {
+    if (m_whiteMatterSurface == NULL) {
         cout << "trace destination surface is null" << endl;
         return;
     }
@@ -290,14 +290,14 @@ void SurfaceCorrespondance::performStreamTracer() {
     m_laplaceField->GetPointData()->SetActiveVectors("LaplacianGradientNorm");
 	
 	/// - Converting the input points to the image coordinate
-    vtkPoints* points = m_isurf->GetPoints();
+    vtkPoints* points = m_whiteMatterSurface->GetPoints();
 	cout << "# of seed points: " << points->GetNumberOfPoints() << endl;
 	
 	/// StreamTracer should have a point-wise gradient field
 	/// - Set up tracer (Use RK45, both direction, initial step 0.05, maximum propagation 500
 	vtkStreamTracer* tracer = vtkStreamTracer::New();
     tracer->SetInputData(m_laplaceField);
-    tracer->SetSourceData(m_isurf);
+    tracer->SetSourceData(m_whiteMatterSurface);
 	tracer->SetComputeVorticity(false);
 
 	tracer->SetIntegrationDirectionToForward();
@@ -319,7 +319,7 @@ void SurfaceCorrespondance::performStreamTracer() {
 	
     vtkPolyData* streamLines = tracer->GetOutput();
 	
-    m_streams = performStreamTracerPostProcessing(streamLines, m_isurf, m_osurf);
+    m_streams = performStreamTracerPostProcessing(streamLines, m_whiteMatterSurface, m_whiteMatterSurface);
 }
 
 void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){

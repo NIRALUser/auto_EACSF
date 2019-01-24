@@ -21,7 +21,7 @@ public:
     void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
 
     vtkPolyData* streams();
-    vtkPolyData* isurf();
+    vtkPolyData* whiteMatterSurface();
 
 private:
     /*** create a structured grid with the size of input
@@ -45,8 +45,8 @@ private:
     string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
 
-    vtkPolyData* m_isurf; //WM
-    vtkPolyData* m_osurf; //GM
+    vtkPolyData* m_whiteMatterSurface;
+    vtkPolyData* m_greyMatterHull;
 
     vtkDataSet* m_laplaceField;
 
