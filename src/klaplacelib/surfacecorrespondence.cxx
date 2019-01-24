@@ -6,7 +6,6 @@
 using namespace std;
 
 #include "surfacecorrespondence.h"
-#include "vtkio.h"
 #include "gridcreate.h"
 #include "boundarycheck.h"
 #include "laplacegrid.h"
@@ -41,15 +40,10 @@ using namespace std;
 #include <vtkMetaImageWriter.h>
 
 SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, int dims /* = 300*/):
-    m_inputObj1(inputObj1),
-    m_inputObj2(inputObj2),
     m_dims(dims)
 {
-    /*
-    if (m_inputObj1 == "" || m_inputObj2 == "") {
-        cout << "-surfaceCorrespondence option needs two inputs" << endl;
-    }
-    */
+    m_isurf = m_vio.readFile(inputObj1);
+    m_osurf = m_vio.readFile(inputObj2);
 }
 
 void SurfaceCorrespondance::setPrefix(string prefix){
@@ -451,8 +445,6 @@ vtkPolyData* SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* src
 }
 
 void SurfaceCorrespondance::run(){
-    vtkIO vio;
-
     string outputGrid = m_prefix + "_grid.vts";
     string outputField = m_prefix + "_field.vts";
     string outputStream = m_prefix + "_stream.vtp";
@@ -464,17 +456,14 @@ void SurfaceCorrespondance::run(){
     cout << "Output streamlines: " << outputStream << endl;
     cout << "Output warped mesh: " << outputMesh << endl;
 
-    vtkPolyData* isurf = vio.readFile(m_inputObj1);
-    vtkPolyData* osurf = vio.readFile(m_inputObj2);
-
     // create uniform grid for a FDM model
     size_t insideCountOut = 0;
-    vtkDataSet* laplaceField = createGrid(osurf, isurf, m_dims, insideCountOut);
+    vtkDataSet* laplaceField = createGrid(m_osurf, m_isurf, m_dims, insideCountOut);
     cout << "Inside Voxels: " << insideCountOut << endl;
 
     if (m_writeGridFile)
     {
-        vio.writeFile(outputGrid, laplaceField);
+        m_vio.writeFile(outputGrid, laplaceField);
     }
 
 
@@ -485,22 +474,22 @@ void SurfaceCorrespondance::run(){
 
     if (m_writeLaplaceFieldFile)
     {
-        vio.writeFile(outputField, laplaceField);
+        m_vio.writeFile(outputField, laplaceField);
     }
 
-    vtkPolyData* streams = performStreamTracer(laplaceField, isurf, osurf);
+    vtkPolyData* streams = performStreamTracer(laplaceField, m_isurf, m_osurf);
     if (m_writeStreamFile)
     {
-        vio.writeFile(outputStream, streams);
+        m_vio.writeFile(outputStream, streams);
     }
 
-    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(isurf,streams);
+    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(m_isurf,streams);
     if (m_writeWarpedMeshFile)
     {
-        vio.writeFile(outputMesh, warpedMesh);
+        m_vio.writeFile(outputMesh, warpedMesh);
     }
     if (m_writeObjFile)
     {
-        vio.writeFile(outputObj, isurf);
+        m_vio.writeFile(outputObj, m_isurf);
     }
 }

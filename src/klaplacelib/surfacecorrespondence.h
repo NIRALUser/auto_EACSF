@@ -6,6 +6,8 @@
 #include <vtkModifiedBSPTree.h>
 #include <vtkPolyData.h>
 
+#include "vtkio.h"
+
 using namespace std;
 
 class SurfaceCorrespondance{
@@ -37,10 +39,15 @@ private:
     /*** computes the correspondence between surfaces from stream lines */
     vtkPolyData* runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
 
-    string m_inputObj1; //white matter surface
-    string m_inputObj2; //grey matter surface
+    vtkIO m_vio;
+
     string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
+
+    vtkPolyData* m_isurf;
+    vtkPolyData* m_osurf;
+
+    vtkDataSet* m_laplaceField;
 
     bool m_writeGridFile = false;
     bool m_writeLaplaceFieldFile = false;
