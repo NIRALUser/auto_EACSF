@@ -359,86 +359,11 @@ void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
-vtkPolyData* SurfaceCorrespondance::runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet *streamMesh) {
-	vtkNew<vtkPolyData> warpedMesh;
-    warpedMesh->DeepCopy(srcMesh);
-	
-    srcMesh->ComputeBounds();
-	
-	double center[3];
-    srcMesh->GetCenter(center);
-	
-	vtkNew<vtkDoubleArray> pointArr;
-	pointArr->SetName("SourcePoints");
-	pointArr->SetNumberOfComponents(3);
-    pointArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
-	
-	vtkNew<vtkDoubleArray> sphrCoord;
-	sphrCoord->SetName("SphericalCoordinates");
-	sphrCoord->SetNumberOfComponents(3);
-    sphrCoord->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
-	
-	vtkNew<vtkSphericalTransform> sphTxf;
-	sphTxf->Inverse();
-	
-	vtkNew<vtkDoubleArray> destPointArr;
-	destPointArr->SetName("DestinationPoints");
-	destPointArr->SetNumberOfComponents(3);
-    destPointArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
-	
-	vtkNew<vtkDoubleArray> sphereRadiusArr;
-	sphereRadiusArr->SetName("SphereRadius");
-	sphereRadiusArr->SetNumberOfComponents(1);
-    sphereRadiusArr->SetNumberOfTuples(srcMesh->GetNumberOfPoints());
-	
-	vtkNew<vtkPoints> warpedPoints;
-    warpedPoints->DeepCopy(srcMesh->GetPoints());
-	
-	vtkNew<vtkPointLocator> ploc;
-    ploc->SetDataSet(srcMesh);
-	ploc->SetTolerance(0);
-	ploc->BuildLocator();
-	
-    const size_t nCells = streamMesh->GetNumberOfCells();
-    vtkDataArray* seedIds = streamMesh->GetCellData()->GetArray("PointIds");
-	
-	
-	for (size_t j = 0; j < nCells; j++) {
-        vtkCell* cell = streamMesh->GetCell(j);
-		const size_t nPts = cell->GetNumberOfPoints();
-		if (nPts < 2) {
-			continue;
-		}
-		vtkIdType s = cell->GetPointId(0);
-		vtkIdType e = cell->GetPointId(nPts-1);
-		
-        double qs[3], qe[3],/* pj[3], spj[3],*/ npj[3];
-        streamMesh->GetPoint(s, qs);
-        streamMesh->GetPoint(e, qe);
-		
-		vtkIdType seedId = (vtkIdType) seedIds->GetTuple1(j);
-		warpedPoints->SetPoint(seedId, qe);
-		
-		vtkMath::Subtract(qe, center, npj);
-		double warpedPointNorm = vtkMath::Norm(npj);
-		
-        sphereRadiusArr->SetValue(j, warpedPointNorm);
-	}
-	
-    srcMesh->GetPointData()->AddArray(sphereRadiusArr.GetPointer());
-	
-	warpedMesh->SetPoints(warpedPoints.GetPointer());
-    interpolateBrokenPoints(warpedMesh.GetPointer(), warpedPoints.GetPointer(), seedIds);
-
-    return warpedMesh.GetPointer();
-}
-
 void SurfaceCorrespondance::run(){
     string outputGrid = m_prefix + "_grid.vts";
     string outputField = m_prefix + "_field.vts";
     string outputStream = m_prefix + "_stream.vtp";
     string outputMesh = m_prefix + "_warpedMesh.vtp";
-    string outputObj = m_prefix + "_object.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
@@ -467,15 +392,5 @@ void SurfaceCorrespondance::run(){
     if (m_writeStreamFile)
     {
         m_vio.writeFile(outputStream, m_streams);
-    }
-
-    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(m_isurf,m_streams);
-    if (m_writeWarpedMeshFile)
-    {
-        m_vio.writeFile(outputMesh, warpedMesh);
-    }
-    if (m_writeObjFile)
-    {
-        m_vio.writeFile(outputObj, m_isurf);
     }
 }

@@ -36,9 +36,6 @@ private:
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
 
-    /*** computes the correspondence between surfaces from stream lines */
-    vtkPolyData* runPrintTraceCorrespondence(vtkPolyData* srcMesh, vtkDataSet* streamMesh);
-
     vtkIO m_vio;
 
     string m_prefix = "surface_correspondence";
