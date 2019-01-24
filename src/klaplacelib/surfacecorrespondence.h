@@ -24,7 +24,7 @@ private:
      * convert the grid to polydata
      * create the intersection between the grid and the polydata
      * outputs the resulting grid */
-    void createGrid(size_t& insideCountOut);
+    void createGrid();
 
     /*** computes the Laplace field from the previous grid */
     void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters);
@@ -32,7 +32,7 @@ private:
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
 
     /*** computes the stream lines */
-    vtkPolyData* performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate = false);
+    vtkPolyData* performStreamTracer();
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
 

@@ -58,7 +58,7 @@ void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplac
     m_writeObjFile = writeObjFile;
 }
 
-void SurfaceCorrespondance::createGrid(size_t& insideCountOut) {
+void SurfaceCorrespondance::createGrid() {
     GridCreate gc(m_osurf->GetBounds(), m_dims);
 
     // Creating the binary grids of the WM and the WM+GM structures
@@ -66,7 +66,10 @@ void SurfaceCorrespondance::createGrid(size_t& insideCountOut) {
     vtkStructuredGrid* woim = gc.createStencil(m_isurf);
 	
 	BoundaryCheck bc;
+    size_t insideCountOut = 0;
     insideCountOut = bc.subtract(goim, woim); // subtraction of both structures to botain a three region map
+    cout << "Inside Voxels: " << insideCountOut << endl;
+
     bc.checkSurface(goim, m_isurf, m_osurf); // boundary errors correction
 	woim->Delete();
 	
@@ -258,43 +261,29 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyDat
 	}
 }
 
-vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, vtkPolyData* inputSeedPoints, vtkPolyData* destSurf, bool zRotate /*= false*/) {
-    if (inputData == NULL || inputSeedPoints == NULL) {
+vtkPolyData* SurfaceCorrespondance::performStreamTracer() {
+    if (m_laplaceField == NULL || m_isurf == NULL) {
         cout << "input vector field or seed points is null!" << endl;
         return NULL;
     }
     
-    if (destSurf == NULL) {
+    if (m_osurf == NULL) {
         cout << "trace destination surface is null" << endl;
         return NULL;
     }
     
 	// set active velocity field
-	inputData->GetPointData()->SetActiveVectors("LaplacianGradientNorm");
+    m_laplaceField->GetPointData()->SetActiveVectors("LaplacianGradientNorm");
 	
 	/// - Converting the input points to the image coordinate
-	vtkPoints* points = inputSeedPoints->GetPoints();
+    vtkPoints* points = m_isurf->GetPoints();
 	cout << "# of seed points: " << points->GetNumberOfPoints() << endl;
-	const int nInputPoints = inputSeedPoints->GetNumberOfPoints();
-	if (zRotate) {
-		for (int i = 0; i < nInputPoints; i++) {
-			double p[3];
-			points->GetPoint(i, p);
-            // FixMe: Do not use a specific scaling factor
-            p[0] = -p[0];
-            p[1] = -p[1];
-            p[2] = p[2];
-			points->SetPoint(i, p);
-		}
-		inputSeedPoints->SetPoints(points);
-	}
-	
 	
 	/// StreamTracer should have a point-wise gradient field
 	/// - Set up tracer (Use RK45, both direction, initial step 0.05, maximum propagation 500
 	vtkStreamTracer* tracer = vtkStreamTracer::New();
-	tracer->SetInputData(inputData);
-	tracer->SetSourceData(inputSeedPoints);
+    tracer->SetInputData(m_laplaceField);
+    tracer->SetSourceData(m_isurf);
 	tracer->SetComputeVorticity(false);
 
 	tracer->SetIntegrationDirectionToForward();
@@ -316,7 +305,7 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer(vtkDataSet* inputData, v
 	
     vtkPolyData* streamLines = tracer->GetOutput();
 	
-	return performStreamTracerPostProcessing(streamLines, inputSeedPoints, destSurf);
+    return performStreamTracerPostProcessing(streamLines, m_isurf, m_osurf);
 }
 
 void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
@@ -457,15 +446,12 @@ void SurfaceCorrespondance::run(){
     cout << "Output warped mesh: " << outputMesh << endl;
 
     // create uniform grid for a FDM model
-    size_t insideCountOut = 0;
-    createGrid(insideCountOut);
-    cout << "Inside Voxels: " << insideCountOut << endl;
+    createGrid();
 
     if (m_writeGridFile)
     {
         m_vio.writeFile(outputGrid, m_laplaceField);
     }
-
 
     // compute laplace map
     //const int numIter = 10000;
@@ -477,7 +463,7 @@ void SurfaceCorrespondance::run(){
         m_vio.writeFile(outputField, m_laplaceField);
     }
 
-    vtkPolyData* streams = performStreamTracer(m_laplaceField, m_isurf, m_osurf);
+    vtkPolyData* streams = performStreamTracer();
     if (m_writeStreamFile)
     {
         m_vio.writeFile(outputStream, streams);
