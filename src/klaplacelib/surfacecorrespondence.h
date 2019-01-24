@@ -24,7 +24,7 @@ private:
      * convert the grid to polydata
      * create the intersection between the grid and the polydata
      * outputs the resulting grid */
-    vtkDataSet* createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut);
+    void createGrid(size_t& insideCountOut);
 
     /*** computes the Laplace field from the previous grid */
     void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters);

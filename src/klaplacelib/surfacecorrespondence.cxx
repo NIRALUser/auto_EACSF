@@ -58,19 +58,19 @@ void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplac
     m_writeObjFile = writeObjFile;
 }
 
-vtkDataSet* SurfaceCorrespondance::createGrid(vtkPolyData* osurf, vtkPolyData* isurf, const int dims, size_t& insideCountOut) {
-	GridCreate gc(osurf->GetBounds(), dims);
+void SurfaceCorrespondance::createGrid(size_t& insideCountOut) {
+    GridCreate gc(m_osurf->GetBounds(), m_dims);
 
     // Creating the binary grids of the WM and the WM+GM structures
-    vtkStructuredGrid* goim = gc.createStencil(osurf);
-    vtkStructuredGrid* woim = gc.createStencil(isurf);
+    vtkStructuredGrid* goim = gc.createStencil(m_osurf);
+    vtkStructuredGrid* woim = gc.createStencil(m_isurf);
 	
 	BoundaryCheck bc;
     insideCountOut = bc.subtract(goim, woim); // subtraction of both structures to botain a three region map
-    bc.checkSurface(goim, isurf, osurf); // boundary errors correction
+    bc.checkSurface(goim, m_isurf, m_osurf); // boundary errors correction
 	woim->Delete();
 	
-	return goim;
+    m_laplaceField = goim;
 }
 
 void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters) {
@@ -458,26 +458,26 @@ void SurfaceCorrespondance::run(){
 
     // create uniform grid for a FDM model
     size_t insideCountOut = 0;
-    vtkDataSet* laplaceField = createGrid(m_osurf, m_isurf, m_dims, insideCountOut);
+    createGrid(insideCountOut);
     cout << "Inside Voxels: " << insideCountOut << endl;
 
     if (m_writeGridFile)
     {
-        m_vio.writeFile(outputGrid, laplaceField);
+        m_vio.writeFile(outputGrid, m_laplaceField);
     }
 
 
     // compute laplace map
     //const int numIter = 10000;
     const int numIter = 1000;
-    computeLaplacePDE(laplaceField, 0, 10000, numIter);
+    computeLaplacePDE(m_laplaceField, 0, 10000, numIter);
 
     if (m_writeLaplaceFieldFile)
     {
-        m_vio.writeFile(outputField, laplaceField);
+        m_vio.writeFile(outputField, m_laplaceField);
     }
 
-    vtkPolyData* streams = performStreamTracer(laplaceField, m_isurf, m_osurf);
+    vtkPolyData* streams = performStreamTracer(m_laplaceField, m_isurf, m_osurf);
     if (m_writeStreamFile)
     {
         m_vio.writeFile(outputStream, streams);
