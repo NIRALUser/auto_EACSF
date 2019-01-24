@@ -18,6 +18,7 @@ public:
 
     void setPrefix(string prefix);
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
+    void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
 
 private:
     /*** create a structured grid with the size of input
@@ -27,7 +28,7 @@ private:
     void createGrid();
 
     /*** computes the Laplace field from the previous grid */
-    void computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters);
+    void computeLaplacePDE();
     bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length);
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
 
@@ -45,6 +46,9 @@ private:
     vtkPolyData* m_osurf;
 
     vtkDataSet* m_laplaceField;
+
+    int m_PDElow = 0, m_PDEhigh = 10000, m_PDEiter = 10000;
+
     vtkPolyData* m_streams;
 
     bool m_writeGridFile = false;

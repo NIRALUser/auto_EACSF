@@ -58,6 +58,12 @@ void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplac
     m_writeObjFile = writeObjFile;
 }
 
+void SurfaceCorrespondance::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
+    m_PDElow = PDElow;
+    m_PDEhigh = PDEhigh;
+    m_PDEiter = PDEiter;
+}
+
 void SurfaceCorrespondance::createGrid() {
     GridCreate gc(m_osurf->GetBounds(), m_dims);
 
@@ -76,19 +82,19 @@ void SurfaceCorrespondance::createGrid() {
     m_laplaceField = goim;
 }
 
-void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low, const double high, const int nIters) {
+void SurfaceCorrespondance::computeLaplacePDE() {
 // Compute Laplace PDE based on the adjacency list and border
-	if (data == NULL) {
+    if (m_laplaceField == NULL) {
 		cout << "Data input is NULL" << endl;
 		return;
 	}
 
-    LaplaceGrid grid(low, high, data);
+    LaplaceGrid grid(m_PDElow, m_PDEhigh, m_laplaceField);
 	
 	clock_t t1 = clock();
 	
 	// main iteration loop
-    for (int i = 1; i <= nIters; i++) {
+    for (int i = 1; i <= m_PDEiter; i++) {
 		if (i%500 == 0) {
 			cout << "iteration: " << i << "\t";
 			clock_t t2 = clock();
@@ -101,7 +107,7 @@ void SurfaceCorrespondance::computeLaplacePDE(vtkDataSet* data, const double low
 	cout << (double) (t2-t1) / CLOCKS_PER_SEC * 1000 << " ms;" << endl;
 	
 	// return the solution
-    data->GetPointData()->AddArray(grid.solution());
+    m_laplaceField->GetPointData()->AddArray(grid.solution());
     grid.computeNormals();
 }
 
@@ -379,9 +385,7 @@ void SurfaceCorrespondance::run(){
     }
 
     // compute laplace map
-    //const int numIter = 10000;
-    const int numIter = 1000;
-    computeLaplacePDE(m_laplaceField, 0, 10000, numIter);
+    computeLaplacePDE();
 
     if (m_writeLaplaceFieldFile)
     {
