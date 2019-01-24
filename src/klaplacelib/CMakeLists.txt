@@ -1,5 +1,6 @@
 list(APPEND klaplace_src
-    klaplace.cxx
+    computecsfdensity.cxx
+    computecsfdensity.h
     surfacecorrespondence.cxx
     surfacecorrespondence.h
     geometry.cxx
