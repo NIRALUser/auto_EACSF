@@ -32,7 +32,7 @@ private:
     vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
 
     /*** computes the stream lines */
-    vtkPolyData* performStreamTracer();
+    void performStreamTracer();
     void findNeighborPoints(vtkCell* cell, vtkIdType pid, set<vtkIdType>& nbrs);
     void interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds);
 
@@ -48,6 +48,7 @@ private:
     vtkPolyData* m_osurf;
 
     vtkDataSet* m_laplaceField;
+    vtkPolyData* m_streams;
 
     bool m_writeGridFile = false;
     bool m_writeLaplaceFieldFile = false;

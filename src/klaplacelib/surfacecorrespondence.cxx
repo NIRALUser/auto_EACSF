@@ -261,15 +261,15 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyDat
 	}
 }
 
-vtkPolyData* SurfaceCorrespondance::performStreamTracer() {
+void SurfaceCorrespondance::performStreamTracer() {
     if (m_laplaceField == NULL || m_isurf == NULL) {
         cout << "input vector field or seed points is null!" << endl;
-        return NULL;
+        return;
     }
     
     if (m_osurf == NULL) {
         cout << "trace destination surface is null" << endl;
-        return NULL;
+        return;
     }
     
 	// set active velocity field
@@ -305,7 +305,7 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracer() {
 	
     vtkPolyData* streamLines = tracer->GetOutput();
 	
-    return performStreamTracerPostProcessing(streamLines, m_isurf, m_osurf);
+    m_streams = performStreamTracerPostProcessing(streamLines, m_isurf, m_osurf);
 }
 
 void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
@@ -463,13 +463,13 @@ void SurfaceCorrespondance::run(){
         m_vio.writeFile(outputField, m_laplaceField);
     }
 
-    vtkPolyData* streams = performStreamTracer();
+    performStreamTracer();
     if (m_writeStreamFile)
     {
-        m_vio.writeFile(outputStream, streams);
+        m_vio.writeFile(outputStream, m_streams);
     }
 
-    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(m_isurf,streams);
+    vtkPolyData* warpedMesh = runPrintTraceCorrespondence(m_isurf,m_streams);
     if (m_writeWarpedMeshFile)
     {
         m_vio.writeFile(outputMesh, warpedMesh);
