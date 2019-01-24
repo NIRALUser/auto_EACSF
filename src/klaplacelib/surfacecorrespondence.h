@@ -20,6 +20,9 @@ public:
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
     void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
 
+    vtkPolyData* streams();
+    vtkPolyData* isurf();
+
 private:
     /*** create a structured grid with the size of input
      * convert the grid to polydata
@@ -42,8 +45,8 @@ private:
     string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
 
-    vtkPolyData* m_isurf;
-    vtkPolyData* m_osurf;
+    vtkPolyData* m_isurf; //WM
+    vtkPolyData* m_osurf; //GM
 
     vtkDataSet* m_laplaceField;
 

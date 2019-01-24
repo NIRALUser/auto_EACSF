@@ -64,6 +64,14 @@ void SurfaceCorrespondance::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
     m_PDEiter = PDEiter;
 }
 
+vtkPolyData* SurfaceCorrespondance::streams(){
+    return m_streams;
+}
+
+vtkPolyData* SurfaceCorrespondance::isurf(){
+    return m_isurf;
+}
+
 void SurfaceCorrespondance::createGrid() {
     GridCreate gc(m_osurf->GetBounds(), m_dims);
 
