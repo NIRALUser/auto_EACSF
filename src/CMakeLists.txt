@@ -1,6 +1,6 @@
 add_subdirectory(app)
 
-option(COMPILE_KLAPLACE "Compile klaplace." ON)
-if(COMPILE_KLAPLACE)
-  add_subdirectory(klaplacelib)
+option(COMPILE_COMPUTECSFDENSITY "Compile computeCSFdensity tool." ON)
+if(COMPILE_COMPUTECSFDENSITY)
+  add_subdirectory(computeCSFdensitylib)
 endif()
