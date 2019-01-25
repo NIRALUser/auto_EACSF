@@ -1,4 +1,4 @@
-list(APPEND klaplace_src
+list(APPEND computeCSFdensity_src
     computecsfdensity.cxx
     computecsfdensity.h
     surfacecorrespondence.cxx
@@ -17,17 +17,20 @@ list(APPEND klaplace_src
     laplacegrid.h
 )
 
-#add_library(klaplacelib ${klaplace_src})
+#add_library(computeCSFdensitylib ${computeCSFdensity_src})
 
 find_package(Qt5 COMPONENTS Widgets OpenGL X11Extras REQUIRED)
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
-FIND_PACKAGE(VTK REQUIRED)
-INCLUDE(${VTK_USE_FILE})
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
 
-add_executable(klaplace ${klaplace_src})
+find_package(ITK REQUIRED)
+include(${ITK_USE_FILE})
 
-link_directories(${VTK_LIBRARY_DIRS})
+add_executable(computeCSFdensity ${computeCSFdensity_src})
 
-#target_link_libraries(klaplace klaplacelib ${VTK_LIBRAIRES} ${QT_LIBRARIES})
-target_link_libraries(klaplace ${VTK_LIBRARIES} ${QT_LIBRARIES})
+link_directories(${VTK_LIBRARY_DIRS} ${ITK_LIBRARIY_DIRS})
+
+#target_link_libraries(computeCSFdensity klaplacelib ${VTK_LIBRAIRES} ${QT_LIBRARIES})
+target_link_libraries(computeCSFdensity ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${QT_LIBRARIES})
