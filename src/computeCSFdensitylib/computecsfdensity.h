@@ -16,14 +16,17 @@ class ComputeCSFdensity
 {
 public:
     ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string prefix, string output_dir = "");
-    void surfacesTranslation(double xShift, double yShift, double zShift, bool writeOutputFiles);
+    void translateSurfaces(double xShift, double yShift, double zShift);
     void createOuterImage(int closingradius = 60, int dilationradius = 5, bool reverse = false);
+    void createOuterSurface(int nbIterSmoothing);
+    void flipOuterSurface(int xFlip, int yFlip, int zFlip);
+    void computeStreamlines();
 
 private:
     int setOuputLocation(string dirname);
     vector<string> splitExt(string filename);
     string relativePath(string path);
-    void translateSurface(vtkPolyData* surf, double xShift, double yShift, double zShift, string outputFileName = "");
+    void shiftSurface(vtkPolyData* surf, double xShift, double yShift, double zShift, string outputFileName = "");
 
     vtkIO m_vio;
 
@@ -32,15 +35,18 @@ private:
     string m_prefix;
     string m_output_dir;
 
-    vtkPolyData* m_whiteMatterSurface = nullptr;
-    vtkPolyData* m_greyMatterSurface = nullptr;
+    vtkSmartPointer<vtkPolyData> m_whiteMatterSurface;
+    vtkSmartPointer<vtkPolyData> m_greyMatterSurface;
 
     typedef itk::Image<unsigned char, 3> m_ImageType;
     m_ImageType::Pointer m_outerImage;
 
-    vtkPolyData* m_outerSurface;
+    vtkSmartPointer<vtkPolyData> m_outerSurface;
 
-    bool m_writeOuterImage = true;
+    bool m_writeTranslatedSurfaces = false;
+    bool m_writeOuterImage = false;
+    bool m_writeOuterSurface = false;
+    bool m_writeFlippedOuterSurface = true;
 };
 
 #endif // COMPUTECSFDENSITY_H

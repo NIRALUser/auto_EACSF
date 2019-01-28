@@ -1,18 +1,24 @@
 #include "computecsfdensity.h"
+#include "surfacecorrespondence.h"
 
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "vtkDecimatePro.h"
+#include "vtkMarchingCubes.h"
+#include "vtkSmoothPolyDataFilter.h"
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
+#include "vtkPolyDataWriter.h"
 
 #include "itkBinaryBallStructuringElement.h"
 #include "itkBinaryMorphologicalClosingImageFilter.h"
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkImageFileReader.h"
-#include "itkImageRegionIterator.h"
 #include "itkImageFileWriter.h"
+#include "itkImageRegionIterator.h"
+#include "itkImageToVTKImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 
 #include "surfacecorrespondence.h"
@@ -99,8 +105,8 @@ string ComputeCSFdensity::relativePath(string path){
     return relPath;
 }
 
-void ComputeCSFdensity::translateSurface(vtkPolyData *surf, double xShift, double yShift, double zShift, string outputFileName){
-    std::cout << "Input surface has " << surf->GetNumberOfPoints() << " points." << std::endl;
+void ComputeCSFdensity::shiftSurface(vtkPolyData *surf, double xShift, double yShift, double zShift, string outputFileName){
+    cout << "Input surface has " << surf->GetNumberOfPoints() << " points." << endl;
 
     // Set up the transform filter
     vtkSmartPointer<vtkTransform> translation = vtkSmartPointer<vtkTransform>::New();
@@ -112,22 +118,24 @@ void ComputeCSFdensity::translateSurface(vtkPolyData *surf, double xShift, doubl
     transformFilter->SetTransform(translation);
     transformFilter->Update();
 
+    surf = transformFilter->GetOutput();
+
     if (outputFileName != ""){
-        m_vio.writeFile(outputFileName,transformFilter->GetOutput());
+        m_vio.writeFile(outputFileName,surf);
     }
 }
 
-void ComputeCSFdensity::surfacesTranslation(double xShift, double yShift, double zShift, bool writeOutputFiles){
+void ComputeCSFdensity::translateSurfaces(double xShift, double yShift, double zShift){
     cout<<"Translating surfaces ..."<<endl;
-    if (!writeOutputFiles){
-        translateSurface(m_whiteMatterSurface, xShift, yShift, zShift);
-        translateSurface(m_greyMatterSurface, xShift, yShift, zShift);
+    if (!m_writeTranslatedSurfaces){
+        shiftSurface(m_whiteMatterSurface, xShift, yShift, zShift);
+        shiftSurface(m_greyMatterSurface, xShift, yShift, zShift);
     }
     else{
         vector<string> filename = splitExt(m_WM_relFilename);
-        translateSurface(m_whiteMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
+        shiftSurface(m_whiteMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
         filename = splitExt(m_GM_relFilename);
-        translateSurface(m_greyMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
+        shiftSurface(m_greyMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
     }
     cout<<"Translation done"<<endl;
 }
@@ -212,22 +220,106 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
         if (reverse){
             hemisphere = "_RH";
         }
+        string filename = m_output_dir + m_prefix + hemisphere + "_GM_Dilated.nrrd";
         typedef itk::ImageFileWriter< m_ImageType >  WriterType;
         WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName(m_output_dir + m_prefix + hemisphere + "_GM_Dilated.nrrd");
+        writer->SetFileName(filename);
         writer->SetInput( rescaleFilter->GetOutput() );
         writer->UseCompressionOn ();
         try
           {
           writer->Update();
+          cout << "Write " << filename << " done ..." << endl;
           }
         catch( itk::ExceptionObject & e )
           {
-          std::cerr << "Error: " << e << std::endl;
+          cerr << "Error: " << e << endl;
           }
     }
 
     cout<<"Outer image created"<<endl;
+}
+
+void ComputeCSFdensity::createOuterSurface(int nbIterSmoothing){
+    cout<<"Creating outer surface ..."<<endl;
+    typedef itk::ImageToVTKImageFilter<m_ImageType> itkVtkConverter;
+    itkVtkConverter::Pointer conv = itkVtkConverter::New();
+    conv->SetInput(m_outerImage);
+    conv->Update();
+
+    vtkSmartPointer<vtkMarchingCubes> outputsurface = vtkSmartPointer<vtkMarchingCubes>::New();
+    outputsurface->SetInputData(conv->GetOutput());
+    outputsurface->ComputeNormalsOn();
+    outputsurface->SetValue(0, 1);
+    outputsurface->Update();
+    cout << "Marching Cube finished...." << endl;
+
+    cout << "Before decimation" << endl << "------------" << endl;
+    cout << "There are " << outputsurface->GetOutput()->GetNumberOfPoints() << " points." << endl;
+    cout << "There are " << outputsurface->GetOutput()->GetNumberOfPolys() << " polygons." << endl;
+
+
+    vtkSmartPointer<vtkDecimatePro> decimate = vtkSmartPointer<vtkDecimatePro>::New();
+    decimate->SetInputData(outputsurface->GetOutput());
+    decimate->SetTargetReduction(.1); //10% reduction (if there was 100 triangles, now there will be 90)
+    decimate->Update();
+
+    cout << "After decimation" << endl << "------------" << endl;
+    cout << "There are " << decimate->GetOutput()->GetNumberOfPoints() << " points." << endl;
+    cout << "There are " << decimate->GetOutput()->GetNumberOfPolys() << " polygons." << endl;
+
+    vtkSmartPointer<vtkSmoothPolyDataFilter> smoothFilter = vtkSmartPointer<vtkSmoothPolyDataFilter>::New();
+    smoothFilter->SetInputConnection( decimate->GetOutputPort());
+    smoothFilter->SetNumberOfIterations(nbIterSmoothing);
+    smoothFilter->SetRelaxationFactor(0.5);
+    smoothFilter->FeatureEdgeSmoothingOff();
+    smoothFilter->BoundarySmoothingOn();
+    smoothFilter->Update();
+    cout << "VTK Smoothing mesh finished...." << endl;
+    m_outerSurface = smoothFilter->GetOutput();
+
+    // Get the Surface filename from the command line
+
+    if (m_writeOuterSurface){
+        string outputSurfaceFilename = m_output_dir + m_prefix + "_LH_GM_Outer_MC.vtk";
+        m_vio.writeFile(outputSurfaceFilename,m_outerSurface);
+//        vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
+//        writer->SetFileName(outputSurfaceFilename.c_str());
+//        writer->SetInputData(m_outerSurface);
+//        writer->SetFileTypeToASCII();
+//        writer->Write();
+    }
+
+    cout << "Input surface has " << m_outerSurface->GetNumberOfPoints() << " points." << endl;
+
+    cout<<"Outer image created"<<endl;
+}
+
+void ComputeCSFdensity::flipOuterSurface(int xFlip, int yFlip, int zFlip){
+    cout<<"Flipping outer surface ..."<<endl;
+    cout << "Input surface has " << m_outerSurface->GetNumberOfPoints() << " points." << endl;
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+    for(vtkIdType j = 0; j < m_outerSurface->GetNumberOfPoints(); j++){
+        double p[3];
+        m_outerSurface->GetPoint(j,p);
+        double P_M[3];
+        P_M[0] = xFlip*p[0];    // x coordinate
+        P_M[1] = yFlip*p[1];    // y coordinate
+        P_M[2] = zFlip*p[2];    // z coordinate
+        points->InsertNextPoint(P_M);
+    }
+
+    m_outerSurface->SetPoints(points);
+    if (m_writeFlippedOuterSurface){
+        string outputSurfaceFilename = m_output_dir + m_prefix + "_LH_GM_Outer_MC_flipped.vtk";
+        m_vio.writeFile(outputSurfaceFilename,m_outerSurface);
+    }
+    cout<<"Flipped outer surface created ..."<<endl;
+}
+
+void ComputeCSFdensity::computeStreamlines(){
+
 }
 
 int main(int argc, char* argv[]) {
@@ -243,8 +335,10 @@ int main(int argc, char* argv[]) {
     string outputDir = argv[5];
 
     ComputeCSFdensity CSFdensity(WMsurf, GMsurf, segfile, prefix, outputDir);
-    CSFdensity.surfacesTranslation(-194,-232,0,false);
+    CSFdensity.translateSurfaces(-194,-232,0);
     CSFdensity.createOuterImage(15,8);
+    CSFdensity.createOuterSurface(1);
+    CSFdensity.flipOuterSurface(-1,-1,1);
 
     //cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
 
