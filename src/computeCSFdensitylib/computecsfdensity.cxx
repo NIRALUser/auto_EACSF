@@ -216,11 +216,7 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
     rescaleFilter->Update();
 
     if (m_writeOuterImage){
-        string hemisphere = "_LH";
-        if (reverse){
-            hemisphere = "_RH";
-        }
-        string filename = m_output_dir + m_prefix + hemisphere + "_GM_Dilated.nrrd";
+        string filename = m_output_dir + m_prefix + "_GM_Dilated.nrrd";
         typedef itk::ImageFileWriter< m_ImageType >  WriterType;
         WriterType::Pointer writer = WriterType::New();
         writer->SetFileName(filename);
@@ -281,7 +277,7 @@ void ComputeCSFdensity::createOuterSurface(int nbIterSmoothing){
     // Get the Surface filename from the command line
 
     if (m_writeOuterSurface){
-        string outputSurfaceFilename = m_output_dir + m_prefix + "_LH_GM_Outer_MC.vtk";
+        string outputSurfaceFilename = m_output_dir + m_prefix + "_GM_Outer_MC.vtk";
         m_vio.writeFile(outputSurfaceFilename,m_outerSurface);
 //        vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
 //        writer->SetFileName(outputSurfaceFilename.c_str());
@@ -312,7 +308,7 @@ void ComputeCSFdensity::flipOuterSurface(int xFlip, int yFlip, int zFlip){
 
     m_outerSurface->SetPoints(points);
     if (m_writeFlippedOuterSurface){
-        string outputSurfaceFilename = m_output_dir + m_prefix + "_LH_GM_Outer_MC_flipped.vtk";
+        string outputSurfaceFilename = m_output_dir + m_prefix + "_GM_Outer_MC_flipped.vtk";
         m_vio.writeFile(outputSurfaceFilename,m_outerSurface);
     }
     cout<<"Flipped outer surface created ..."<<endl;
@@ -338,7 +334,7 @@ int main(int argc, char* argv[]) {
     string prefix = argv[4];
     string outputDir = argv[5];
 
-    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, segfile, prefix, outputDir);
+    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, segfile, prefix + "_LH", outputDir);
     CSFdensity_LH.translateSurfaces(-194,-232,0);
     CSFdensity_LH.createOuterImage(15,8);
     CSFdensity_LH.createOuterSurface(1);
