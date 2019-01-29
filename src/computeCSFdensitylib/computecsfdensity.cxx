@@ -318,8 +318,12 @@ void ComputeCSFdensity::flipOuterSurface(int xFlip, int yFlip, int zFlip){
     cout<<"Flipped outer surface created ..."<<endl;
 }
 
-void ComputeCSFdensity::computeStreamlines(){
-
+void ComputeCSFdensity::computeStreamlines(int dims){
+    SurfaceCorrespondance sCorr(m_whiteMatterSurface, m_outerSurface, dims);
+    sCorr.setPrefix(m_prefix);
+    sCorr.setPDEparams(0,10000,10000);
+    sCorr.setWriteOptions(true);
+    sCorr.run();
 }
 
 int main(int argc, char* argv[]) {
@@ -334,12 +338,12 @@ int main(int argc, char* argv[]) {
     string prefix = argv[4];
     string outputDir = argv[5];
 
-    ComputeCSFdensity CSFdensity(WMsurf, GMsurf, segfile, prefix, outputDir);
-    CSFdensity.translateSurfaces(-194,-232,0);
-    CSFdensity.createOuterImage(15,8);
-    CSFdensity.createOuterSurface(1);
-    CSFdensity.flipOuterSurface(-1,-1,1);
-
+    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, segfile, prefix, outputDir);
+    CSFdensity_LH.translateSurfaces(-194,-232,0);
+    CSFdensity_LH.createOuterImage(15,8);
+    CSFdensity_LH.createOuterSurface(1);
+    CSFdensity_LH.flipOuterSurface(-1,-1,1);
+    CSFdensity_LH.computeStreamlines(300);
     //cout<<"inputs: "<<endl<<inputObj1<<endl<<inputObj2<<endl<<prefix<<endl<<dims<<endl<<endl;
 
 //    if (argc != 9)

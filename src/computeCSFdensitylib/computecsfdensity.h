@@ -20,7 +20,7 @@ public:
     void createOuterImage(int closingradius = 60, int dilationradius = 5, bool reverse = false);
     void createOuterSurface(int nbIterSmoothing);
     void flipOuterSurface(int xFlip, int yFlip, int zFlip);
-    void computeStreamlines();
+    void computeStreamlines(int dims);
 
 private:
     int setOuputLocation(string dirname);
