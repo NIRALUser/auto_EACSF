@@ -121,14 +121,6 @@ void SurfaceCorrespondence::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
     m_PDEiter = PDEiter;
 }
 
-vtkPolyData* SurfaceCorrespondence::streams(){
-    return m_streams;
-}
-
-vtkPolyData* SurfaceCorrespondence::whiteMatterSurface(){
-    return m_whiteMatterSurface;
-}
-
 void SurfaceCorrespondence::createGrid() {
     GridCreate gc(m_whiteMatterSurface->GetBounds(), m_dims);
 
@@ -430,7 +422,7 @@ void SurfaceCorrespondence::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
-void SurfaceCorrespondence::run(){
+vtkPolyData* SurfaceCorrespondence::run(){
     string outputGrid = m_output_dir + m_prefix + "_grid.vts";
     string outputField = m_output_dir + m_prefix + "_field.vts";
     string outputStream = m_output_dir + m_prefix + "_stream.vtp";
@@ -462,4 +454,6 @@ void SurfaceCorrespondence::run(){
     {
         m_vio.writeFile(outputStream, m_streams);
     }
+
+    return m_streams;
 }

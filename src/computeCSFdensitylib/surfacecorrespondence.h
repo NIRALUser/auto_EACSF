@@ -22,8 +22,7 @@ public:
     void setWriteOptions(bool writeAll);
     void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
 
-    vtkPolyData* streams();
-    vtkPolyData* whiteMatterSurface();
+    vtkPolyData *run();
 
 private:
     int setOutputLocation(string dirname);
@@ -64,9 +63,6 @@ private:
     bool m_writeStreamFile = false;
     bool m_writeWarpedMeshFile = false;
     bool m_writeObjFile = false;
-
-public:
-    void run();
 };
 
 #endif
