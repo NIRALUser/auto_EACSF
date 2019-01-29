@@ -23,7 +23,7 @@ public:
     void computeStreamlines(int dims);
 
 private:
-    int setOuputLocation(string dirname);
+    int setOutputLocation(string dirname);
     vector<string> splitExt(string filename);
     string relativePath(string path);
     void shiftSurface(vtkPolyData* surf, double xShift, double yShift, double zShift, string outputFileName = "");

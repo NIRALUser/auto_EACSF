@@ -10,12 +10,12 @@
 
 using namespace std;
 
-class SurfaceCorrespondance{
+class SurfaceCorrespondence{
     typedef std::vector<std::string> StringVector;
 
 public:
-    SurfaceCorrespondance(string WMsurf, string GMHsurf, int dims = 300);
-    SurfaceCorrespondance(vtkPolyData* whiteMatterSurface, vtkPolyData* greyMatterHull, int dims = 300);
+    SurfaceCorrespondence(string WMsurf, string GMHsurf, int dims = 300, string output_dir = "");
+    SurfaceCorrespondence(vtkPolyData* whiteMatterSurface, vtkPolyData* greyMatterHull, int dims = 300, string output_dir = "");
 
     void setPrefix(string prefix);
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
@@ -26,6 +26,8 @@ public:
     vtkPolyData* whiteMatterSurface();
 
 private:
+    int setOutputLocation(string dirname);
+
     /*** create a structured grid with the size of input
      * convert the grid to polydata
      * create the intersection between the grid and the polydata
@@ -44,6 +46,7 @@ private:
 
     vtkIO m_vio;
 
+    string m_output_dir;
     string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
 

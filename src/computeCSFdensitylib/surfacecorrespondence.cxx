@@ -1,4 +1,6 @@
 #include <iostream>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <map>
 #include <vector>
 #include <set>
@@ -39,25 +41,65 @@ using namespace std;
 #include <vtkImageWriter.h>
 #include <vtkMetaImageWriter.h>
 
-SurfaceCorrespondance::SurfaceCorrespondance(string WMsurf, string GMHsurf, int dims /* = 300*/):
+SurfaceCorrespondence::SurfaceCorrespondence(string WMsurf, string GMHsurf, int dims /* = 300*/, string output_dir /* = ""*/):
     m_dims(dims)
 {
+    // Creating output directory if necessary
+    int dirstatus = setOutputLocation(output_dir);
+    if (dirstatus == EXIT_FAILURE){
+        exit(1);
+    }
+
     m_whiteMatterSurface = m_vio.readFile(WMsurf);
     m_greyMatterHull = m_vio.readFile(GMHsurf);
 }
 
-SurfaceCorrespondance::SurfaceCorrespondance(vtkPolyData *whiteMatterSurface, vtkPolyData *greyMatterHull, int dims):
+SurfaceCorrespondence::SurfaceCorrespondence(vtkPolyData *whiteMatterSurf, vtkPolyData *greyMatterHullSurf, int dims /* = 300*/, string output_dir /* = ""*/):
     m_dims(dims)
 {
-    m_whiteMatterSurface = whiteMatterSurface;
-    m_greyMatterHull = greyMatterHull;
+    // Creating output directory if necessary
+    int dirstatus = setOutputLocation(output_dir);
+    if (dirstatus == EXIT_FAILURE){
+        exit(1);
+    }
+
+    m_whiteMatterSurface = whiteMatterSurf;
+    m_greyMatterHull = greyMatterHullSurf;
 }
 
-void SurfaceCorrespondance::setPrefix(string prefix){
+void SurfaceCorrespondence::setPrefix(string prefix){
     m_prefix = prefix;
 }
 
-void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile){
+int SurfaceCorrespondence::setOutputLocation(string dirname){
+    if (dirname[dirname.size()-1] == '/'){
+        m_output_dir = dirname;
+    }
+    else{
+        m_output_dir = dirname + '/';
+    }
+
+    struct stat info;
+    if( stat( m_output_dir.c_str(), &info ) != 0 ){
+        if (mkdir(m_output_dir.c_str(), 0777) == -1){
+            cerr << "Error :  " << strerror(errno) << endl;
+            return EXIT_FAILURE;
+        }
+        else{
+            cout << m_output_dir << " directory created";
+            return EXIT_SUCCESS;
+        }
+    }
+    else if( info.st_mode & S_IFDIR ){
+        return EXIT_SUCCESS;
+    }
+    else{
+        cerr<<m_output_dir<<" is no directory"<<endl;
+        return EXIT_FAILURE;
+    }
+}
+
+void SurfaceCorrespondence::setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile){
     m_writeGridFile = writeGridFile;
     m_writeLaplaceFieldFile = writeLaplaceFieldFile;
     m_writeStreamFile = writeStreamFile;
@@ -65,7 +107,7 @@ void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplac
     m_writeObjFile = writeObjFile;
 }
 
-void SurfaceCorrespondance::setWriteOptions(bool writeAll){
+void SurfaceCorrespondence::setWriteOptions(bool writeAll){
     m_writeGridFile = writeAll;
     m_writeLaplaceFieldFile = writeAll;
     m_writeStreamFile = writeAll;
@@ -73,21 +115,21 @@ void SurfaceCorrespondance::setWriteOptions(bool writeAll){
     m_writeObjFile = writeAll;
 }
 
-void SurfaceCorrespondance::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
+void SurfaceCorrespondence::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
     m_PDElow = PDElow;
     m_PDEhigh = PDEhigh;
     m_PDEiter = PDEiter;
 }
 
-vtkPolyData* SurfaceCorrespondance::streams(){
+vtkPolyData* SurfaceCorrespondence::streams(){
     return m_streams;
 }
 
-vtkPolyData* SurfaceCorrespondance::whiteMatterSurface(){
+vtkPolyData* SurfaceCorrespondence::whiteMatterSurface(){
     return m_whiteMatterSurface;
 }
 
-void SurfaceCorrespondance::createGrid() {
+void SurfaceCorrespondence::createGrid() {
     GridCreate gc(m_whiteMatterSurface->GetBounds(), m_dims);
 
     // Creating the binary grids of the WM and the WM+GM structures
@@ -105,7 +147,7 @@ void SurfaceCorrespondance::createGrid() {
     m_laplaceField = goim;
 }
 
-void SurfaceCorrespondance::computeLaplacePDE() {
+void SurfaceCorrespondence::computeLaplacePDE() {
 // Compute Laplace PDE based on the adjacency list and border
     if (m_laplaceField == NULL) {
 		cout << "Data input is NULL" << endl;
@@ -134,7 +176,7 @@ void SurfaceCorrespondance::computeLaplacePDE() {
     grid.computeNormals();
 }
 
-bool SurfaceCorrespondance::performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
+bool SurfaceCorrespondence::performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length) {
 	
 	/// - Iterate over all points in a line
 	vtkIdList* ids = lineToClip->GetPointIds();
@@ -195,7 +237,7 @@ bool SurfaceCorrespondance::performLineClipping(vtkPolyData* streamLines, vtkMod
 	return false;
 }
 
-vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface) {
+vtkPolyData* SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface) {
 	
 	const size_t nInputPoints = seedPoints->GetNumberOfPoints();
 	
@@ -290,7 +332,7 @@ vtkPolyData* SurfaceCorrespondance::performStreamTracerPostProcessing(vtkPolyDat
 	}
 }
 
-void SurfaceCorrespondance::performStreamTracer() {
+void SurfaceCorrespondence::performStreamTracer() {
     if (m_laplaceField == NULL || m_whiteMatterSurface == NULL) {
         cout << "input vector field or seed points is null!" << endl;
         return;
@@ -337,7 +379,7 @@ void SurfaceCorrespondance::performStreamTracer() {
     m_streams = performStreamTracerPostProcessing(streamLines, m_whiteMatterSurface, m_whiteMatterSurface);
 }
 
-void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
+void SurfaceCorrespondence::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
     for (/*size_t*/int j = 0; j < cell->GetNumberOfPoints(); j++) {
         vtkIdType cellPt = cell->GetPointId(j);
         if (pid != cellPt) {
@@ -346,7 +388,7 @@ void SurfaceCorrespondance::findNeighborPoints(vtkCell *cell, vtkIdType pid, set
     }
 }
 
-void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds){
+void SurfaceCorrespondence::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints* warpedPoints, vtkDataArray* seedIds){
     // identify broken points
     vector<vtkIdType> brokenPoints;
     vtkIdType z = 0;
@@ -388,11 +430,11 @@ void SurfaceCorrespondance::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
-void SurfaceCorrespondance::run(){
-    string outputGrid = m_prefix + "_grid.vts";
-    string outputField = m_prefix + "_field.vts";
-    string outputStream = m_prefix + "_stream.vtp";
-    string outputMesh = m_prefix + "_warpedMesh.vtp";
+void SurfaceCorrespondence::run(){
+    string outputGrid = m_output_dir + m_prefix + "_grid.vts";
+    string outputField = m_output_dir + m_prefix + "_field.vts";
+    string outputStream = m_output_dir + m_prefix + "_stream.vtp";
+    string outputMesh = m_output_dir + m_prefix + "_warpedMesh.vtp";
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
