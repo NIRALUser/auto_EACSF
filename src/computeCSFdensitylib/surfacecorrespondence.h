@@ -45,14 +45,14 @@ private:
     string m_prefix = "surface_correspondence";
     int m_dims; //number of subdivision of the grid in each dimensions
 
-    vtkPolyData* m_whiteMatterSurface;
-    vtkPolyData* m_greyMatterHull;
+    vtkSmartPointer<vtkPolyData> m_whiteMatterSurface;
+    vtkSmartPointer<vtkPolyData> m_greyMatterHull;
 
-    vtkDataSet* m_laplaceField;
+    vtkSmartPointer<vtkDataSet> m_laplaceField;
 
     int m_PDElow = 0, m_PDEhigh = 10000, m_PDEiter = 10000;
 
-    vtkPolyData* m_streams;
+    vtkSmartPointer<vtkPolyData> m_streams;
 
     bool m_writeGridFile = false;
     bool m_writeLaplaceFieldFile = false;
