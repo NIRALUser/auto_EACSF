@@ -39,11 +39,18 @@ using namespace std;
 #include <vtkImageWriter.h>
 #include <vtkMetaImageWriter.h>
 
-SurfaceCorrespondance::SurfaceCorrespondance(string inputObj1, string inputObj2, int dims /* = 300*/):
+SurfaceCorrespondance::SurfaceCorrespondance(string WMsurf, string GMHsurf, int dims /* = 300*/):
     m_dims(dims)
 {
-    m_whiteMatterSurface = m_vio.readFile(inputObj1);
-    m_whiteMatterSurface = m_vio.readFile(inputObj2);
+    m_whiteMatterSurface = m_vio.readFile(WMsurf);
+    m_greyMatterHull = m_vio.readFile(GMHsurf);
+}
+
+SurfaceCorrespondance::SurfaceCorrespondance(vtkPolyData *whiteMatterSurface, vtkPolyData *greyMatterHull, int dims):
+    m_dims(dims)
+{
+    m_whiteMatterSurface = whiteMatterSurface;
+    m_greyMatterHull = greyMatterHull;
 }
 
 void SurfaceCorrespondance::setPrefix(string prefix){
@@ -56,6 +63,14 @@ void SurfaceCorrespondance::setWriteOptions(bool writeGridFile, bool writeLaplac
     m_writeStreamFile = writeStreamFile;
     m_writeWarpedMeshFile = writeWarpedMeshFile;
     m_writeObjFile = writeObjFile;
+}
+
+void SurfaceCorrespondance::setWriteOptions(bool writeAll){
+    m_writeGridFile = writeAll;
+    m_writeLaplaceFieldFile = writeAll;
+    m_writeStreamFile = writeAll;
+    m_writeWarpedMeshFile = writeAll;
+    m_writeObjFile = writeAll;
 }
 
 void SurfaceCorrespondance::setPDEparams(int PDElow, int PDEhigh, int PDEiter){

@@ -14,10 +14,12 @@ class SurfaceCorrespondance{
     typedef std::vector<std::string> StringVector;
 
 public:
-    SurfaceCorrespondance(string inputObj1, string inputObj2, int dims = 300);
+    SurfaceCorrespondance(string WMsurf, string GMHsurf, int dims = 300);
+    SurfaceCorrespondance(vtkPolyData* whiteMatterSurface, vtkPolyData* greyMatterHull, int dims = 300);
 
     void setPrefix(string prefix);
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
+    void setWriteOptions(bool writeAll);
     void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
 
     vtkPolyData* streams();
