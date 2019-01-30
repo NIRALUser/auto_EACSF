@@ -15,12 +15,13 @@ using namespace std;
 class ComputeCSFdensity
 {
 public:
-    ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string prefix, string output_dir = "");
+    ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir = "");
     void translateSurfaces(double xShift, double yShift, double zShift);
     void createOuterImage(int closingradius = 60, int dilationradius = 5, bool reverse = false);
     void createOuterSurface(int nbIterSmoothing);
     void flipOuterSurface(int xFlip, int yFlip, int zFlip);
     void computeStreamlines(int dims);
+    void EstimateCortexStreamlinesDensity(int maxIter = 1, float maxDist = 20.0);
 
 private:
     int setOutputLocation(string dirname);
@@ -39,14 +40,20 @@ private:
     vtkSmartPointer<vtkPolyData> m_greyMatterSurface;
 
     typedef itk::Image<unsigned char, 3> m_ImageType;
+    m_ImageType::Pointer m_seg;
+    m_ImageType::Pointer m_CSFprop;
     m_ImageType::Pointer m_outerImage;
 
     vtkSmartPointer<vtkPolyData> m_outerSurface;
 
+    vtkSmartPointer<vtkPolyData> m_streamlines;
+
     bool m_writeTranslatedSurfaces = false;
-    bool m_writeOuterImage = false;
-    bool m_writeOuterSurface = false;
+    bool m_writeOuterImage = true;
+    bool m_writeOuterSurface = true;
     bool m_writeFlippedOuterSurface = true;
+    bool m_writeOutputDensitySurf = true;
+    bool m_writeVisitationMap = true;
 };
 
 #endif // COMPUTECSFDENSITY_H
