@@ -62,10 +62,6 @@ vtkStructuredGrid* GridCreate::createStencil(vtkPolyData* surf) {
     isten->Update();
 
     vtkImageData* imgGrid = isten->GetOutput();
-//    vtkNew<vtkMetaImageWriter> imageWriter;
-//    imageWriter->SetInputData(imgGrid);
-//    imageWriter->SetFileName("testimage.mhd");
-//    imageWriter->Write();
     imgGrid->GetPointData()->GetScalars()->SetName("SampledValue");
 
 

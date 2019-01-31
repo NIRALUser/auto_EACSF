@@ -122,10 +122,10 @@ void SurfaceCorrespondence::setPDEparams(int PDElow, int PDEhigh, int PDEiter){
 }
 
 void SurfaceCorrespondence::createGrid() {
-    GridCreate gc(m_whiteMatterSurface->GetBounds(), m_dims);
+    GridCreate gc(m_greyMatterHull->GetBounds(), m_dims);
 
     // Creating the binary grids of the WM and the WM+GM structures
-    vtkStructuredGrid* goim = gc.createStencil(m_whiteMatterSurface);
+    vtkStructuredGrid* goim = gc.createStencil(m_greyMatterHull);
     vtkStructuredGrid* woim = gc.createStencil(m_whiteMatterSurface);
 	
 	BoundaryCheck bc;
@@ -133,7 +133,7 @@ void SurfaceCorrespondence::createGrid() {
     insideCountOut = bc.subtract(goim, woim); // subtraction of both structures to botain a three region map
     cout << "Inside Voxels: " << insideCountOut << endl;
 
-    bc.checkSurface(goim, m_whiteMatterSurface, m_whiteMatterSurface); // boundary errors correction
+    bc.checkSurface(goim, m_whiteMatterSurface, m_greyMatterHull); // boundary errors correction
 	woim->Delete();
 	
     m_laplaceField = goim;
@@ -229,9 +229,9 @@ bool SurfaceCorrespondence::performLineClipping(vtkPolyData* streamLines, vtkMod
 	return false;
 }
 
-vtkPolyData* SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface) {
+void SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyData* streamLines) {
 	
-	const size_t nInputPoints = seedPoints->GetNumberOfPoints();
+    const size_t nInputPoints = m_whiteMatterSurface->GetNumberOfPoints();
 	
 	// remove useless pointdata information
 	streamLines->GetPointData()->Reset();
@@ -257,8 +257,8 @@ vtkPolyData* SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyDat
 	lineCorrect->SetNumberOfValues(nInputPoints);
 	lineCorrect->FillComponent(0, 0);
 	
-	seedPoints->GetPointData()->SetScalars(streamLineLengthPerPoint);
-	seedPoints->GetPointData()->AddArray(lineCorrect);
+    m_whiteMatterSurface->GetPointData()->SetScalars(streamLineLengthPerPoint);
+    m_whiteMatterSurface->GetPointData()->AddArray(lineCorrect);
 	
 	cout << "Assigning length to each source vertex ..." << endl;
 	vtkDataArray* seedIds = streamLines->GetCellData()->GetScalars("SeedIds");
@@ -269,7 +269,7 @@ vtkPolyData* SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyDat
 		
 		/// construct a tree locator
 		vtkModifiedBSPTree* tree = vtkModifiedBSPTree::New();
-		tree->SetDataSet(destinationSurface);
+        tree->SetDataSet(m_greyMatterHull);
 		tree->BuildLocator();
 		
 		vtkDoubleArray* lengthArray = vtkDoubleArray::New();
@@ -317,10 +317,9 @@ vtkPolyData* SurfaceCorrespondence::performStreamTracerPostProcessing(vtkPolyDat
 		cleaner->SetInputData(outputStreamLines);
 		cleaner->Update();
 		
-		return cleaner->GetOutput();
+        m_streams = cleaner->GetOutput();
 	} else {
-		cout << "Can't find SeedIds" << endl;
-		return NULL;
+        cout << "Can't find SeedIds" << endl;
 	}
 }
 
@@ -366,9 +365,7 @@ void SurfaceCorrespondence::performStreamTracer() {
 
     tracer->Update();
 	
-    vtkPolyData* streamLines = tracer->GetOutput();
-	
-    m_streams = performStreamTracerPostProcessing(streamLines, m_whiteMatterSurface, m_whiteMatterSurface);
+    performStreamTracerPostProcessing(tracer->GetOutput());
 }
 
 void SurfaceCorrespondence::findNeighborPoints(vtkCell *cell, vtkIdType pid, set<vtkIdType> &nbrs){
@@ -425,7 +422,7 @@ void SurfaceCorrespondence::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
 vtkPolyData* SurfaceCorrespondence::run(){
     string outputGrid = m_output_dir + m_prefix + "_grid.vts";
     string outputField = m_output_dir + m_prefix + "_field.vts";
-    string outputStream = m_output_dir + m_prefix + "_stream.vtp";
+    string outputStream = m_output_dir + m_prefix + "_stream.vtk";
     string outputMesh = m_output_dir + m_prefix + "_warpedMesh.vtp";
 
     cout << "Output grid: " << outputGrid << endl;

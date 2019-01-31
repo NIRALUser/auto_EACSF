@@ -336,6 +336,7 @@ void ComputeCSFdensity::flipOuterSurface(int xFlip, int yFlip, int zFlip){
 
 void ComputeCSFdensity::computeStreamlines(int dims){
     SurfaceCorrespondence sCorr(m_whiteMatterSurface, m_outerSurface, dims, m_output_dir);
+    //SurfaceCorrespondence sCorr(m_vio.readFile("WM.vtk"),m_vio.readFile("MC.vtk"), dims, "debug_test/");
     sCorr.setPrefix(m_prefix);
     sCorr.setPDEparams(0,10000,10000);
     sCorr.setWriteOptions(true);
@@ -712,8 +713,8 @@ int main(int argc, char* argv[]) {
     string outputDir = argv[6];
 
     ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, segfile, csfProp, prefix + "_LH", outputDir);
-    // CSFdensity_LH.translateSurfaces(-194,-232,0);
-    CSFdensity_LH.createOuterImage(15,8);
+    //CSFdensity_LH.translateSurfaces(-194,-232,0);
+    CSFdensity_LH.createOuterImage(15,3);
     CSFdensity_LH.createOuterSurface(1);
     CSFdensity_LH.flipOuterSurface(-1,-1,1);
     CSFdensity_LH.computeStreamlines(300);

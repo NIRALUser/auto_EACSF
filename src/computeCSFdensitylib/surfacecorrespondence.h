@@ -36,7 +36,7 @@ private:
     /*** computes the Laplace field from the previous grid */
     void computeLaplacePDE();
     bool performLineClipping(vtkPolyData* streamLines, vtkModifiedBSPTree* tree, /*int lineId,*/ vtkCell* lineToClip, vtkPoints* outputPoints, vtkCellArray* outputLines, double &length);
-    vtkPolyData* performStreamTracerPostProcessing(vtkPolyData* streamLines, vtkPolyData* seedPoints, vtkPolyData* destinationSurface);
+    void performStreamTracerPostProcessing(vtkPolyData* streamLines);
 
     /*** computes the stream lines */
     void performStreamTracer();
