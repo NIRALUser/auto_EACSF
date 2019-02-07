@@ -50,13 +50,19 @@ ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string 
 
 
     // Reading itk images (segmentation  and probability map)
-    typedef itk::ImageFileReader<m_ImageType> ReaderType;
-    ReaderType::Pointer readerSeg = ReaderType::New();
-    readerSeg->SetFileName(segFile);
-    readerSeg->Update();
-    m_seg = readerSeg->GetOutput();
+    typedef itk::ImageFileReader<m_ucImageType> ucReaderType;
+    ucReaderType::Pointer readerucSeg = ucReaderType::New();
+    readerucSeg->SetFileName(segFile);
+    readerucSeg->Update();
+    m_ucseg = readerucSeg->GetOutput();
 
-    ReaderType::Pointer readerCSFprop = ReaderType::New();
+    typedef itk::ImageFileReader<m_dImageType> dReaderType;
+    dReaderType::Pointer readerdSeg = dReaderType::New();
+    readerdSeg->SetFileName(segFile);
+    readerdSeg->Update();
+    m_dseg = readerdSeg->GetOutput();
+
+    dReaderType::Pointer readerCSFprop = dReaderType::New();
     readerCSFprop->SetFileName(csfPropFile);
     readerCSFprop->Update();
     m_CSFprop = readerCSFprop->GetOutput();
@@ -156,12 +162,12 @@ void ComputeCSFdensity::translateSurfaces(double xShift, double yShift, double z
 void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, bool reverse){
     cout<<"Creating outer image ..."<<endl;
 
-    m_ImageType::SpacingType spacing = m_seg->GetSpacing();
+    m_ucImageType::SpacingType spacing = m_ucseg->GetSpacing();
     closingradius = closingradius/spacing[0];
 
-    typedef itk::BinaryThresholdImageFilter <m_ImageType, m_ImageType> BinaryThresholdImageFilterType;
+    typedef itk::BinaryThresholdImageFilter <m_ucImageType, m_ucImageType> BinaryThresholdImageFilterType;
     BinaryThresholdImageFilterType::Pointer thresholdFilter = BinaryThresholdImageFilterType::New();
-    thresholdFilter->SetInput(m_seg);
+    thresholdFilter->SetInput(m_ucseg);
     thresholdFilter->SetLowerThreshold(1);
     thresholdFilter->SetUpperThreshold(4);
     thresholdFilter->SetInsideValue(1);
@@ -170,12 +176,12 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
 
     m_outerImage = thresholdFilter->GetOutput();
 
-    m_ImageType::SizeType regionSize;
+    m_ucImageType::SizeType regionSize;
     regionSize[0] = int(m_outerImage->GetLargestPossibleRegion().GetSize()[0]/2);
     regionSize[1] = m_outerImage->GetLargestPossibleRegion().GetSize()[1];
     regionSize[2] = m_outerImage->GetLargestPossibleRegion().GetSize()[2];
 
-    m_ImageType::IndexType regionIndex;
+    m_ucImageType::IndexType regionIndex;
     regionIndex[0] = 0;
     if (reverse){
         regionIndex[0] = m_outerImage->GetLargestPossibleRegion().GetSize()[0]/2;
@@ -183,30 +189,30 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
     regionIndex[1] = 0;
     regionIndex[2] = 0;
 
-    m_ImageType::RegionType region;
+    m_ucImageType::RegionType region;
     region.SetSize(regionSize);
     region.SetIndex(regionIndex);
 
-    itk::ImageRegionIterator<m_ImageType> imageIterator(m_outerImage,region);
+    itk::ImageRegionIterator<m_ucImageType> imageIterator(m_outerImage,region);
 
     while(!imageIterator.IsAtEnd()){
         imageIterator.Set(0);
         ++imageIterator;
     }
 
-    typedef itk::BinaryBallStructuringElement<m_ImageType::PixelType,3> StructuringElementType;
+    typedef itk::BinaryBallStructuringElement<m_ucImageType::PixelType,3> StructuringElementType;
     StructuringElementType structuringElement;
     structuringElement.SetRadius(closingradius);
     structuringElement.CreateStructuringElement();
 
-    typedef itk::RescaleIntensityImageFilter<m_ImageType, m_ImageType > RescaleFilterType;
+    typedef itk::RescaleIntensityImageFilter<m_ucImageType, m_ucImageType > RescaleFilterType;
     RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
     rescaleFilter->SetInput(m_outerImage);
     rescaleFilter->SetOutputMinimum(0);
     rescaleFilter->SetOutputMaximum(255);
     rescaleFilter->Update();
 
-    typedef itk::BinaryMorphologicalClosingImageFilter <m_ImageType, m_ImageType, StructuringElementType> BinaryMorphologicalClosingImageFilterType;
+    typedef itk::BinaryMorphologicalClosingImageFilter <m_ucImageType, m_ucImageType, StructuringElementType> BinaryMorphologicalClosingImageFilterType;
     BinaryMorphologicalClosingImageFilterType::Pointer closingFilter = BinaryMorphologicalClosingImageFilterType::New();
     closingFilter->SetInput(rescaleFilter->GetOutput());
     closingFilter->SetKernel(structuringElement);
@@ -217,7 +223,7 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
     structuringElement.SetRadius(dilationradius);
     structuringElement.CreateStructuringElement();
 
-    typedef itk::BinaryDilateImageFilter <m_ImageType, m_ImageType, StructuringElementType> BinaryDilateImageFilterType;
+    typedef itk::BinaryDilateImageFilter <m_ucImageType, m_ucImageType, StructuringElementType> BinaryDilateImageFilterType;
     BinaryDilateImageFilterType::Pointer dilateFilter = BinaryDilateImageFilterType::New();
     dilateFilter->SetInput(closingFilter->GetOutput());
     dilateFilter->SetKernel(structuringElement);
@@ -232,7 +238,7 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
 
     if (m_writeOuterImage){
         string filename = m_output_dir + m_prefix + "_GM_Dilated.nrrd";
-        typedef itk::ImageFileWriter< m_ImageType >  WriterType;
+        typedef itk::ImageFileWriter< m_ucImageType >  WriterType;
         WriterType::Pointer writer = WriterType::New();
         writer->SetFileName(filename);
         writer->SetInput(m_outerImage);
@@ -253,7 +259,7 @@ void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, 
 
 void ComputeCSFdensity::createOuterSurface(int nbIterSmoothing){
     cout<<"Creating outer surface ..."<<endl;
-    typedef itk::ImageToVTKImageFilter<m_ImageType> itkVtkConverter;
+    typedef itk::ImageToVTKImageFilter<m_ucImageType> itkVtkConverter;
     itkVtkConverter::Pointer conv = itkVtkConverter::New();
     conv->SetInput(m_outerImage);
     conv->Update();
@@ -343,6 +349,10 @@ void ComputeCSFdensity::computeStreamlines(int dims){
     m_streamlines = sCorr.run();
 }
 
+void ComputeCSFdensity::readStreamLines(string streamFile){
+    m_streamlines = m_vio.readFile(streamFile);
+}
+
 void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, float maxDist /* = 20.0*/){
     // Start the clock
     int start_s=clock();
@@ -353,29 +363,21 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
     // Streamlines
     cout << "Outer Streamlines File has " << m_streamlines ->GetNumberOfLines() << " lines." << endl;
-    vtkDoubleArray* OuterLengthArray = vtkDoubleArray::SafeDownCast(m_streamlines->GetCellData()->GetArray("Length"));
 
     // Get the segmentation filename from the command line
     // inputImage <=> m_CSFprop
 
     // Get all segmentation data from the image
-    const unsigned int Dimension = 3;
-    typedef double dPixelType;
-    typedef itk::Image< dPixelType, Dimension > dImageType;
-    typedef itk::Point< double, Dimension > PointType;
-    typedef itk::CastImageFilter<m_ImageType, dImageType> CastFilterType;
 
-    CastFilterType::Pointer castFilter = CastFilterType::New();
-    castFilter->SetInput(m_CSFprop);
-    castFilter->Update();
+    typedef itk::Point< double, 3 > PointType;
 
-    dImageType::Pointer inputImage = dImageType::New();
-    inputImage->CopyInformation(castFilter->GetOutput());
-    inputImage->SetRegions(castFilter->GetOutput()->GetRequestedRegion());
+    m_dImageType::Pointer inputImage = m_dImageType::New();
+    inputImage->CopyInformation(m_CSFprop);
+    inputImage->SetRegions(m_CSFprop->GetRequestedRegion());
     inputImage->Allocate();
 
-    typedef itk::ImageRegionIterator< dImageType> IteratorType;
-    IteratorType inputIt1(castFilter->GetOutput(), castFilter->GetOutput()->GetRequestedRegion());
+    typedef itk::ImageRegionIterator< m_dImageType> IteratorType;
+    IteratorType inputIt1(m_CSFprop, m_CSFprop->GetRequestedRegion());
     IteratorType inputIt2(inputImage, inputImage->GetRequestedRegion());
 
     inputIt1.GoToBegin();
@@ -388,7 +390,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
     }
 
     //cout << "Initializing Voxel Visiting Map... "  << endl;
-    dImageType::Pointer outputImage = dImageType::New();
+    m_dImageType::Pointer outputImage = m_dImageType::New();
     outputImage->CopyInformation(inputImage);
     outputImage->SetRegions(inputImage->GetRequestedRegion());
     outputImage->Allocate();
@@ -401,11 +403,8 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
         ++outputIt;
     }
 
-    // inputMask <=> m_seg
-    CastFilterType::Pointer maskCastFilter = CastFilterType::New();
-    maskCastFilter->SetInput(m_seg);
-    maskCastFilter->Update();
-    dImageType::Pointer inputMask = maskCastFilter->GetOutput();
+    // inputMask <=> m_ucseg
+    m_dImageType::Pointer inputMask = m_dseg;
 
     //-----------------------------------------------Estimate CSF Density------------------------------------------------------------------
 
@@ -416,7 +415,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
     vtkSmartPointer<vtkCellArray> outerLineArray = m_streamlines->GetLines();
     vtkIdType outerLineID = -1;
 
-    typedef itk::LinearInterpolateImageFunction<dImageType, double> InterpolatorType;
+    typedef itk::LinearInterpolateImageFunction<m_dImageType, double> InterpolatorType;
 
     for(vtkIdType vertexID = 0; vertexID < m_whiteMatterSurface->GetNumberOfPoints(); vertexID++){
         // cout << "Vertex ID " << vertexID << endl;
@@ -478,16 +477,13 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
             point_next[1] = -p[1];    // y coordinate
             point_next[2] =  p[2];    // z coordinate
 
-            dImageType::IndexType pixelIndex;
-            const bool isInside = inputImage->TransformPhysicalPointToIndex( point, pixelIndex );
-            dImageType::PixelType visited = outputImage->GetPixel(pixelIndex);
+            m_dImageType::IndexType pixelIndex;
 
-            dImageType::IndexType pixelIndex1;
-            const bool isInside1 = inputMask->TransformPhysicalPointToIndex( point, pixelIndex1 );
-            dImageType::PixelType label = inputMask->GetPixel(pixelIndex1);
+            m_dImageType::IndexType pixelIndex1;
+            m_dImageType::PixelType label = inputMask->GetPixel(pixelIndex1);
 
-            dImageType::PixelType probability = Interpolator->Evaluate(point);
-            dImageType::PixelType probability_next = Interpolator->Evaluate(point_next);
+            m_dImageType::PixelType probability = Interpolator->Evaluate(point);
+            m_dImageType::PixelType probability_next = Interpolator->Evaluate(point_next);
 
             if(label > 0){
                 CSFDensity += ((probability + probability_next)*step)/2;
@@ -676,7 +672,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
     }
 
     if (m_writeVisitationMap){
-        typedef itk::BinaryThresholdImageFilter <dImageType, dImageType> BinaryThresholdImageFilterType;
+        typedef itk::BinaryThresholdImageFilter <m_dImageType, m_dImageType> BinaryThresholdImageFilterType;
 
         BinaryThresholdImageFilterType::Pointer thresholdFilter = BinaryThresholdImageFilterType::New();
         thresholdFilter->SetInput(outputImage);
@@ -687,7 +683,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
         thresholdFilter->Update();
 
         string visitationMapFilename = m_output_dir + m_prefix + "_VisitationMap.nrrd";
-        typedef itk::ImageFileWriter< dImageType > WriterType;
+        typedef itk::ImageFileWriter< m_dImageType > WriterType;
         WriterType::Pointer imageWriter = WriterType::New();
         imageWriter->SetInput(thresholdFilter->GetOutput());
         imageWriter->SetFileName(visitationMapFilename);
@@ -700,10 +696,10 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 7){
-        cout << "Usage : " << argv[0] << " whiteMatterSurface greyMatterSurface segfile CSFprop prefix outputDir";
-        return EXIT_FAILURE;
-    }
+//    if (argc != 7){
+//        cout << "Usage : " << argv[0] << " whiteMatterSurface greyMatterSurface segfile CSFprop prefix outputDir";
+//        return EXIT_FAILURE;
+//    }
 
     string WMsurf = argv[1];
     string GMsurf = argv[2];
@@ -712,12 +708,13 @@ int main(int argc, char* argv[]) {
     string prefix = argv[5];
     string outputDir = argv[6];
 
-    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, segfile, csfProp, prefix + "_LH", outputDir);
+    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, csfProp, segfile, prefix + "_LH", outputDir);
     //CSFdensity_LH.translateSurfaces(-194,-232,0);
-    CSFdensity_LH.createOuterImage(15,3);
-    CSFdensity_LH.createOuterSurface(1);
-    CSFdensity_LH.flipOuterSurface(-1,-1,1);
-    CSFdensity_LH.computeStreamlines(300);
+//    CSFdensity_LH.createOuterImage(15,3);
+//    CSFdensity_LH.createOuterSurface(1);
+//    CSFdensity_LH.flipOuterSurface(-1,-1,1);
+//    CSFdensity_LH.computeStreamlines(300);
+    CSFdensity_LH.readStreamLines(argv[7]);
     cout << "Starting cortex streamlines density estimation ..." << flush;
     CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
     cout << " done" << endl;

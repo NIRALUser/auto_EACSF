@@ -22,6 +22,7 @@ public:
     void flipOuterSurface(int xFlip, int yFlip, int zFlip);
     void computeStreamlines(int dims);
     void EstimateCortexStreamlinesDensity(int maxIter = 1, float maxDist = 20.0);
+    void readStreamLines(string streamFile);
 
 private:
     int setOutputLocation(string dirname);
@@ -39,10 +40,13 @@ private:
     vtkSmartPointer<vtkPolyData> m_whiteMatterSurface;
     vtkSmartPointer<vtkPolyData> m_greyMatterSurface;
 
-    typedef itk::Image<unsigned char, 3> m_ImageType;
-    m_ImageType::Pointer m_seg;
-    m_ImageType::Pointer m_CSFprop;
-    m_ImageType::Pointer m_outerImage;
+    typedef itk::Image< unsigned char, 3 > m_ucImageType;
+    typedef double dPixelType;
+    typedef itk::Image< dPixelType, 3 > m_dImageType;
+    m_ucImageType::Pointer m_ucseg;
+    m_dImageType::Pointer m_dseg;
+    m_dImageType::Pointer m_CSFprop;
+    m_ucImageType::Pointer m_outerImage;
 
     vtkSmartPointer<vtkPolyData> m_outerSurface;
 
