@@ -16,7 +16,6 @@ class ComputeCSFdensity
 {
 public:
     ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir = "");
-    void translateSurfaces(double xShift, double yShift, double zShift);
     void createOuterImage(int closingradius = 60, int dilationradius = 5, bool reverse = false);
     void createOuterSurface(int nbIterSmoothing);
     void flipOuterSurface(int xFlip, int yFlip, int zFlip);
@@ -28,7 +27,6 @@ private:
     int setOutputLocation(string dirname);
     vector<string> splitExt(string filename);
     string relativePath(string path);
-    void shiftSurface(vtkPolyData* surf, double xShift, double yShift, double zShift, string outputFileName = "");
 
     vtkIO m_vio;
 
@@ -52,7 +50,6 @@ private:
 
     vtkSmartPointer<vtkPolyData> m_streamlines;
 
-    bool m_writeTranslatedSurfaces = false;
     bool m_writeOuterImage = true;
     bool m_writeOuterSurface = true;
     bool m_writeFlippedOuterSurface = true;

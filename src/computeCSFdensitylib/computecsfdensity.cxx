@@ -37,7 +37,7 @@
 
 using namespace std;
 
-ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir){
+ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir){
     // Creating output directory if necessary
     int dirstatus = setOutputLocation(output_dir);
     if (dirstatus == EXIT_FAILURE){
@@ -46,7 +46,6 @@ ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string 
 
     // Reading vtk surfaces
     m_whiteMatterSurface = m_vio.readFile(whiteMatterSurface_fileName);
-    m_greyMatterSurface = m_vio.readFile(greyMatterSurface_fileName);
 
 
     // Reading itk images (segmentation  and probability map)
@@ -122,41 +121,6 @@ string ComputeCSFdensity::relativePath(string path){
         relPath = path.erase(0,pos+1);
     }
     return relPath;
-}
-
-void ComputeCSFdensity::shiftSurface(vtkPolyData *surf, double xShift, double yShift, double zShift, string outputFileName){
-    cout << "Input surface has " << surf->GetNumberOfPoints() << " points." << endl;
-
-    // Set up the transform filter
-    vtkSmartPointer<vtkTransform> translation = vtkSmartPointer<vtkTransform>::New();
-    translation->Translate(xShift, yShift, zShift);
-
-    vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
-    vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-    transformFilter->SetInputData(surf);
-    transformFilter->SetTransform(translation);
-    transformFilter->Update();
-
-    surf = transformFilter->GetOutput();
-
-    if (outputFileName != ""){
-        m_vio.writeFile(outputFileName,surf);
-    }
-}
-
-void ComputeCSFdensity::translateSurfaces(double xShift, double yShift, double zShift){
-    cout<<"Translating surfaces ..."<<endl;
-    if (!m_writeTranslatedSurfaces){
-        shiftSurface(m_whiteMatterSurface, xShift, yShift, zShift);
-        shiftSurface(m_greyMatterSurface, xShift, yShift, zShift);
-    }
-    else{
-        vector<string> filename = splitExt(m_WM_relFilename);
-        shiftSurface(m_whiteMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
-        filename = splitExt(m_GM_relFilename);
-        shiftSurface(m_greyMatterSurface, xShift, yShift, zShift, m_output_dir + filename[0] + "_translated" + filename[1]);
-    }
-    cout<<"Translation done"<<endl;
 }
 
 void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, bool reverse){
@@ -427,7 +391,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
         vtkIdType lineOuterCellLocation = 0;
         outerLineArray->InitTraversal();
         int numOuter = 0;
-        vtkIdType *lineIDlistOuterFinal;
+        vtkIdType *lineIDlistOuterFinal = nullptr;
 
         for (vtkIdType a = 0; a <= outerLineID; a++){
             vtkIdType lineOuterNumIDs; // to hold the size of the cell
@@ -696,24 +660,22 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
 
 int main(int argc, char* argv[]) {
-//    if (argc != 7){
-//        cout << "Usage : " << argv[0] << " whiteMatterSurface greyMatterSurface segfile CSFprop prefix outputDir";
-//        return EXIT_FAILURE;
-//    }
+    if (argc != 7){
+        cout << "Usage : " << argv[0] << " whiteMatterSurface greyMatterSurface segfile CSFprop prefix outputDir";
+        return EXIT_FAILURE;
+    }
 
     string WMsurf = argv[1];
-    string GMsurf = argv[2];
-    string segfile = argv[3];
-    string csfProp = argv[4];
-    string prefix = argv[5];
-    string outputDir = argv[6];
+    string segfile = argv[2];
+    string csfProp = argv[3];
+    string prefix = argv[4];
+    string outputDir = argv[5];
 
-    ComputeCSFdensity CSFdensity_LH(WMsurf, GMsurf, csfProp, segfile, prefix + "_LH", outputDir);
-    //CSFdensity_LH.translateSurfaces(-194,-232,0);
-//    CSFdensity_LH.createOuterImage(15,3);
-//    CSFdensity_LH.createOuterSurface(1);
-//    CSFdensity_LH.flipOuterSurface(-1,-1,1);
-//    CSFdensity_LH.computeStreamlines(300);
+    ComputeCSFdensity CSFdensity_LH(WMsurf, csfProp, segfile, prefix + "_LH", outputDir);
+    CSFdensity_LH.createOuterImage(15,3);
+    CSFdensity_LH.createOuterSurface(1);
+    CSFdensity_LH.flipOuterSurface(-1,-1,1);
+    CSFdensity_LH.computeStreamlines(300);
     CSFdensity_LH.readStreamLines(argv[7]);
     cout << "Starting cortex streamlines density estimation ..." << flush;
     CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
