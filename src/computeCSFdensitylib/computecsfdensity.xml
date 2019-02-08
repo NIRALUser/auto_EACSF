@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+    <title>Compute CSF Density</title>
+    <description>Takes the inner surface, the CSF probability map and the brain segmentation as inputs to compute the CSF density</description>
+    <contributor>Mahmoud Mostapha, Arthur Le Maout</contributor>
+    <version>1.0</version>
+    <parameters advanced="false">
+        <file>
+            <name>whiteMatterSurface</name>
+            <longflag>whiteMatterSurface</longflag>
+            <flag>w</flag>
+            <label>Input white matter surface</label>
+            <description>Input white matter surface file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>segmentation</name>
+            <longflag>segmentation</longflag>
+            <flag>s</flag>
+            <label>Input segmentation</label>
+            <description>Input segmentation file (.nrrd)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>CSFprobabilityMap</name>
+            <longflag>CSFprobabilityMap</longflag>
+            <flag>c</flag>
+            <label>Input CSF probability map</label>
+            <description>Input CSF probability map file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <string>
+            <name>prefix</name>
+            <longflag>prefix</longflag>
+            <flag>p</flag>
+            <label>Prefix for saved files</label>
+            <description>Prefix for saved files names</description>
+            <channel>output</channel>
+        </string>
+        <string>
+            <name>outputDir</name>
+            <longflag>outputDir</longflag>
+            <flag>d</flag>
+            <label>Output dir for saved files</label>
+            <description>Output directory path for saved files</description>
+            <channel>output</channel>
+        </string>
+    </parameters>
+</executable>

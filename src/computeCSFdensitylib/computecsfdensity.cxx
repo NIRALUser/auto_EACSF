@@ -1,4 +1,5 @@
 #include "computecsfdensity.h"
+#include "computecsfdensityCLP.h"
 #include "surfacecorrespondence.h"
 
 #include <iostream>
@@ -68,7 +69,6 @@ ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string 
 
     // Other members setting
     m_WM_relFilename = relativePath(whiteMatterSurface_fileName);
-    m_GM_relFilename = relativePath(greyMatterSurface_fileName);
 
     m_prefix = prefix;
 }
@@ -660,18 +660,20 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 7){
-        cout << "Usage : " << argv[0] << " whiteMatterSurface greyMatterSurface segfile CSFprop prefix outputDir";
-        return EXIT_FAILURE;
-    }
+    PARSE_ARGS;
+//    if (argc != 6){
+//        cout << "Usage : " << argv[0] << " whiteMatterSurface segfile CSFprop prefix outputDir";
+//        return EXIT_FAILURE;
+//    }
 
-    string WMsurf = argv[1];
-    string segfile = argv[2];
-    string csfProp = argv[3];
-    string prefix = argv[4];
-    string outputDir = argv[5];
+//    string WMsurf = argv[1];
+//    string segfile = argv[2];
+//    string csfProp = argv[3];
+//    string prefix = argv[4];
+//    string outputDir = argv[5];
 
-    ComputeCSFdensity CSFdensity_LH(WMsurf, csfProp, segfile, prefix + "_LH", outputDir);
+    cout << "Computing CSF density for left hemisphere ..." <<endl;
+    ComputeCSFdensity CSFdensity_LH(whiteMatterSurface, CSFprobabilityMap, segmentation, prefix + "_LH", outputDir);
     CSFdensity_LH.createOuterImage(15,3);
     CSFdensity_LH.createOuterSurface(1);
     CSFdensity_LH.flipOuterSurface(-1,-1,1);
@@ -681,5 +683,15 @@ int main(int argc, char* argv[]) {
     CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
     cout << " done" << endl;
 
+    cout << "Computing CSF density for right hemisphere ..." <<endl;
+    ComputeCSFdensity CSFdensity_RH(whiteMatterSurface, CSFprobabilityMap, segmentation, prefix + "_RH", outputDir);
+    CSFdensity_RH.createOuterImage(15,3,true);
+    CSFdensity_RH.createOuterSurface(1);
+    CSFdensity_RH.flipOuterSurface(-1,-1,1);
+    CSFdensity_RH.computeStreamlines(300);
+    CSFdensity_RH.readStreamLines(argv[7]);
+    cout << "Starting cortex streamlines density estimation ..." << flush;
+    CSFdensity_RH.EstimateCortexStreamlinesDensity(0,0);
+    cout << " done" << endl;
     return EXIT_SUCCESS;
 }

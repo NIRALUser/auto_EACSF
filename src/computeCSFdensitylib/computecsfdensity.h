@@ -15,7 +15,7 @@ using namespace std;
 class ComputeCSFdensity
 {
 public:
-    ComputeCSFdensity(string whiteMatterSurface_fileName, string greyMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir = "");
+    ComputeCSFdensity(string whiteMatterSurface_fileName, string segFile, string csfPropFile, string prefix, string output_dir = "");
     void createOuterImage(int closingradius = 60, int dilationradius = 5, bool reverse = false);
     void createOuterSurface(int nbIterSmoothing);
     void flipOuterSurface(int xFlip, int yFlip, int zFlip);
@@ -31,7 +31,6 @@ private:
     vtkIO m_vio;
 
     string m_WM_relFilename;
-    string m_GM_relFilename;
     string m_prefix;
     string m_output_dir;
 
