@@ -6,11 +6,19 @@
     <version>1.0</version>
     <parameters advanced="false">
         <file>
-            <name>whiteMatterSurface</name>
-            <longflag>whiteMatterSurface</longflag>
-            <flag>w</flag>
-            <label>Input white matter surface</label>
-            <description>Input white matter surface file (.vtk or .vtp)</description>
+            <name>LH_WM_Surf</name>
+            <longflag>LH_WM_Surf</longflag>
+            <flag>l</flag>
+            <label>Input left hemisphere white matter surface</label>
+            <description>Input left hemisphere white matter surface file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>RH_WM_Surf</name>
+            <longflag>RH_WM_Surf</longflag>
+            <flag>r</flag>
+            <label>Input right hemisphere white matter surface</label>
+            <description>Input right hemisphere white matter surface file (.vtk or .vtp)</description>
             <channel>input</channel>
         </file>
         <file>
@@ -27,6 +35,20 @@
             <flag>c</flag>
             <label>Input CSF probability map</label>
             <description>Input CSF probability map file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>LH_streamlines</name>
+            <longflag>LH_streamlines</longflag>
+            <label>Input left hemisphere streamlines</label>
+            <description>Input left hemisphere streamlines file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>RH_streamlines</name>
+            <longflag>RH_streamlines</longflag>
+            <label>Input right hemisphere streamlines</label>
+            <description>Input right hemisphere streamlines file (.vtk or .vtp)</description>
             <channel>input</channel>
         </file>
         <string>
