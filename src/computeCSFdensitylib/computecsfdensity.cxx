@@ -61,7 +61,6 @@ ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string 
     readerdSeg->SetFileName(segFile);
     readerdSeg->Update();
     m_dseg = readerdSeg->GetOutput();
-
     dReaderType::Pointer readerCSFprop = dReaderType::New();
     readerCSFprop->SetFileName(csfPropFile);
     readerCSFprop->Update();
@@ -442,8 +441,11 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
             point_next[2] =  p[2];    // z coordinate
 
             m_dImageType::IndexType pixelIndex;
+            inputImage->TransformPhysicalPointToIndex( point, pixelIndex );
+            outputImage->GetPixel(pixelIndex);
 
             m_dImageType::IndexType pixelIndex1;
+            inputMask->TransformPhysicalPointToIndex( point, pixelIndex1 );
             m_dImageType::PixelType label = inputMask->GetPixel(pixelIndex1);
 
             m_dImageType::PixelType probability = Interpolator->Evaluate(point);
@@ -673,23 +675,35 @@ int main(int argc, char* argv[]) {
 //    string outputDir = argv[5];
 
     cout << "Computing CSF density for left hemisphere ..." <<endl;
-    ComputeCSFdensity CSFdensity_LH(whiteMatterSurface, CSFprobabilityMap, segmentation, prefix + "_LH", outputDir);
-    CSFdensity_LH.createOuterImage(15,3);
-    CSFdensity_LH.createOuterSurface(1);
-    CSFdensity_LH.flipOuterSurface(-1,-1,1);
-    CSFdensity_LH.computeStreamlines(300);
-    CSFdensity_LH.readStreamLines(argv[7]);
+    ComputeCSFdensity CSFdensity_LH(LH_WM_Surf, CSFprobabilityMap, segmentation, prefix + "_LH", outputDir);
+    if (LH_streamlines.empty()){
+        cout << "Computing left hemisphere streamlines ..." << endl;
+        CSFdensity_LH.createOuterImage(15,3);
+        CSFdensity_LH.createOuterSurface(1);
+        CSFdensity_LH.flipOuterSurface(-1,-1,1);
+        CSFdensity_LH.computeStreamlines(300);
+    }
+    else{
+        cout << "Reading left hemisphere streamlines ..." << endl;
+        CSFdensity_LH.readStreamLines(LH_streamlines);
+    }
     cout << "Starting cortex streamlines density estimation ..." << flush;
     CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
     cout << " done" << endl;
 
     cout << "Computing CSF density for right hemisphere ..." <<endl;
-    ComputeCSFdensity CSFdensity_RH(whiteMatterSurface, CSFprobabilityMap, segmentation, prefix + "_RH", outputDir);
-    CSFdensity_RH.createOuterImage(15,3,true);
-    CSFdensity_RH.createOuterSurface(1);
-    CSFdensity_RH.flipOuterSurface(-1,-1,1);
-    CSFdensity_RH.computeStreamlines(300);
-    CSFdensity_RH.readStreamLines(argv[7]);
+    ComputeCSFdensity CSFdensity_RH(RH_WM_Surf, CSFprobabilityMap, segmentation, prefix + "_RH", outputDir);
+    if (RH_streamlines.empty()){
+        cout << "Computing right hemisphere streamlines ..." << endl;
+        CSFdensity_RH.createOuterImage(1,3,true);
+        CSFdensity_RH.createOuterSurface(1);
+        CSFdensity_RH.flipOuterSurface(-1,-1,1);
+        CSFdensity_RH.computeStreamlines(300);
+    }
+    else{
+        cout << "Reading right hemisphere streamlines ..." << endl;
+        CSFdensity_RH.readStreamLines(RH_streamlines);
+    }
     cout << "Starting cortex streamlines density estimation ..." << flush;
     CSFdensity_RH.EstimateCortexStreamlinesDensity(0,0);
     cout << " done" << endl;
