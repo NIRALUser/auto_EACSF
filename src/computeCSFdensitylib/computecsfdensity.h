@@ -40,8 +40,7 @@ private:
     typedef itk::Image< unsigned char, 3 > m_ucImageType;
     typedef double dPixelType;
     typedef itk::Image< dPixelType, 3 > m_dImageType;
-    m_ucImageType::Pointer m_ucseg;
-    m_dImageType::Pointer m_dseg;
+    m_ucImageType::Pointer m_seg;
     m_dImageType::Pointer m_CSFprop;
     m_ucImageType::Pointer m_outerImage;
 

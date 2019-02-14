@@ -35,6 +35,8 @@
 #include "itkRescaleIntensityImageFilter.h"
 
 #include "vtkImageWriter.h"
+#include "vtkPolyDataReader.h"
+#include "vtkGenericDataObjectReader.h"
 
 using namespace std;
 
@@ -51,16 +53,12 @@ ComputeCSFdensity::ComputeCSFdensity(string whiteMatterSurface_fileName, string 
 
     // Reading itk images (segmentation  and probability map)
     typedef itk::ImageFileReader<m_ucImageType> ucReaderType;
-    ucReaderType::Pointer readerucSeg = ucReaderType::New();
-    readerucSeg->SetFileName(segFile);
-    readerucSeg->Update();
-    m_ucseg = readerucSeg->GetOutput();
+    ucReaderType::Pointer readerSeg = ucReaderType::New();
+    readerSeg->SetFileName(segFile);
+    readerSeg->Update();
+    m_seg = readerSeg->GetOutput();
 
     typedef itk::ImageFileReader<m_dImageType> dReaderType;
-    dReaderType::Pointer readerdSeg = dReaderType::New();
-    readerdSeg->SetFileName(segFile);
-    readerdSeg->Update();
-    m_dseg = readerdSeg->GetOutput();
     dReaderType::Pointer readerCSFprop = dReaderType::New();
     readerCSFprop->SetFileName(csfPropFile);
     readerCSFprop->Update();
@@ -125,12 +123,12 @@ string ComputeCSFdensity::relativePath(string path){
 void ComputeCSFdensity::createOuterImage(int closingradius, int dilationradius, bool reverse){
     cout<<"Creating outer image ..."<<endl;
 
-    m_ucImageType::SpacingType spacing = m_ucseg->GetSpacing();
+    m_ucImageType::SpacingType spacing = m_seg->GetSpacing();
     closingradius = closingradius/spacing[0];
 
     typedef itk::BinaryThresholdImageFilter <m_ucImageType, m_ucImageType> BinaryThresholdImageFilterType;
     BinaryThresholdImageFilterType::Pointer thresholdFilter = BinaryThresholdImageFilterType::New();
-    thresholdFilter->SetInput(m_ucseg);
+    thresholdFilter->SetInput(m_seg);
     thresholdFilter->SetLowerThreshold(1);
     thresholdFilter->SetUpperThreshold(4);
     thresholdFilter->SetInsideValue(1);
@@ -335,21 +333,15 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
     typedef itk::Point< double, 3 > PointType;
 
     m_dImageType::Pointer inputImage = m_dImageType::New();
-    inputImage->CopyInformation(m_CSFprop);
-    inputImage->SetRegions(m_CSFprop->GetRequestedRegion());
-    inputImage->Allocate();
+    inputImage = m_CSFprop;
 
     typedef itk::ImageRegionIterator< m_dImageType> IteratorType;
-    IteratorType inputIt1(m_CSFprop, m_CSFprop->GetRequestedRegion());
-    IteratorType inputIt2(inputImage, inputImage->GetRequestedRegion());
-
-    inputIt1.GoToBegin();
-    inputIt2.GoToBegin();
-    while (!inputIt1.IsAtEnd())
+    IteratorType inputIt(inputImage, inputImage->GetRequestedRegion());
+    inputIt.GoToBegin();
+    while (!inputIt.IsAtEnd())
     {
-        inputIt2.Set(double(inputIt1.Get())/double(numeric_limits<unsigned short>::max()));
-        ++inputIt1;
-        ++inputIt2;
+        inputIt.Set(double(inputIt.Get())/double(numeric_limits<unsigned short>::max()));
+        ++inputIt;
     }
 
     //cout << "Initializing Voxel Visiting Map... "  << endl;
@@ -366,8 +358,14 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
         ++outputIt;
     }
 
-    // inputMask <=> m_ucseg
-    m_dImageType::Pointer inputMask = m_dseg;
+    // inputMask <=> m_seg
+
+    itk::CastImageFilter<m_ucImageType, m_dImageType>::Pointer castFilter = itk::CastImageFilter<m_ucImageType, m_dImageType>::New();
+    castFilter->SetInput(m_seg);
+    castFilter->Update();
+    m_dImageType::Pointer inputMask = castFilter->GetOutput();
+
+    //m_dImageType::Pointer inputMask = m_dseg;
 
     //-----------------------------------------------Estimate CSF Density------------------------------------------------------------------
 
@@ -663,49 +661,63 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
 int main(int argc, char* argv[]) {
     PARSE_ARGS;
-//    if (argc != 6){
-//        cout << "Usage : " << argv[0] << " whiteMatterSurface segfile CSFprop prefix outputDir";
-//        return EXIT_FAILURE;
-//    }
 
-//    string WMsurf = argv[1];
-//    string segfile = argv[2];
-//    string csfProp = argv[3];
-//    string prefix = argv[4];
-//    string outputDir = argv[5];
+    if (CSFprobabilityMap.empty()){
+        cerr << "A CSF probability map has to be specified" << endl;
+        return EXIT_FAILURE;
+    }
 
-    cout << "Computing CSF density for left hemisphere ..." <<endl;
-    ComputeCSFdensity CSFdensity_LH(LH_WM_Surf, CSFprobabilityMap, segmentation, prefix + "_LH", outputDir);
-    if (LH_streamlines.empty()){
-        cout << "Computing left hemisphere streamlines ..." << endl;
-        CSFdensity_LH.createOuterImage(15,3);
-        CSFdensity_LH.createOuterSurface(1);
-        CSFdensity_LH.flipOuterSurface(-1,-1,1);
-        CSFdensity_LH.computeStreamlines(300);
+    if (segmentation.empty()){
+        cerr << "A brain segmentation has to be specified" << endl;
+        return EXIT_FAILURE;
     }
-    else{
-        cout << "Reading left hemisphere streamlines ..." << endl;
-        CSFdensity_LH.readStreamLines(LH_streamlines);
-    }
-    cout << "Starting cortex streamlines density estimation ..." << flush;
-    CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
-    cout << " done" << endl;
 
-    cout << "Computing CSF density for right hemisphere ..." <<endl;
-    ComputeCSFdensity CSFdensity_RH(RH_WM_Surf, CSFprobabilityMap, segmentation, prefix + "_RH", outputDir);
-    if (RH_streamlines.empty()){
-        cout << "Computing right hemisphere streamlines ..." << endl;
-        CSFdensity_RH.createOuterImage(1,3,true);
-        CSFdensity_RH.createOuterSurface(1);
-        CSFdensity_RH.flipOuterSurface(-1,-1,1);
-        CSFdensity_RH.computeStreamlines(300);
+    if (LH_WM_Surf.empty() && RH_WM_Surf.empty()){
+        cerr << "At least one inner surface has to be specified" << endl;
+        return EXIT_FAILURE;
     }
-    else{
-        cout << "Reading right hemisphere streamlines ..." << endl;
-        CSFdensity_RH.readStreamLines(RH_streamlines);
+
+    if (prefix.empty()){
+        prefix = "CCDresult";
     }
-    cout << "Starting cortex streamlines density estimation ..." << flush;
-    CSFdensity_RH.EstimateCortexStreamlinesDensity(0,0);
-    cout << " done" << endl;
+
+    if (!LH_WM_Surf.empty()){
+        cout << "Computing CSF density for left hemisphere ..." <<endl;
+        ComputeCSFdensity CSFdensity_LH(LH_WM_Surf, segmentation, CSFprobabilityMap, prefix + "_LH", outputDir);
+        if (LH_streamlines.empty()){
+            cout << "Computing left hemisphere streamlines ..." << endl;
+            CSFdensity_LH.createOuterImage(15,3);
+            CSFdensity_LH.createOuterSurface(1);
+            CSFdensity_LH.flipOuterSurface(-1,-1,1);
+            CSFdensity_LH.computeStreamlines(300);
+        }
+        else{
+            cout << "Reading left hemisphere streamlines ..." << endl;
+            CSFdensity_LH.readStreamLines(LH_streamlines);
+        }
+        cout << "Starting cortex streamlines density estimation ..." << flush;
+        CSFdensity_LH.EstimateCortexStreamlinesDensity(0,0);
+        cout << "Left hemisphere done" << endl;
+    }
+
+    if (!RH_WM_Surf.empty()){
+        cout << "Computing CSF density for right hemisphere ..." <<endl;
+        ComputeCSFdensity CSFdensity_RH(RH_WM_Surf, segmentation, CSFprobabilityMap, prefix + "_RH", outputDir);
+        if (RH_streamlines.empty()){
+            cout << "Computing right hemisphere streamlines ..." << endl;
+            CSFdensity_RH.createOuterImage(1,3,true);
+            CSFdensity_RH.createOuterSurface(1);
+            CSFdensity_RH.flipOuterSurface(-1,-1,1);
+            CSFdensity_RH.computeStreamlines(300);
+        }
+        else{
+            cout << "Reading right hemisphere streamlines ..." << endl;
+            CSFdensity_RH.readStreamLines(RH_streamlines);
+        }
+        cout << "Starting cortex streamlines density estimation ..." << flush;
+        CSFdensity_RH.EstimateCortexStreamlinesDensity(0,0);
+        cout << "Right hemisphere done" << endl;
+    }
+
     return EXIT_SUCCESS;
 }
