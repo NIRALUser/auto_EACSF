@@ -22,6 +22,9 @@ public:
     void computeStreamlines(int dims);
     void EstimateCortexStreamlinesDensity(int maxIter = 1, float maxDist = 20.0);
     void readStreamLines(string streamFile);
+    void setWriteOptions(bool writeOuterImage, bool writeOuterSurface, bool writeFlippedOuterSurface, bool writeDensity, bool writeDensityMagGradient,
+                         bool writeNormDensityMagGradient, bool writeOutputDensitySurf, bool writeVisitationMap);
+    void setWriteOptions(bool writeAll);
 
 private:
     int setOutputLocation(string dirname);
@@ -51,6 +54,9 @@ private:
     bool m_writeOuterImage = true;
     bool m_writeOuterSurface = true;
     bool m_writeFlippedOuterSurface = true;
+    bool m_writeDensity = true;
+    bool m_writeDensityMagGradient = true;
+    bool m_writeNormDensityMagGradient = true;
     bool m_writeOutputDensitySurf = true;
     bool m_writeVisitationMap = true;
 };

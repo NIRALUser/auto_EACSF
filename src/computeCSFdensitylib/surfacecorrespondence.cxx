@@ -329,11 +329,14 @@ void SurfaceCorrespondence::performStreamTracer() {
         return;
     }
     
-    if (m_whiteMatterSurface == NULL) {
+    if (m_greyMatterHull == NULL) {
         cout << "trace destination surface is null" << endl;
         return;
     }
-    
+
+    m_whiteMatterSurface = m_vio.readFile("/ASD/mahmoud_projects/ASDPredection6M/EACSF/108372/108372_LH_MID.vtk");
+    m_greyMatterHull = m_vio.readFile("/ASD/mahmoud_projects/ASDPredection6M/EACSF/108372/108372_LH_GM_Outer_MC.vtk");
+
 	// set active velocity field
     m_laplaceField->GetPointData()->SetActiveVectors("LaplacianGradientNorm");
 	
@@ -346,6 +349,10 @@ void SurfaceCorrespondence::performStreamTracer() {
 	vtkStreamTracer* tracer = vtkStreamTracer::New();
     tracer->SetInputData(m_laplaceField);
     tracer->SetSourceData(m_whiteMatterSurface);
+
+    m_vio.writeFile(m_output_dir + "inputData.vts",m_laplaceField);
+    m_vio.writeFile(m_output_dir + "inputSeedPoints.vtk",m_whiteMatterSurface);
+
 	tracer->SetComputeVorticity(false);
 
 	tracer->SetIntegrationDirectionToForward();
@@ -364,6 +371,7 @@ void SurfaceCorrespondence::performStreamTracer() {
     cout << "IntegratorType: " << tracer->GetIntegratorType() << endl;
 
     tracer->Update();
+    m_vio.writeFile(m_output_dir + "tracerOutput.vtk",tracer->GetOutput());
 	
     performStreamTracerPostProcessing(tracer->GetOutput());
 }
@@ -419,37 +427,88 @@ void SurfaceCorrespondence::interpolateBrokenPoints(vtkPolyData* surf, vtkPoints
     }
 }
 
+void SurfaceCorrespondence::setOutputStreamFilename(string filename){
+    m_outputStream = filename;
+}
+
+bool SurfaceCorrespondence::fileExists(string filename){
+    struct stat info;
+    if( stat( filename.c_str(), &info ) != 0 ){
+        return false;
+    }
+    else if( info.st_mode & S_IFREG ){
+        return true;
+    }
+    else{
+        cerr<<filename<<" is not a regular file"<<endl;
+        return false;
+    }
+}
+
 vtkPolyData* SurfaceCorrespondence::run(){
     string outputGrid = m_output_dir + m_prefix + "_grid.vts";
     string outputField = m_output_dir + m_prefix + "_field.vts";
-    string outputStream = m_output_dir + m_prefix + "_stream.vtk";
-    string outputMesh = m_output_dir + m_prefix + "_warpedMesh.vtp";
+    if (m_outputStream.empty()){
+        m_outputStream = m_output_dir + m_prefix + "_stream.vtk";
+    }
 
     cout << "Output grid: " << outputGrid << endl;
     cout << "Output laplacian field: " << outputField << endl;
-    cout << "Output streamlines: " << outputStream << endl;
-    cout << "Output warped mesh: " << outputMesh << endl;
+    cout << "Output streamlines: " << m_outputStream << endl;
 
     // create uniform grid for a FDM model
-    createGrid();
+    if (fileExists(outputGrid)){
+        cout << "Grid already exists" << endl;
+        cout << "Loading " << outputGrid << " ..." << endl;
+        m_laplaceField = m_vio.readDataFile(outputGrid);
+        cout << "Grid loaded" << endl;
+    }
+    else{
+        cout << "Creating grid ..." <<endl;
+        createGrid();
+        cout << "Grid created" << endl;
 
-    if (m_writeGridFile)
-    {
-        m_vio.writeFile(outputGrid, m_laplaceField);
+        if (m_writeGridFile)
+        {
+            m_vio.writeFile(outputGrid, m_laplaceField);
+        }
     }
 
     // compute laplace map
-    computeLaplacePDE();
+    if (fileExists(outputField)){
+        cout << "Laplacian field already exists" << endl;
+        cout << "Loading " << outputField << " ..." << endl;
+        m_laplaceField = m_vio.readDataFile(outputField);
+        cout << "Laplacian field loaded" << endl;
+    }
+    else{
+        cout << "Creating laplacian field ..." <<endl;
+        computeLaplacePDE();
+        cout << "Laplacian field created" << endl;
 
-    if (m_writeLaplaceFieldFile)
-    {
-        m_vio.writeFile(outputField, m_laplaceField);
+        if (m_writeLaplaceFieldFile)
+        {
+            m_vio.writeFile(outputField, m_laplaceField);
+        }
     }
 
-    performStreamTracer();
-    if (m_writeStreamFile)
-    {
-        m_vio.writeFile(outputStream, m_streams);
+
+    // compute streamlines
+    if (fileExists(m_outputStream)){
+        cout << "Streamlines already exist" << endl;
+        cout << "Loading " << m_outputStream << " ..." << endl;
+        m_streams = m_vio.readFile(m_outputStream);
+        cout << "Streamlines loaded" << endl;
+    }
+    else{
+        cout << "Creating streamlines ..." <<endl;
+        performStreamTracer();
+        cout << "Streamlines field created" << endl;
+
+        if (m_writeStreamFile)
+        {
+            m_vio.writeFile(m_outputStream, m_streams);
+        }
     }
 
     return m_streams;

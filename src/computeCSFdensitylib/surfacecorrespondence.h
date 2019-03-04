@@ -21,6 +21,8 @@ public:
     void setWriteOptions(bool writeGridFile, bool writeLaplaceFieldFile, bool writeStreamFile, bool writeWarpedMeshFile, bool writeObjFile);
     void setWriteOptions(bool writeAll);
     void setPDEparams(int PDElow, int PDEhigh, int PDEiter);
+    void setOutputStreamFilename(string filename);
+    static bool fileExists(string filename);
 
     vtkPolyData *run();
 
@@ -47,6 +49,7 @@ private:
 
     string m_output_dir;
     string m_prefix = "surface_correspondence";
+    string m_outputStream;
     int m_dims; //number of subdivision of the grid in each dimensions
 
     vtkSmartPointer<vtkPolyData> m_whiteMatterSurface;
