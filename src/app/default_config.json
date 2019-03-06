@@ -22,7 +22,9 @@
 	"Reference_Atlas": "pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
 	"SkullStripping_Atlases_dir": "brainmaskingMultiatlas",
 	"TissueSeg_Atlas_dir": "pediatric-atlas-1year-T1-ABC/DeepGray5Class",
-	"TissueSeg_csf": 3
+    "TissueSeg_csf": 3,
+    "LH_inner_surf": "",
+    "RH_inner_surf": ""
     },
     "executables": [
         {
