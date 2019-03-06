@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>5</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -552,7 +552,7 @@
     </widget>
     <widget class="QWidget" name="tab_TissueSeg">
      <attribute name="title">
-      <string>3. Tissue Segmentation + Ventricle Masking</string>
+      <string>3. Tissue Segmentation + 4. Ventricle Masking</string>
      </attribute>
      <widget class="QCheckBox" name="checkBox_TissueSeg">
       <property name="geometry">
@@ -1041,6 +1041,76 @@
       </item>
      </widget>
     </widget>
+    <widget class="QWidget" name="tab_CSFDensity">
+     <attribute name="title">
+      <string>CSF Density</string>
+     </attribute>
+     <widget class="QCheckBox" name="checkBox_CSFDensity">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>50</y>
+        <width>381</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::PreventContextMenu</enum>
+      </property>
+      <property name="text">
+       <string>Compute CSF Density</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_LH_inner">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>100</y>
+        <width>661</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_LH_inner">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>100</y>
+        <width>231</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Left hemisphere inner surface</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_RH_inner">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>150</y>
+        <width>661</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_RH_inner">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>150</y>
+        <width>231</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Right hemisphere inner surface</string>
+      </property>
+     </widget>
+    </widget>
     <widget class="QWidget" name="tab_Execution">
      <attribute name="title">
       <string>Execution</string>
@@ -1124,11 +1194,6 @@ p, li { white-space: pre-wrap; }
        <string>Execute</string>
       </property>
      </widget>
-    </widget>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Local Volume Computation</string>
-     </attribute>
     </widget>
    </widget>
   </widget>

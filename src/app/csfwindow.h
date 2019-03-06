@@ -158,6 +158,11 @@ private slots:
     void on_spinBox_T1Weight_valueChanged(const QString &val);
     void on_lineEdit_Iterations_textChanged(const QString &val);
 
+    //CSF Density
+    void on_pushButton_LH_inner_clicked();
+    void on_pushButton_RH_inner_clicked();
+    void on_checkBox_CSFDensity_stateChanged(int state);
+
     //Execution
     void on_pushButton_execute_clicked();
 };
