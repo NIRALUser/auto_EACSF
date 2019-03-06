@@ -717,7 +717,7 @@ void ComputeCSFdensity::EstimateCortexStreamlinesDensity(int maxIter /* = 1*/, f
 
 }
 
-ComputeCSFdensity::setWriteOptions(bool writeOuterImage, bool writeOuterSurface, bool writeFlippedOuterSurface, bool writeDensity, bool writeDensityMagGradient,
+void ComputeCSFdensity::setWriteOptions(bool writeOuterImage, bool writeOuterSurface, bool writeFlippedOuterSurface, bool writeDensity, bool writeDensityMagGradient,
                                    bool writeNormDensityMagGradient, bool writeOutputDensitySurf, bool writeVisitationMap)
 {
     m_writeOuterImage = writeOuterImage;
@@ -730,7 +730,7 @@ ComputeCSFdensity::setWriteOptions(bool writeOuterImage, bool writeOuterSurface,
     m_writeVisitationMap = writeVisitationMap;
 }
 
-ComputeCSFdensity::setWriteOptions(bool writeAll)
+void ComputeCSFdensity::setWriteOptions(bool writeAll)
 {
     m_writeOuterImage = writeAll;
     m_writeOuterSurface = writeAll;
