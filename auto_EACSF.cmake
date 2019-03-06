@@ -322,3 +322,10 @@ install(FILES
 file(GLOB Auto_EACSF_HEADERS "*.h")
 install(FILES ${Auto_EACSF_HEADERS} 
 DESTINATION include)
+
+option(BUILD_TESTING "Build the testing tree" ON)
+
+IF(BUILD_TESTING)
+  include(CTest)
+  ADD_SUBDIRECTORY(Testing)
+ENDIF(BUILD_TESTING)
