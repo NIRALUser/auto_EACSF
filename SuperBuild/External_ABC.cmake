@@ -30,18 +30,19 @@ if(NOT DEFINED ABC_SOURCE_DIR)
   endif()
 
   ExternalProject_Add(${proj}
-    #GIT_REPOSITORY "${git_protocol}://github.com/NIRALUser/ABC.git"
-    GIT_REPOSITORY "${git_protocol}://github.com/ArthurLeMaout/ABC.git"
+    GIT_REPOSITORY "${git_protocol}://github.com/NIRALUser/ABC.git"
+    #GIT_REPOSITORY "${git_protocol}://github.com/ArthurLeMaout/ABC.git"
     GIT_TAG master
     SOURCE_DIR ${proj}
     BINARY_DIR ${proj}-build
     CMAKE_GENERATOR ${gen}
     "${cmakeversion_external_update}"
     CMAKE_ARGS
-      -DUSE_SYSTEM_ITK:BOOL=OFF
+      -DUSE_SYSTEM_ITK:BOOL=ON
       # -DITK_DIR:PATH=/tools/ITK/ITKv4.8.2/ITKv4.8.2_THL64_stat_Release/lib/cmake/ITK-4.8/
-      # -DABC_SUPERBUILD:BOOL=OFF
-      -DABC_SUPERBUILD:BOOL=ON
+      -DABC_SUPERBUILD:BOOL=OFF
+      -DITK_DIR:PATH=${ITK_DIR}
+      #-DABC_SUPERBUILD:BOOL=ON
       -DCMAKE_C_FLAGS:STRING=-fPIC
       -DCMAKE_CXX_FLAGS:STRING=-fPIC
       ${CMAKE_OSX_EXTERNAL_PROJECT_ARGS}
