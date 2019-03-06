@@ -8,7 +8,6 @@ import argparse
 import subprocess
 from main_script import eprint
 from main_script import call_and_print
-from main_script import print_main_info
 
 def main(args):
     T1 = args.t1
@@ -29,26 +28,34 @@ def main(args):
     TEMPLATE_AFF = os.path.join(OUTPUT_DIR,'template_affine.nrrd')
     ANTs_MATRIX_NAME = os.path.join(OUTPUT_DIR,'template_to_T1_')
     ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+    ANTs_INV_WARP =  ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
     ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
     TEMPLATE_FIN = os.path.join(OUTPUT_DIR,'template.mha')
 
-    args = [BRAINSFit, '--fixedVolume', T1, '--movingVolume', TEMPLATE, '--outputTransform',AFFINE_TF, '--useRigid', '--initializeTransformMode', 'useCenterOfHeadAlign']
-    call_and_print(args)
+    if not (os.path.isfile(TEMPLATE) and os.path.isfile(AFFINE_TF) and os.path.isfile(TEMPLATE_AFF) and os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_INV_WARP) and os.path.isfile(ANTs_AFFINE) and os.path.isfile(TEMPLATE_FIN)):
+        args = [BRAINSFit, '--fixedVolume', T1, '--movingVolume', TEMPLATE, '--outputTransform',AFFINE_TF, '--useRigid', '--initializeTransformMode', 'useCenterOfHeadAlign']
+        call_and_print(args)
 
-    args = [WarpImageMultiTransform, '3', TEMPLATE, TEMPLATE_AFF, AFFINE_TF, '-R', T1]
-    call_and_print(args)
+        args = [WarpImageMultiTransform, '3', TEMPLATE, TEMPLATE_AFF, AFFINE_TF, '-R', T1]
+        call_and_print(args)
 
-    args = [ANTS, '3', '-m', 'CC['+T1+','+TEMPLATE+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
-    call_and_print(args)
+        args = [ANTS, '3', '-m', 'CC['+T1+','+TEMPLATE+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+        call_and_print(args)
 
-    args = [WarpImageMultiTransform, '3', TEMPLATE, TEMPLATE_FIN, ANTs_WARP, ANTs_AFFINE, '-R', T1]
-    call_and_print(args)
+        args = [WarpImageMultiTransform, '3', TEMPLATE, TEMPLATE_FIN, ANTs_WARP, ANTs_AFFINE, '-R', T1]
+        call_and_print(args)
+    else:
+        print_aef('ANTs registration already exists')
 
     for i in range(1,6):
         FILE = os.path.join(ATLAS_DIR,str(i)+'.mha')
         FILE_FIN = os.path.join(OUTPUT_DIR,str(i)+'.mha')
-        args = [WarpImageMultiTransform, '3', FILE, FILE_FIN, ANTs_WARP, ANTs_AFFINE, '-R', T1]
-        call_and_print(args)
+
+        if not (os.path.isfile(FILE_FIN)):
+            args = [WarpImageMultiTransform, '3', FILE, FILE_FIN, ANTs_WARP, ANTs_AFFINE, '-R', T1]
+            call_and_print(args)
+        else:
+            print_aef(FILE_FIN+' already exist')
 
     args = [ABC, os.path.join(PARENT_DIR,'ABCparam.xml')]
     call_and_print(args)

@@ -13,6 +13,12 @@ import numpy as np
 def print_main_info(info):
     info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="blue">'+info+"</font></b>"
     print(info)
+    sys.stdout.flush()
+
+def print_aef(info):
+    #print already existing file infos
+    info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="yellow">'+info+"</font></b>"
+    sys.stdout.flush()
 
 def eprint(*args, **kwargs):
     #print errors function
@@ -23,7 +29,7 @@ def call_and_print(args):
     exe_path=args.pop(0)
     exe_dir=os.path.dirname(exe_path)
     exe_name=os.path.basename(exe_path)
-    print("<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="blue">Running: </font></b>'+exe_dir+'/<b><font color="blue">'+exe_name+'</font></b> '+" ".join(args)+'\n')
+    print("<b>   >>> "+os.path.basename(sys.argv[0])+' : <font color="blue">Running: </font></b>'+exe_dir+'/<b><font color="blue">'+exe_name+'</font></b> '+" ".join(args)+'\n')
     sys.stdout.flush()
     args.insert(0,exe_path)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -126,7 +132,7 @@ def main(main_args):
     if (main_args.performReg == "true"):
        rigid_align="rigid_align_script.py"
        print_main_info("Running "+rigid_align)
-       sys.stdout.flush()
+
        OUT_RR=os.path.join(OUT_PATH,'RigidRegistration')
        call([python, scripts_prefix+rigid_align,'--output',OUT_RR])
        T1 = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
@@ -134,38 +140,40 @@ def main(main_args):
            T2=os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
 
        print_main_info("Finished running "+rigid_align)
-       sys.stdout.flush()
 
     if (main_args.performSS == "true"):
        make_mask="make_mask_script.py"
        print_main_info("Running "+make_mask)
-       sys.stdout.flush()
+
        OUT_SS=os.path.join(OUT_PATH,'SkullStripping')
-       call([python, scripts_prefix+make_mask, '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
        BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
+       if not(os.path.isfile(BRAIN_MASK)):
+           call([python, scripts_prefix+make_mask, '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
+       else:
+           print('Brainmask already exists')
        print_main_info("Finished running "+make_mask)
-       sys.stdout.flush()
 
 
     if (main_args.performTSeg == "true"):
        tissue_seg="tissue_seg_script.py"
        print_main_info("Running tissue_seg_script.py")
-       sys.stdout.flush()
+
        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-       call([python, scripts_prefix+tissue_seg, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
-       print_main_info("Finished running tissue_seg_script.py")
        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
-       sys.stdout.flush()
+       if not(os.path.isfile(Segmentation)):
+           print(Segmentation + ' doesnt exist')
+           call([python, scripts_prefix+tissue_seg, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
+       else:
+           print('Segmentation already exists')
+       print_main_info("Finished running tissue_seg_script.py")
 
     vent_mask="vent_mask_script.py"
     print_main_info("Running "+vent_mask)
-    sys.stdout.flush()
     OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
     call([python, scripts_prefix+vent_mask, '--t1', T1, '--tissueSeg', Segmentation, '--atlas', '--output',OUT_VR])
     Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
     print_main_info("Finished running "+vent_mask)
-    sys.stdout.flush()
 
     BRAIN_MASK_dir = os.path.dirname(BRAIN_MASK)
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
@@ -238,6 +246,13 @@ def main(main_args):
     args=[ImageStat, FINAL_OUTERCSF, '-label', FINAL_OUTERCSF]
     call_and_print(args)
 
+    if (main_args.computeCSFDensity == "true"):
+        LH_INNER_SURF = main_args.LHInnerSurf
+        RH_INNER_SURF = main_args.RHInnerSurf
+        OUT_CCD=os.path.join(OUT_PATH,'CSF_Density')
+        args = ['computecsfdensity', '-l', LH_INNER_SURF, '-r', RH_INNER_SURF, '-s', Segmentation, '-c', FINAL_OUTERCSF, '-o', OUT_CCD, '-p', Segmentation_base]
+        call_and_print(args)
+
     print_main_info("Auto_EACSF finished")
 
     sys.exit(0);
@@ -252,10 +267,13 @@ if (__name__ == "__main__"):
     parser.add_argument('--CSFLabel', type=str, help='CSF Label in segmentation', default="@CSF_LABEL@")
     parser.add_argument('--ACPCunit', type=str, help='ACPC unit (mm/index)', default="@ACPC_UNIT@")
     parser.add_argument('--ACPCval', type=str, help='ACPC value', default="@ACPC_VAL@")
+    parser.add_argument('--LHInnerSurf', type=str, help='Left hemisphere inner surface', default="@LH_INNER@")
+    parser.add_argument('--RHInnerSurf', type=str, help='Right hemisphere inner surface', default="@RH_INNER@")
     parser.add_argument('--useDfCerMask', type=str, help='Use the default cerebellum mask', default="@USE_DCM@")
     parser.add_argument('--performReg', type=str, help='Perform rigid registration', default="@PERFORM_REG@")
     parser.add_argument('--performSS', type=str, help='Perform skull stripping', default="@PERFORM_SS@")
     parser.add_argument('--performTSeg', type=str, help='Perform tissue segmentation', default="@PERFORM_TSEG@")
+    parser.add_argument('--computeCSFDensity', type=str, help='Compute CSF density', default="@COMPUTE_CSFDENS@")
     parser.add_argument('--python3', type=str, help='Python3 executable path', default='@python3_PATH@')
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--ImageStat', type=str, help='ImageStat executable path', default='@ImageStat_PATH@')

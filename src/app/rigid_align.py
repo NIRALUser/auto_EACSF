@@ -8,10 +8,8 @@ import argparse
 import subprocess
 from main_script import eprint
 from main_script import call_and_print
-from main_script import print_main_info
 
 def main(args):
-    print(">>>>>>>>>>>>>>>>RIGIDALIGN")
     sys.stdout.flush()
     T1 = args.t1
     T2 = args.t2
@@ -44,14 +42,20 @@ def main(args):
             T2_base=T2_split[0]
         STX_T2 = os.path.join(OUTPUT_DIR, "".join([T2_base,"_stx.nrrd"]))
 
-    args=[BRAINSFit, '--fixedVolume', ATLAS, '--movingVolume', T1, '--outputVolume', STX_T1, '--useRigid',\
-    '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
-    call_and_print(args)
-
-    if (T2_exists):
-        args=[BRAINSFit, '--fixedVolume', STX_T1, '--movingVolume', T2, '--outputVolume', STX_T2, '--useRigid',\
+    if (not os.path.isfile(STX_T1)):
+        args=[BRAINSFit, '--fixedVolume', ATLAS, '--movingVolume', T1, '--outputVolume', STX_T1, '--useRigid',\
         '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
         call_and_print(args)
+    else:
+        print_aef("T1 image already aligned")
+
+    if (T2_exists):
+        if (not os.path.isfile(STX_T2)):
+            args=[BRAINSFit, '--fixedVolume', STX_T1, '--movingVolume', T2, '--outputVolume', STX_T2, '--useRigid',\
+            '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
+            call_and_print(args)
+        else:
+            print_aef("T2 image already aligned")
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Calculates segmentation w/o ventricle mask. Computes deformation field with T1 vs ATLAS, applies warp to ventricle mask and masks tissue-seg')

@@ -7,7 +7,7 @@ import argparse
 import subprocess
 from main_script import eprint
 from main_script import call_and_print
-from main_script import print_main_info
+from main_script import print_aef
 
 def main(args):
     T1 = args.t1
@@ -58,14 +58,34 @@ def main(args):
 
     if (T1 != Input_T1_NII):
         args=[convertITKformats, T1, Input_T1_NII]
-        call_and_print(args)
+        if not(os.path.isfile(Input_T1_NII)):
+            call_and_print(args)
+        else:
+            print_aef('T1 image already converted to nii.gz')
 
     if (T2_exists):
         if (T2 != Input_T2_NII):
-            args=[convertITKformats, T2, Input_T2_NII]
-            call_and_print(args)
+            if not(os.path.isfile(Input_T2_NII)):
+                args=[convertITKformats, T2, Input_T2_NII]
+                call_and_print(args)
+            else:
+                print_aef('T2 image already converted to nii.gz')
 
     T1_Only_Mask = os.path.join(T1_dir, "".join([T1_base,"_T1only"]))
+
+    Input_T1_NII_255 = os.path.join(T1_dir, "".join([T1_base,"_255.nii.gz"]))
+    Pre_SkullMask = os.path.join(T1_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
+
+    if not(os.path.isfile(Input_T1_NII_255)):
+        args=[ImageMath, Input_T1_NII, '-rescale', '0,255', '-outfile', Input_T1_NII_255]
+        call_and_print(args)
+    else:
+        print_aef(Input_T1_NII_255+' already exists')
+    if not(os.path.isfile(Pre_SkullMask)):
+        args=[ImageMath, Input_T1_NII_255, '-threshold', '0,240', '-outfile', Pre_SkullMask]
+        call_and_print(args)
+    else:
+        print_aef(Pre_SkullMask+' already exists')
 
     if (T2_exists):
         T2_Only_Mask = os.path.join(T2_dir, "".join([T2_base,"_T2only"]))
@@ -75,56 +95,49 @@ def main(args):
         T2_Joint_T1_Mask1 = os.path.join(T1_dir, "".join([T1_base,"_T2JointT1_tmp1"]))
         T2_Joint_T1_Mask2 = os.path.join(T1_dir, "".join([T1_base,"_T2JointT1_tmp2"]))
 
-        args=[FSLBET, Input_T2_NII, T2_Joint_T1_Mask1, '-f', '0.52', '-g', '0.2', '-m', '-n', '-A2', Input_T1_NII, '-R']
-        call_and_print(args)
+        if not(os.path.isfile(T2_Joint_T1_Mask)):
+            args=[FSLBET, Input_T2_NII, T2_Joint_T1_Mask1, '-f', '0.52', '-g', '0.2', '-m', '-n', '-A2', Input_T1_NII, '-R']
+            call_and_print(args)
 
+            args=[FSLBET, Input_T2_NII, T2_Joint_T1_Mask2, '-f', '0.52', '-g', '0.2', '-m', '-n', '-A2', Input_T1_NII, '-R']
+            call_and_print(args)
 
-        args=[FSLBET, Input_T2_NII, T2_Joint_T1_Mask2, '-f', '0.52', '-g', '0.2', '-m', '-n', '-A2', Input_T1_NII, '-R']
-        call_and_print(args)
+            T2_Joint_T1_Mask1 = ''.join([T2_Joint_T1_Mask1, "_mask.nii.gz"])
+            T2_Joint_T1_Mask2 = ''.join([T2_Joint_T1_Mask2, "_mask.nii.gz"])
 
-        T2_Joint_T1_Mask1 = ''.join([T2_Joint_T1_Mask1, "_mask.nii.gz"])
-        T2_Joint_T1_Mask2 = ''.join([T2_Joint_T1_Mask2, "_mask.nii.gz"])
+            args=[ImageMath, T2_Joint_T1_Mask1, '-add', T2_Joint_T1_Mask2, '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-        args=[ImageMath, T2_Joint_T1_Mask1, '-add', T2_Joint_T1_Mask2, '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-threshold', '1,2', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-        args=[ImageMath, T2_Joint_T1_Mask, '-threshold', '1,2', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-dilate', '1,1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-        args=[ImageMath, T2_Joint_T1_Mask, '-dilate', '1,1', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-        args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-mul', Pre_SkullMask, '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-    Input_T1_NII_255 = os.path.join(T1_dir, "".join([T1_base,"_255.nii.gz"]))
-    Pre_SkullMask = os.path.join(T1_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
+            args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-    args=[ImageMath, Input_T1_NII, '-rescale', '0,255', '-outfile', Input_T1_NII_255]
-    call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-dilate', '1,1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-    args=[ImageMath, Input_T1_NII_255, '-threshold', '0,240', '-outfile', Pre_SkullMask]
-    call_and_print(args)
+            args=[ImageMath, T2_Joint_T1_Mask, '-conComp', '1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
 
-    if (T2_exists):
-        args=[ImageMath, T2_Joint_T1_Mask, '-mul', Pre_SkullMask, '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
-
-        args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
-
-        args=[ImageMath, T2_Joint_T1_Mask, '-dilate', '1,1', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
-
-        args=[ImageMath, T2_Joint_T1_Mask, '-conComp', '1', '-outfile', T2_Joint_T1_Mask]
-        call_and_print(args)
-
-        for i in range(0,2):
+            for i in range(0,2):
                 args=[ImageMath, T2_Joint_T1_Mask, '-dilate', '1,1', '-outfile', T2_Joint_T1_Mask]
                 call_and_print(args)
 
                 args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
                 call_and_print(args)
+
+        else:
+            print_aef('T2 Joint T1 mask already exists')
 
         args_maj_vote.append(T2_Joint_T1_Mask)
 
@@ -133,16 +146,10 @@ def main(args):
         atlas_base=atlases_list[2*k]
         atlas_type=int(atlases_list[2*k+1])
 
-        if (atlas_type < 3):
-            if (atlas_type == 1):
-                ATLAS_suffix = '_T1.nrrd'
-                IM_base = T1_base
-                Input = Input_T1_NII
-
-            else:
-                ATLAS_suffix = '_T2.nrrd'
-                IM_base = T2_base
-                Input = Input_T2_NII
+        if (atlas_type == 1):
+            ATLAS_suffix = '_T1.nrrd'
+            IM_base = T1_base
+            Input = Input_T1_NII
 
             ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
             ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
@@ -150,31 +157,55 @@ def main(args):
 
             ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
             ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+            ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+            ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+
+            args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+
+        elif ((atlas_type == 2) and T2_exists):
+            ATLAS_suffix = '_T2.nrrd'
+            IM_base = T2_base
+            Input = Input_T2_NII
+
+            ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
+            ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+            OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+
+            ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
+            ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+            ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
             ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
 
             args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
 
         else:
-            T1_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T1.nrrd']))
-            T2_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T2.nrrd']))
-            ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
-            OUT_MASK = os.path.join(output_dir,''.join([T2_base,'_joined_',atlas_base,'_mask.nii.gz']))
-            ANTs_MATRIX_NAME = os.path.join(output_dir, "".join([T2_base,'_joined_',atlas_base,'_']))
-            ANTs_WARP_ = ''.join([ANTs_MATRIX_NAME, 'Warp.nii.gz'])
-            ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME, 'Affine.txt'])
+            if (T2_exists):
+                T1_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T1.nrrd']))
+                T2_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T2.nrrd']))
+                ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+                OUT_MASK = os.path.join(output_dir,''.join([T2_base,'_joined_',atlas_base,'_mask.nii.gz']))
+                ANTs_MATRIX_NAME = os.path.join(output_dir, "".join([T2_base,'_joined_',atlas_base,'_']))
+                ANTs_WARP = ''.join([ANTs_MATRIX_NAME, 'Warp.nii.gz'])
+                ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+                ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME, 'Affine.txt'])
 
-            args=[ANTS, '3', '-m', 'CC['+Input_T1_NII+','+T1_ATLAS+',1,4]', '-m', 'CC['+Input_T2_NII+','+T2_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t','SyN[0.25]', '-r', 'Gauss[3,0]']
+                args=[ANTS, '3', '-m', 'CC['+Input_T1_NII+','+T1_ATLAS+',1,4]', '-m', 'CC['+Input_T2_NII+','+T2_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t','SyN[0.25]', '-r', 'Gauss[3,0]']
 
 
-
-        call_and_print(args)
-
-        if (atlas_type == 2):
-            args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T2_NII, '--use-NN']
+        if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_INV_WARP) and os.path.isfile(ANTs_AFFINE)):
+            call_and_print(args)
         else:
-            args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T1_NII, '--use-NN']
+            print_aef('ANTs already executed')
 
-        call_and_print(args)
+        if not (os.path.isfile(OUT_MASK)):
+            if (atlas_type == 2):
+                args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T2_NII, '--use-NN']
+            else:
+                args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T1_NII, '--use-NN']
+
+            call_and_print(args)
+        else:
+            print_aef(OUT_MASK + ' already exists')
 
         args_maj_vote.append(OUT_MASK)
 
@@ -184,19 +215,26 @@ def main(args):
     Weighted_Majority_Mask = os.path.join(output_dir, "".join([T1_base,"_weightedMajority.nii.gz"]))
     #args=[ImageMath,Input_T1_NII,'-majorityVoting', T2_Joint_T1_Mask, T1_Only_Mask, T2_Only_Mask, COLIN_OUT_MASK, ICMB152_OUT_MASK,
     #       BIGCSF01_OUT_MASK, BIGCSF02_OUT_MASK,'-outfile', Weighted_Majority_Mask]
-    args_maj_vote.extend(['-outfile',Weighted_Majority_Mask])
-    call_and_print(args_maj_vote)
 
-    TEMP_ERODE_MASK = os.path.join(output_dir, "".join([T1_base,"_TEMP_ERODE.nii.gz"]))
-    args=[ImageMath,Weighted_Majority_Mask, '-erode', '8,1', '-outfile', TEMP_ERODE_MASK]
-    call_and_print(args)
+    if not (os.path.isfile(Weighted_Majority_Mask)):
+        args_maj_vote.extend(['-outfile',Weighted_Majority_Mask])
+        call_and_print(args_maj_vote)
+
+        TEMP_ERODE_MASK = os.path.join(output_dir, "".join([T1_base,"_TEMP_ERODE.nii.gz"]))
+        args=[ImageMath,Weighted_Majority_Mask, '-erode', '8,1', '-outfile', TEMP_ERODE_MASK]
+        call_and_print(args)
+
+        args=[ImageMath,Weighted_Majority_Mask, '-dilate', '1,1', '-outfile', Weighted_Majority_Mask]
+        call_and_print(args)
+    else:
+        print_aef('Weighted majority mask already exists')
 
     FINAL_MASK = os.path.join(output_dir, "".join([T1_base,"_FinalBrainMask.nrrd"]))
-    args=[ImageMath,Weighted_Majority_Mask, '-dilate', '1,1', '-outfile', Weighted_Majority_Mask]
-    call_and_print(args)
-
-    args=[ImageMath,Weighted_Majority_Mask, '-erode', '1,1', '-outfile', FINAL_MASK]
-    call_and_print(args)
+    if not (os.path.isfile(FINAL_MASK)):
+        args=[ImageMath,Weighted_Majority_Mask, '-erode', '1,1', '-outfile', FINAL_MASK]
+        call_and_print(args)
+    else:
+        print_aef('Final mask already exists')
 
 ##############################################################################################################
 

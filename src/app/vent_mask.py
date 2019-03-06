@@ -8,7 +8,6 @@ import subprocess
 import itk
 from main_script import eprint
 from main_script import call_and_print
-from main_script import print_main_info
 
 def main(args):
     sys.stdout.flush()
