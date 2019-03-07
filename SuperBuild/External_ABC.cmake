@@ -13,6 +13,10 @@ endif()
 # Include dependent projects if any
 set(proj ABC)
 
+set(${proj}_DEPENDENCIES ITKv4)
+
+SlicerMacroCheckExternalProjectDependency(ABC)
+
 # Set CMake OSX variable to pass down the external project
 set(CMAKE_OSX_EXTERNAL_PROJECT_ARGS)
 if(APPLE)
@@ -49,10 +53,15 @@ if(NOT DEFINED ABC_SOURCE_DIR)
       #${COMMON_EXTERNAL_PROJECT_ARGS}
       -DCOMPILE_COMMANDLINE:BOOL=ON
       -DCOMPILE_SLICER4COMMANDLINE:BOOL=OFF
-      -DCMAKE_INSTALL_PREFIX:PATH=${EXTERNAL_BINARY_DIRECTORY}/${proj}-install
-      -DINSTALL_RUNTIME_DESTINATION=bin
+      # -DCMAKE_INSTALL_PREFIX:PATH=${EXTERNAL_BINARY_DIRECTORY}/${proj}-install
+      # -DINSTALL_RUNTIME_DESTINATION=bin
 
       ${${proj}_CMAKE_OPTIONS}
+
+    DEPENDS
+      ${${proj}_DEPENDENCIES}
+    
+    INSTALL_COMMAND ""
     )
   set(${proj}_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
   set(${proj}CommonLib_DIR    ${CMAKE_BINARY_DIR}/${proj}-build/ABC-build/ABCCommonLib)
