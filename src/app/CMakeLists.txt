@@ -13,8 +13,6 @@ csfwindow.cxx
 csfwindow.h
 extexecutableswidget.cxx
 extexecutableswidget.h
-automaticinterface.cxx
-automaticinterface.h
 ${${APP_NAME}_generated_moc}
 ${${APP_NAME}_generated_ui}
 ${${APP_NAME}_generated_rcc}
