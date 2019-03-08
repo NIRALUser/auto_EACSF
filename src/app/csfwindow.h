@@ -27,9 +27,8 @@ public:
     ~CSFWindow();
 
 private:
-    void check_tree_type();
     bool find_data_dir_path();
-    void check_exe_in_folder(QString name, QString path);
+    QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
     void find_executables();
     void readDefaultConfig();
     void readConfig(QString filename);

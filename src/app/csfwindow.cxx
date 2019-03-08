@@ -1,6 +1,6 @@
 #include "csfwindow.h"
 #include "extexecutableswidget.h"
-#include "automaticinterface.h"
+//#include "automaticinterface.h"
 
 #include <iostream>
 #include <QFile>
@@ -39,7 +39,6 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
     prc= new QProcess;
-    check_tree_type();
     m_data_found=find_data_dir_path();
     if(!m_data_found)
     {
@@ -75,6 +74,7 @@ CSFWindow::CSFWindow(QWidget *m_parent):
 
 
     tabWidget->removeTab(1);
+    tabWidget->removeTab(3);
 #endif
 }
 
@@ -107,40 +107,29 @@ bool CSFWindow::find_data_dir_path()
     }
 }
 
-void CSFWindow::check_tree_type()
+QStringList CSFWindow::check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint)
 {
-    QDir CD=QDir::current();
-    CD.cdUp();
-    QString CMakeFiles_path = QDir::cleanPath(CD.absolutePath()+QString("/CMakeFiles"));
-    if (QDir(CMakeFiles_path).exists())
+    QString full_path;
+    QStringList unfound_executables;
+    for (QString exe_name : exe_list)
     {
-        m_tree_type=TreeType::dev_superbuild;
-    }
-    else
-    {
-        CD.cdUp();
-        CMakeFiles_path = QDir::cleanPath(CD.absolutePath()+QString("/CMakeFiles"));
-        if (QDir(CMakeFiles_path).exists())
+        full_path = dir_path;
+        if (use_hint)
         {
-            m_tree_type=TreeType::release_superbuild;
+            full_path = QDir::cleanPath(full_path + "/" + executables[exe_name]);
         }
-        else{
-            m_tree_type=TreeType::install;
+        full_path = QDir::cleanPath(full_path + "/" + exe_name);
+        QFileInfo check_exe(full_path);
+        if (check_exe.exists() && check_exe.isExecutable())
+        {
+            executables[exe_name]=full_path;
+        }
+        else
+        {
+            unfound_executables.append(exe_name);
         }
     }
-}
-
-void CSFWindow::check_exe_in_folder(QString name, QString path)
-{
-    QFileInfo check_exe(path);
-    if (check_exe.exists() && check_exe.isExecutable())
-    {
-        executables[name]=path;
-    }
-    else
-    {
-        executables[name]=QString("");
-    }
+    return unfound_executables;
 }
 
 void CSFWindow::find_executables(){
@@ -151,40 +140,22 @@ void CSFWindow::find_executables(){
     cout<<"**************************************"<<endl;
     */
     QStringList path_split=env_PATH.split(":");
+
 #ifdef Q_OS_LINUX
     QDir CD=QDir::current();
+    QStringList unfound_exe = check_exe_in_folder(executables.keys(),CD.absolutePath(),false);
 
-    switch (m_tree_type)
+    if (!unfound_exe.empty())
     {
-        case TreeType::dev_superbuild: // If Auto_EACSF has not been installed, look in superbuild tree
-            CD.cdUp(); //auto_EACSF-bin
-            for (QString exe_name : executables.keys())
-            {
-                QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
-                check_exe_in_folder(exe_name,dirpath);
-            }
-            break;
-        case TreeType::release_superbuild:
-            CD.cdUp(); //auto_EACSF-build/auto_EACSF-inner-build/
-            CD.cdUp(); //auto_EACSF-build/
-            for (QString exe_name : executables.keys())
-            {
-                QString dirpath = QDir::cleanPath(CD.absolutePath()+executables[exe_name]+exe_name);
-                check_exe_in_folder(exe_name,dirpath);
-            }
-            break;
-        case TreeType::install: // If it has been installed, look in install tree
-            for (QString exe_name : executables.keys())
-            {
-                QString dirpath = QDir::cleanPath(CD.absolutePath()+QString("/")+exe_name);
-                check_exe_in_folder(exe_name,dirpath);
-            }
-            break;
-        default:
-            break;
+        CD.cdUp();
+        unfound_exe = check_exe_in_folder(unfound_exe,CD.absolutePath(),true);
     }
 
-
+    if (!unfound_exe.empty())
+    {
+        CD.cdUp();
+        unfound_exe = check_exe_in_folder(unfound_exe,CD.absolutePath(),true);
+    }
 
 
 #endif
@@ -194,38 +165,36 @@ void CSFWindow::find_executables(){
 
     //for unfound exe, look in path
 
-    for (QString exe : executables.keys())
+    for (QString exe : unfound_exe)
     {
-        if (executables[exe].isEmpty()) //if exe has not been found
+        executables[exe].clear();
+        for (QString p : path_split)
         {
-            for (QString p : path_split)
+            QString p_exe = QDir::cleanPath(p + QString("/") + exe);
+            QFileInfo check_p_exe(p_exe);
+            if (check_p_exe.exists() && check_p_exe.isExecutable())
             {
-                QString p_exe = QDir::cleanPath(p + QString("/") + exe);
-                QFileInfo check_p_exe(p_exe);
-                if (check_p_exe.exists() && check_p_exe.isExecutable())
-                {
-                    executables[exe]=p_exe;
-                    break;
-                }
+                executables[exe]=p_exe;
+                break;
             }
         }
     }
 
     QString unfoundExecMessage = QString ("Following executables unfound : ");
-    bool atLeastOneExeMissing;
+    bool atLeastOneExeMissing = false;
     for (QString exe : executables.keys())
     {
         if (executables[exe].isEmpty()) //if exe has not been found
         {
             unfoundExecMessage=unfoundExecMessage+QString("<b>")+exe+QString("</b>, ");
-            atLeastOneExeMissing=true;
+            atLeastOneExeMissing = true;
         }
     }
     if (atLeastOneExeMissing)
     {
         unfoundExecMessage.resize(unfoundExecMessage.size()-2);
         unfoundExecMessage+=QString(". Toggle <b>\"Show executables\"</b> in <b>Window</b> menu to find the missing executable path.");
-        //infoMsgBox(unfoundExecMessage,QMessageBox::Warning);
+        infoMsgBox(unfoundExecMessage,QMessageBox::Warning);
     }
 }
 
@@ -972,10 +941,12 @@ void CSFWindow::on_actionShow_executables_toggled(bool toggled)
     if (toggled)
     {
         tabWidget->insertTab(1,tab_executables,QString("Executables"));
+        tabWidget->insertTab(4,tab_ANTSregistration,QString("ANTS Parameters"));
     }
     else
     {
         tabWidget->removeTab(1);
+        tabWidget->removeTab(3);
     }
 
 }

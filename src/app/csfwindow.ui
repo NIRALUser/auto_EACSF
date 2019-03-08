@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>5</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -1258,7 +1258,7 @@ p, li { white-space: pre-wrap; }
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Show executables</string>
+    <string>Toggle advanced mode</string>
    </property>
   </action>
  </widget>
