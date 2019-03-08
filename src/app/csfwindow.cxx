@@ -257,7 +257,7 @@ void CSFWindow::readDefaultConfig()
 
     QString p_RH_inner = param_obj["RH_inner_surf"].toString();
     if (!p_RH_inner.isEmpty()){ lineEdit_RH_inner->setText(QDir::cleanPath(m_data_dir_path+QString("/surfaces/")+p_RH_inner));}
-    displayAtlases(lineEdit_SSAtlasFolder->text());
+    displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 
     QJsonArray exe_array = root_obj["executables"].toArray();
     for (QJsonValue exe_val : exe_array)
@@ -313,7 +313,7 @@ void CSFWindow::readConfig(QString filename)
     lineEdit_SSAtlasFolder->setText(param_obj["SkullStripping_Atlases_dir"].toString());
     lineEdit_TissueSegAtlas->setText(param_obj["TissueSeg_Atlas_dir"].toString());
     spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
-    displayAtlases(lineEdit_SSAtlasFolder->text());
+    displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 
     QJsonArray exe_array = root_obj["executables"].toArray();
     for (QJsonValue exe_val : exe_array)
@@ -489,7 +489,7 @@ void CSFWindow::infoMsgBox(QString message, QMessageBox::Icon type)
     mb.exec();
 }
 
-void CSFWindow::displayAtlases(QString folder_path)
+void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
 {
     listWidget_SSAtlases->clear();
     const QString T1=QString("T1");
@@ -512,7 +512,7 @@ void CSFWindow::displayAtlases(QString folder_path)
 
         if (fileSplit.size()>3 || fileSplit.size()<2)
         {
-            invalidItems.append(fileName);
+            invalidItems.append("Non atlas file : " + fileName);
         }
         else
         {
@@ -552,7 +552,7 @@ void CSFWindow::displayAtlases(QString folder_path)
             }
             else if((fileName != QString(".")) && (fileName != QString("..")))
             {
-                invalidItems.append(fileName);
+                invalidItems.append("Non atlas file : " + fileName);
             }
         }
 
@@ -565,10 +565,18 @@ void CSFWindow::displayAtlases(QString folder_path)
         if (atlases[atlas].size() == 2)
         {
             itemLabel = atlas+QString(" : ")+atlases[atlas].at(0)+QString(" and ")+atlases[atlas].at(1)+QString(" image detected");
+            if ((atlases[atlas].at(1) == "T2") && !T2_provided)
+            {
+                itemLabel.append(" (You must provide T2 image to use this atlas)");
+            }
         }
         else if(atlases[atlas].size() == 3)
         {
             itemLabel = atlas+QString(" : ")+atlases[atlas].at(0)+QString(", ")+atlases[atlas].at(1)+QString(" and ")+atlases[atlas].at(2)+QString(" images detected");
+            if (!T2_provided)
+            {
+                itemLabel.append(" (You must provide T2 image to use this atlas)");
+            }
         }
         itemsList.append(itemLabel);
     }
@@ -580,8 +588,17 @@ void CSFWindow::displayAtlases(QString folder_path)
     for (int i = 0 ; i < listWidget_SSAtlases->count(); i++)
     {
         item = listWidget_SSAtlases->item(i);
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-        item->setCheckState(Qt::Checked);
+        if (!item->text().endsWith(")"))
+        {
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Checked);
+        }
+        else
+        {
+            item->setFlags((item->flags() | Qt::ItemIsUserCheckable) & !Qt::ItemIsEnabled);
+            item->setCheckState(Qt::Unchecked);
+        }
+
         if (i==0)
         {
             QFont b_font=QFont();
@@ -595,7 +612,7 @@ void CSFWindow::displayAtlases(QString folder_path)
     for (int i = count ; i < listWidget_SSAtlases->count(); i++)
     {
         item = listWidget_SSAtlases->item(i);
-        item->setTextColor(QColor(150,150,150));
+        item->setFlags(item->flags() & !Qt::ItemIsEnabled);
     }
 
     QObject::connect(listWidget_SSAtlases, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(selectAtlases(QListWidgetItem*)));
@@ -982,6 +999,11 @@ void CSFWindow::on_pushButton_T2img_clicked()
     }
 }
 
+void CSFWindow::on_lineEdit_T2img_textChanged()
+{
+    displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
+}
+
 void CSFWindow::on_pushButton_BrainMask_clicked()
 {
     QString path=OpenFile();
@@ -1104,7 +1126,7 @@ void CSFWindow::on_pushButton_SSAtlasFolder_clicked()
     {
     lineEdit_SSAtlasFolder->setText(path);
     }
-    displayAtlases(lineEdit_SSAtlasFolder->text());
+    displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 }
 
 void CSFWindow::selectAtlases(QListWidgetItem *item)
@@ -1115,7 +1137,7 @@ void CSFWindow::selectAtlases(QListWidgetItem *item)
         for (int i = 0; i < listWidget_SSAtlases->count(); i++)
         {
             it=listWidget_SSAtlases->item(i);
-            if (it->textColor() != QColor(150,150,150))
+            if (it->flags() != (it->flags() & !Qt::ItemIsEnabled))
             {
                 it->setCheckState(item->checkState());
             }

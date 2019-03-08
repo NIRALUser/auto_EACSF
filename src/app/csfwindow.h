@@ -45,7 +45,7 @@ private:
     int questionMsgBox(bool checkState, QString maskType, QString action);
     void infoMsgBox(QString message, QMessageBox::Icon type);
 
-    void displayAtlases(QString folder_path);
+    void displayAtlases(QString folder_path, bool T2_provided);
 
     void write_main_script();
     void write_rigid_align();
@@ -113,6 +113,7 @@ private slots:
     //1st Tab
     void on_pushButton_T1img_clicked();
     void on_pushButton_T2img_clicked();
+    void on_lineEdit_T2img_textChanged();
     void on_pushButton_BrainMask_clicked();
     void on_lineEdit_BrainMask_textChanged();
     void on_pushButton_VentricleMask_clicked();

@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -519,9 +519,9 @@
      <widget class="QListWidget" name="listWidget_SSAtlases">
       <property name="geometry">
        <rect>
-        <x>260</x>
+        <x>150</x>
         <y>310</y>
-        <width>501</width>
+        <width>711</width>
         <height>291</height>
        </rect>
       </property>
