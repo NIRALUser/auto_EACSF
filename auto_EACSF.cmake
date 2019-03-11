@@ -158,7 +158,8 @@ endif()
 if (ABC_DIR)
   find_program(ABC_LOCATION
     ABC_CLI
-    HINTS ${ABC_DIR}/StandAloneCLI)
+    PATHS ${ABC_DIR}/ABC-inner-install/bin)
+  set(ABC_LOCATION ${ABC_DIR}/ABC-inner-install/bin/ABC_CLI)
   if(ABC_LOCATION)
     install(PROGRAMS ${ABC_LOCATION}
       DESTINATION ${INSTALL_RUNTIME_DESTINATION}
