@@ -87,22 +87,28 @@ def main(main_args):
         index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
         ACPC_val=round(index_coord[0])
 
-    if(ACPC_val == 70):
+#    if(ACPC_val == 70):
+#        Coronal_Mask = os.path.join(DATADIR,"masks","coronal_mask_70.nrrd")
+#    else:
+    print_main_info('Creating coronal mask') # Created before registration!!!
+    im=itk.imread(T1)
+    np_copy=itk.GetArrayFromImage(im)
+    if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
+        eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
+        sys.stderr.flush()
         Coronal_Mask = os.path.join(DATADIR,"masks","coronal_mask_70.nrrd")
     else:
-        im=itk.imread(T1)
-        np_copy=itk.GetArrayFromImage(im)
-        if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
-            eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
-            sys.stderr.flush()
-            Coronal_Mask = os.path.join(DATADIR,"masks","coronal_mask_70.nrrd")
-        else:
-            np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=np.iinfo(np_copy.dtype).max
-            np_copy[0:ACPC_val-1,:,:]=0
-            itk_np_copy=itk.GetImageViewFromArray(np_copy)
-            itk_outfile_name="coronal_mask_"+str(ACPC_val)
-            itk.imwrite(itk_np_copy,itk_outfile_name)
-            Coronal_Mask = itk_outfile_name
+        np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=1
+        np_copy[0:ACPC_val-1,:,:]=0
+        itk_np_copy=itk.GetImageViewFromArray(np_copy)
+        itk_np_copy.SetOrigin(im.GetOrigin())
+        itk_np_copy.SetSpacing(im.GetSpacing())
+        itk_np_copy.SetDirection(im.GetDirection())
+        itk_outfile_name="coronal_mask_"+str(ACPC_val)+".nrrd"
+        itk.imwrite(itk_np_copy,itk_outfile_name)
+        Coronal_Mask = itk_outfile_name
+
+    print_main_info('Coronal mask created')
 
     ### Executables
     python=main_args.python3
@@ -114,7 +120,7 @@ def main(main_args):
     BRAIN_MASK = main_args.brainMask
 
     if (main_args.useDfCerMask == "true"):
-        PRE_CEREBELLUM_MASK = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF/data/CVS_MASK_RAI_Dilate.nrrd"
+        PRE_CEREBELLUM_MASK = "/work/alemaout/sources/Projects/auto_EACSF-Project/auto_EACSF-bin/data/CVS_MASK_RAI_Dilate_stx.nrrd"
     else:
         PRE_CEREBELLUM_MASK = main_args.cerebellumMask
     Segmentation = main_args.tissueSeg
@@ -161,9 +167,10 @@ def main(main_args):
        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
+       print(Segmentation)
        if not(os.path.isfile(Segmentation)):
            print(Segmentation + ' doesnt exist')
-           call([python, scripts_prefix+tissue_seg, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
+           #call([python, scripts_prefix+tissue_seg, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
        else:
            print('Segmentation already exists')
        print_main_info("Finished running tissue_seg_script.py")
@@ -203,7 +210,7 @@ def main(main_args):
     args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP02, '-sub', PRE_CEREBELLUM_MASK]
     call_and_print(args)
 
-    args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP02, '-threshold', '1,1']
+    args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP02, '-threshold', '1,1'] # valeur max du mask qui nique tout
     call_and_print(args)
 
     args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP03, '-conComp','1']
