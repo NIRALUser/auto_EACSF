@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -612,7 +612,7 @@
        <string>Tissue Segmentation Atlas Directory</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_ROIAtlasT1">
+     <widget class="QPushButton" name="pushButton_templateT1Ventricle">
       <property name="geometry">
        <rect>
         <x>79</x>
@@ -622,7 +622,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Atlas T1</string>
+       <string>Ventricle template T1</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_VentricleRemoval">
@@ -660,11 +660,34 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_ROIAtlasT1">
+     <widget class="QLineEdit" name="lineEdit_templateT1Ventricle">
       <property name="geometry">
        <rect>
         <x>360</x>
         <y>320</y>
+        <width>601</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_templateInvMaskVentricle">
+      <property name="geometry">
+       <rect>
+        <x>79</x>
+        <y>370</y>
+        <width>261</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Ventricle Mask</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_templateInvMaskVentricle">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>370</y>
         <width>601</width>
         <height>31</height>
        </rect>

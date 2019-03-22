@@ -39,12 +39,7 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
     prc= new QProcess;
-    m_data_found=find_data_dir_path();
-    if(!m_data_found)
-    {
-        infoMsgBox(QString("Data folder not found, project building or installation might be incomplete."),QMessageBox::Warning);
-    }
-    readDefaultConfig();
+    readConfig(QString(":/config/default_config.json"),true);
 
 #if 0
     QString config_qstr;
@@ -76,35 +71,12 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     tabWidget->removeTab(1);
     tabWidget->removeTab(3);
 #endif
+
+    checkBox_CSFDensity->setChecked(false);
 }
 
 CSFWindow::~CSFWindow()
 {
-}
-
-bool CSFWindow::find_data_dir_path()
-{
-    QDir CD = QDir::current();
-    CD.cdUp();
-    CD.cdUp();
-    switch(m_tree_type)
-    {
-        case TreeType::dev_superbuild:
-            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
-            return (QDir(m_data_dir_path).exists());
-            break;
-        case TreeType::release_superbuild:
-            CD.cdUp();
-            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
-            return (QDir(m_data_dir_path).exists());
-            break;
-        case TreeType::install:
-            m_data_dir_path=QDir::cleanPath(CD.absolutePath()+QString("/data"));
-            return (QDir(m_data_dir_path).exists());
-            break;
-        default:
-            return false;
-    }
 }
 
 QStringList CSFWindow::check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint)
@@ -198,86 +170,7 @@ void CSFWindow::find_executables(){
     }
 }
 
-void CSFWindow::readDefaultConfig()
-{
-    QString config_qstr;
-    QFile config_qfile;
-    config_qfile.setFileName(QString(":/config/default_config.json"));
-    config_qfile.open(QIODevice::ReadOnly | QIODevice::Text);
-    config_qstr = config_qfile.readAll();
-    config_qfile.close();
-
-    QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
-    QJsonObject root_obj = config_doc.object();
-
-    if (m_data_found)
-    {
-        QJsonObject data_obj = root_obj["data"].toObject();
-
-        QString p_BrainMask = data_obj["BrainMask"].toString();
-        if (!p_BrainMask.isEmpty()){ lineEdit_BrainMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+p_BrainMask));}
-
-        QString p_CerebellumMask = data_obj["CerebellumMask"].toString();
-        if (!p_CerebellumMask.isEmpty()){ lineEdit_CerebellumMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+p_CerebellumMask));}
-
-        QString p_T1img = data_obj["T1img"].toString();
-        if (!p_T1img.isEmpty()){ lineEdit_T1img->setText(QDir::cleanPath(m_data_dir_path+QString("/inputs/")+p_T1img));}
-
-        QString p_T2img = data_obj["T2img"].toString();
-        if (!p_T2img.isEmpty()){ lineEdit_T2img->setText(QDir::cleanPath(m_data_dir_path+QString("/inputs/")+p_T2img));}
-
-        QString p_TissueSeg = data_obj["TissueSeg"].toString();
-        if (!p_TissueSeg.isEmpty()){ lineEdit_TissueSeg->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+p_TissueSeg));}
-
-        QString p_VentricleMask = data_obj["VentricleMask"].toString();
-        if (!p_VentricleMask.isEmpty()){ lineEdit_VentricleMask->setText(QDir::cleanPath(m_data_dir_path+QString("/masks/")+p_VentricleMask));}
-
-        QString p_OutputDir = data_obj["output_dir"].toString();
-        if (!p_OutputDir.isEmpty()){ lineEdit_OutputDir->setText(QDir::cleanPath(QDir::currentPath()+QString("/")+p_OutputDir));}
-    }
-
-    QJsonObject param_obj = root_obj["parameters"].toObject();
-    spinBox_Index->setValue(param_obj["ACPC_index"].toInt());
-    doubleSpinBox_mm->setValue(param_obj["ACPC_mm"].toDouble());
-    spinBox_T1Weight->setValue(param_obj["ANTS_T1_weight"].toInt());
-    doubleSpinBox_GaussianSigma->setValue(param_obj["ANTS_gaussian_sig"].toDouble());
-    lineEdit_Iterations->setText(param_obj["ANTS_iterations_val"].toString());
-    comboBox_RegType->setCurrentText(param_obj["ANTS_reg_type"].toString());
-    comboBox_Metric->setCurrentText(param_obj["ANTS_sim_metric"].toString());
-    spinBox_SimilarityParameter->setValue(param_obj["ANTS_sim_param"].toInt());
-    doubleSpinBox_TransformationStep->setValue(param_obj["ANTS_transformation_step"].toDouble());
-    lineEdit_ROIAtlasT1->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["ROI_Atlas_T1"].toString()));
-    lineEdit_ReferenceAtlasFile->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["Reference_Atlas"].toString()));
-    lineEdit_SSAtlasFolder->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["SkullStripping_Atlases_dir"].toString()));
-    lineEdit_TissueSegAtlas->setText(QDir::cleanPath(m_data_dir_path+QString("/atlases/")+param_obj["TissueSeg_Atlas_dir"].toString()));
-    spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
-
-    QString p_LH_inner = param_obj["LH_inner_surf"].toString();
-    if (!p_LH_inner.isEmpty()){ lineEdit_LH_inner->setText(QDir::cleanPath(m_data_dir_path+QString("/surfaces/")+p_LH_inner));}
-
-    QString p_RH_inner = param_obj["RH_inner_surf"].toString();
-    if (!p_RH_inner.isEmpty()){ lineEdit_RH_inner->setText(QDir::cleanPath(m_data_dir_path+QString("/surfaces/")+p_RH_inner));}
-    displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
-
-    QJsonArray exe_array = root_obj["executables"].toArray();
-    for (QJsonValue exe_val : exe_array)
-    {
-        QJsonObject exe_obj = exe_val.toObject();
-        executables[exe_obj["name"].toString()] = exe_obj["path"].toString();
-    }
-
-    QJsonArray script_array = root_obj["scripts"].toArray();
-    for (QJsonValue script_val : script_array)
-    {
-        QJsonObject script_obj = script_val.toObject();
-        for (QJsonValue exe_name : script_obj["executables"].toArray())
-        {
-            script_exe[script_obj["name"].toString()].append(exe_name.toString());
-        }
-    }
-}
-
-void CSFWindow::readConfig(QString filename)
+void CSFWindow::readConfig(QString filename, bool default_config)
 {
     QString config_qstr;
     QFile config_qfile;
@@ -289,14 +182,17 @@ void CSFWindow::readConfig(QString filename)
     QJsonDocument config_doc = QJsonDocument::fromJson(config_qstr.toUtf8());
     QJsonObject root_obj = config_doc.object();
 
-    QJsonObject data_obj = root_obj["data"].toObject();
-    lineEdit_BrainMask->setText(data_obj["BrainMask"].toString());
-    lineEdit_CerebellumMask->setText(data_obj["CerebellumMask"].toString());
-    lineEdit_T1img->setText(data_obj["T1img"].toString());
-    lineEdit_T2img->setText(data_obj["T2img"].toString());
-    lineEdit_TissueSeg->setText(data_obj["TissueSeg"].toString());
-    lineEdit_VentricleMask->setText(data_obj["VentricleMask"].toString());
-    lineEdit_OutputDir->setText(data_obj["output_dir"].toString());
+    if (!default_config)
+    {
+        QJsonObject data_obj = root_obj["data"].toObject();
+        lineEdit_BrainMask->setText(data_obj["BrainMask"].toString());
+        lineEdit_CerebellumMask->setText(data_obj["CerebellumMask"].toString());
+        lineEdit_T1img->setText(data_obj["T1img"].toString());
+        lineEdit_T2img->setText(data_obj["T2img"].toString());
+        lineEdit_TissueSeg->setText(data_obj["TissueSeg"].toString());
+        lineEdit_VentricleMask->setText(data_obj["SubjectVentricleMask"].toString());
+        lineEdit_OutputDir->setText(data_obj["output_dir"].toString());
+    }
 
     QJsonObject param_obj = root_obj["parameters"].toObject();
     spinBox_Index->setValue(param_obj["ACPC_index"].toInt());
@@ -308,11 +204,19 @@ void CSFWindow::readConfig(QString filename)
     comboBox_Metric->setCurrentText(param_obj["ANTS_sim_metric"].toString());
     spinBox_SimilarityParameter->setValue(param_obj["ANTS_sim_param"].toInt());
     doubleSpinBox_TransformationStep->setValue(param_obj["ANTS_transformation_step"].toDouble());
-    lineEdit_ROIAtlasT1->setText(param_obj["ROI_Atlas_T1"].toString());
-    lineEdit_ReferenceAtlasFile->setText(param_obj["Reference_Atlas"].toString());
-    lineEdit_SSAtlasFolder->setText(param_obj["SkullStripping_Atlases_dir"].toString());
-    lineEdit_TissueSegAtlas->setText(param_obj["TissueSeg_Atlas_dir"].toString());
-    spinBox_CSFLabel->setValue(param_obj["TissueSeg_csf"].toInt());
+
+    if (!default_config)
+    {
+        lineEdit_templateT1Ventricle->setText(param_obj["templateT1Ventricle"].toString());
+        lineEdit_templateInvMaskVentricle->setText(param_obj["templateInvMaskVentricle"].toString());
+        lineEdit_ReferenceAtlasFile->setText(param_obj["registrationAtlas"].toString());
+        lineEdit_SSAtlasFolder->setText(param_obj["skullStrippingAtlasesDirectory"].toString());
+        lineEdit_TissueSegAtlas->setText(param_obj["tissueSegAtlasDirectory"].toString());
+        spinBox_CSFLabel->setValue(param_obj["CSFLabel"].toInt());
+        lineEdit_LH_inner->setText(param_obj["LH_innerSurface"].toString());
+        lineEdit_RH_inner->setText(param_obj["RH_innerSurface"].toString());
+    }
+
     displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 
     QJsonArray exe_array = root_obj["executables"].toArray();
@@ -321,6 +225,20 @@ void CSFWindow::readConfig(QString filename)
         QJsonObject exe_obj = exe_val.toObject();
         executables[exe_obj["name"].toString()] = exe_obj["path"].toString();
     }
+
+    if (default_config)
+    {
+        QJsonArray script_array = root_obj["scripts"].toArray();
+        for (QJsonValue script_val : script_array)
+        {
+            QJsonObject script_obj = script_val.toObject();
+            for (QJsonValue exe_name : script_obj["executables"].toArray())
+            {
+                script_exe[script_obj["name"].toString()].append(exe_name.toString());
+            }
+        }
+    }
+
 }
 
 bool CSFWindow::writeConfig(QString filename)
@@ -337,7 +255,7 @@ bool CSFWindow::writeConfig(QString filename)
     data_obj["T1img"] = lineEdit_T1img->text();
     data_obj["T2img"] = lineEdit_T2img->text();
     data_obj["CerebellumMask"] = lineEdit_CerebellumMask->text();
-    data_obj["VentricleMask"] = lineEdit_VentricleMask->text();
+    data_obj["SubjectVentricleMask"] = lineEdit_VentricleMask->text();
     data_obj["TissueSeg"] = lineEdit_TissueSeg->text();
     data_obj["output_dir"] = lineEdit_OutputDir->text();
     root_obj["data"]=data_obj;
@@ -352,11 +270,14 @@ bool CSFWindow::writeConfig(QString filename)
     param_obj["ANTS_sim_metric"] = comboBox_Metric->currentText();
     param_obj["ANTS_sim_param"] = spinBox_SimilarityParameter->value();
     param_obj["ANTS_transformation_step"] = doubleSpinBox_TransformationStep->value();
-    param_obj["ROI_Atlas_T1"] = lineEdit_ROIAtlasT1->text();
-    param_obj["Reference_Atlas"] = lineEdit_ReferenceAtlasFile->text();
-    param_obj["SkullStripping_Atlases_dir"] = lineEdit_SSAtlasFolder->text();
-    param_obj["TissueSeg_Atlas_dir"] = lineEdit_TissueSegAtlas->text();
-    param_obj["TissueSeg_csf"] = spinBox_CSFLabel->value();
+    param_obj["templateT1Ventricle"] = lineEdit_templateT1Ventricle->text();
+    param_obj["templateInvMaskVentricle"] = lineEdit_templateInvMaskVentricle->text();
+    param_obj["registrationAtlas"] = lineEdit_ReferenceAtlasFile->text();
+    param_obj["skullStrippingAtlasesDirectory"] = lineEdit_SSAtlasFolder->text();
+    param_obj["tissueSegAtlasDirectory"] = lineEdit_TissueSegAtlas->text();
+    param_obj["CSFLabel"] = spinBox_CSFLabel->value();
+    param_obj["LH_innerSurface"] = lineEdit_LH_inner->text();
+    param_obj["RH_innerSurface"] = lineEdit_RH_inner->text();
     root_obj["parameters"]=param_obj;
 
     QJsonArray exe_array;
@@ -673,7 +594,6 @@ void CSFWindow::write_main_script()
         script.replace(str_code,exe_path);
     }
 
-    script.replace("@DATADIR@", m_data_dir_path);
     script.replace("@OUTPUT_DIR@", output_dir);
 
     QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
@@ -731,7 +651,7 @@ void CSFWindow::write_make_mask()
     for (int i=0; i<listWidget_SSAtlases->count(); i++)
     {
         item=listWidget_SSAtlases->item(i);
-        if (item->textColor() != QColor(150,150,150) && i!=0)
+        if ((item->flags() != (item->flags() & !Qt::ItemIsEnabled)) && i!=0)
         {
             if (item->checkState() == Qt::Checked)
             {
@@ -827,10 +747,10 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
     xmlStream << "<?xml version=\"1.0\"?>" << '\n' << "<!DOCTYPE SEGMENTATION-PARAMETERS>" << '\n' << "<SEGMENTATION-PARAMETERS>" << '\n';
     xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/TissueSegAtlas")) << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
     xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
-    xmlStream << "<IMAGE>" << '\n' << "\t<FILE>" << T1img << "</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
+    xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T1_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
     if (T2provided)
     {
-        xmlStream << "<IMAGE>" << '\n' << "\t<FILE>" << T2img << "</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
+        xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T2_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
     }
     xmlStream << "<FILTER-ITERATIONS>10</FILTER-ITERATIONS>" << '\n' << "<FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>" << '\n' << "<FILTER-METHOD>Curvature flow</FILTER-METHOD>" << '\n';
     xmlStream << "<MAX-BIAS-DEGREE>4</MAX-BIAS-DEGREE>" << '\n' << "<PRIOR>1.3</PRIOR>" << '\n' << "<PRIOR>1</PRIOR>" << '\n' << "<PRIOR>0.7</PRIOR>" << '\n';
@@ -843,8 +763,9 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
 
 void CSFWindow::write_vent_mask()
 {
-    QString ROI_AtlasT1=lineEdit_ROIAtlasT1->text();
-    QString VentricleMask=lineEdit_VentricleMask->text();
+    QString tenplateT1Ventricle = lineEdit_templateT1Ventricle->text();
+    QString templateT1invMask = lineEdit_templateInvMaskVentricle->text();
+    QString subjectVentricleMask = lineEdit_VentricleMask->text();
 
     QFile v_file(QString(":/PythonScripts/vent_mask.py"));
     v_file.open(QIODevice::ReadOnly);
@@ -852,7 +773,10 @@ void CSFWindow::write_vent_mask()
     v_file.close();
 
     v_script.replace("@T1IMG@", T1img);
-    v_script.replace("@ATLAS@", ROI_AtlasT1);
+    v_script.replace("@TEMPT1VENT@", tenplateT1Ventricle);
+    v_script.replace("@TEMP_INV_VMASK@", templateT1invMask);
+    v_script.replace("@TISSUE_SEG@", TissueSeg);
+    v_script.replace("@SUB_VMASK@" , subjectVentricleMask);
     v_script.replace("@REG_TYPE@", Registration_Type);
     v_script.replace("@TRANS_STEP@", Transformation_Step);
     v_script.replace("@ITERATIONS@", Iterations);
@@ -860,8 +784,6 @@ void CSFWindow::write_vent_mask()
     v_script.replace("@SIM_PARAMETER@", Sim_Parameter);
     v_script.replace("@GAUSSIAN@", Gaussian);
     v_script.replace("@T1_WEIGHT@", T1_Weight);
-    v_script.replace("@TISSUE_SEG@", TissueSeg);
-    v_script.replace("@VENTRICLE_MASK@" ,VentricleMask);
 
     for (QString exe_name : script_exe[QString("vent_mask")])
     {
@@ -927,7 +849,7 @@ void CSFWindow::on_actionLoad_Configuration_File_triggered()
     QString filename= OpenFile();
     if (!filename.isEmpty())
     {
-        readConfig(filename);
+        readConfig(filename,false);
     }
 }
 
@@ -1187,16 +1109,27 @@ void CSFWindow::on_checkBox_VentricleRemoval_stateChanged(int state)
     else{enab=false;}
 
     label_VentricleRemoval->setEnabled(enab);
-    pushButton_ROIAtlasT1->setEnabled(enab);
-    lineEdit_ROIAtlasT1->setEnabled(enab);
+    pushButton_templateT1Ventricle->setEnabled(enab);
+    lineEdit_templateT1Ventricle->setEnabled(enab);
+    pushButton_templateInvMaskVentricle->setEnabled(enab);
+    lineEdit_templateInvMaskVentricle->setEnabled(enab);
 }
 
-void CSFWindow::on_pushButton_ROIAtlasT1_clicked()
+void CSFWindow::on_pushButton_templateT1Ventricle_clicked()
 {
     QString path=OpenFile();
     if (!path.isEmpty())
     {
-        lineEdit_ROIAtlasT1->setText(path);
+        lineEdit_templateT1Ventricle->setText(path);
+    }
+}
+
+void CSFWindow::on_pushButton_templateInvMaskVentricle_clicked()
+{
+    QString path=OpenFile();
+    if (!path.isEmpty())
+    {
+        lineEdit_templateInvMaskVentricle->setText(path);
     }
 }
 

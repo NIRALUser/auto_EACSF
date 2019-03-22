@@ -8,6 +8,7 @@ import argparse
 import subprocess
 from main_script import eprint
 from main_script import call_and_print
+from main_script import print_aef
 
 def main(args):
     T1 = args.t1
@@ -57,7 +58,16 @@ def main(args):
         else:
             print_aef(FILE_FIN+' already exist')
 
-    args = [ABC, os.path.join(PARENT_DIR,'ABCparam.xml')]
+    segfile_path = os.path.join(PARENT_DIR,'ABCparam.xml')
+    segfile = open(segfile_path,'r')
+    segfiledata = segfile.read()
+    segfiledata = segfiledata.replace('@T1_INSEG_IMG@',T1)
+    segfiledata = segfiledata.replace('@T2_INSEG_IMG@',T2)
+    segfile = open(segfile_path,'w')
+    segfile.write(segfiledata)
+    segfile.close()
+
+    args = [ABC, segfile_path]
     call_and_print(args)
 
 if (__name__ == "__main__"):

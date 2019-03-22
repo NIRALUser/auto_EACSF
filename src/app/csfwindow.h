@@ -27,11 +27,9 @@ public:
     ~CSFWindow();
 
 private:
-    bool find_data_dir_path();
     QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
     void find_executables();
-    void readDefaultConfig();
-    void readConfig(QString filename);
+    void readConfig(QString filename, bool default_config);
     bool writeConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
@@ -76,10 +74,6 @@ private:
     QString Sim_Parameter="4";
     QString Gaussian="3";
     QString T1_Weight="1";
-
-    //Data directory path
-    QString m_data_dir_path;
-    bool m_data_found;
 
     //Other
     bool dataSeemsAligned=false;
@@ -147,7 +141,8 @@ private slots:
     //5th Tab
     void on_checkBox_VentricleRemoval_stateChanged(int state);
 
-    void on_pushButton_ROIAtlasT1_clicked();
+    void on_pushButton_templateT1Ventricle_clicked();
+    void on_pushButton_templateInvMaskVentricle_clicked();
 
     //ANTS Registration
     void on_comboBox_RegType_currentTextChanged(const QString &val);

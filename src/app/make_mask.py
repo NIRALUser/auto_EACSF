@@ -73,20 +73,6 @@ def main(args):
 
     T1_Only_Mask = os.path.join(T1_dir, "".join([T1_base,"_T1only"]))
 
-    Input_T1_NII_255 = os.path.join(T1_dir, "".join([T1_base,"_255.nii.gz"]))
-    Pre_SkullMask = os.path.join(T1_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
-
-    if not(os.path.isfile(Input_T1_NII_255)):
-        args=[ImageMath, Input_T1_NII, '-rescale', '0,255', '-outfile', Input_T1_NII_255]
-        call_and_print(args)
-    else:
-        print_aef(Input_T1_NII_255+' already exists')
-    if not(os.path.isfile(Pre_SkullMask)):
-        args=[ImageMath, Input_T1_NII_255, '-threshold', '0,240', '-outfile', Pre_SkullMask]
-        call_and_print(args)
-    else:
-        print_aef(Pre_SkullMask+' already exists')
-
     if (T2_exists):
         T2_Only_Mask = os.path.join(T2_dir, "".join([T2_base,"_T2only"]))
 
@@ -115,6 +101,15 @@ def main(args):
             call_and_print(args)
 
             args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
+            call_and_print(args)
+
+            Input_T1_NII_255 = os.path.join(T1_dir, "".join([T1_base,"_255.nii.gz"]))
+            Pre_SkullMask = os.path.join(T1_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
+
+            args=[ImageMath, Input_T1_NII, '-rescale', '0,255', '-outfile', Input_T1_NII_255]
+            call_and_print(args)
+
+            args=[ImageMath, Input_T1_NII_255, '-threshold', '0,240', '-outfile', Pre_SkullMask]
             call_and_print(args)
 
             args=[ImageMath, T2_Joint_T1_Mask, '-mul', Pre_SkullMask, '-outfile', T2_Joint_T1_Mask]

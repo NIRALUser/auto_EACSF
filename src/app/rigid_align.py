@@ -8,6 +8,7 @@ import argparse
 import subprocess
 from main_script import eprint
 from main_script import call_and_print
+from main_script import print_aef
 
 def main(args):
     sys.stdout.flush()
