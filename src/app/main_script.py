@@ -20,9 +20,9 @@ def print_aef(info):
     info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="yellow">'+info+"</font></b>"
     sys.stdout.flush()
 
-def eprint(*args, **kwargs):
+def eprint(*err_args, **err_kwargs):
     #print errors function
-    print(*args, file=sys.stderr, **kwargs)
+    print(*err_args, file=sys.stderr, **err_kwargs)
 
 def call_and_print(args):
     #external process calling function with output and errors printing
@@ -39,7 +39,7 @@ def call_and_print(args):
     if(out!=''):
         print(out+"\n")
         sys.stdout.flush()
-    if(err!=''):
+    if(err!='' and err !='.'):
         eprint('<font color="red"><b>While running : </b></font>'+exe_dir+'/<b><font color="red">'+exe_name+'</font></b> '+" ".join(args)+'\n')
         eprint('<font color="red"><b>Following error(s) occured : </b></font>\n')
         eprint(err+'\n')
@@ -82,11 +82,16 @@ def main(main_args):
 
         OUT_RR = os.path.join(OUT_PATH,'RigidRegistration')
         call([python, rigid_align_script, '--output', OUT_RR])
-        T1 = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
+        T1_REGISTERED = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
         if (T2_exists):
-           T2 = os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
+           T2_REGISTERED = os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
 
         print_main_info("Finished running "+rigid_align_script)
+
+    else:
+        T1_REGISTERED = T1
+        if (T2_exists):
+            T2_REGISTERED = T2
 
     T1_split=os.path.splitext(os.path.basename(T1))
     if (T1_split[1] == 'gz'):
@@ -101,19 +106,34 @@ def main(main_args):
         else:
             T2_base = T2_split[0]
 
+    OUT_SS = os.path.join(OUT_PATH, 'SkullStripping')
+    if not os.path.exists(OUT_SS):
+        os.makedirs(OUT_SS)
+
     if (main_args.skullStripping == "true"):
         make_mask_script = os.path.join(scripts_prefix, "make_mask_script.py")
         print_main_info("Running " + make_mask_script)
 
-        OUT_SS = os.path.join(OUT_PATH, 'SkullStripping')
         BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
         if not(os.path.isfile(BRAIN_MASK)):
-           call([python, make_mask_script, '--t1', T1, '--t2', T2, '--at_dir', '--at_list', '--output',OUT_SS])
+           call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T1_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
         else:
            print('Brainmask already exists')
         print_main_info("Finished running " + make_mask_script)
     else:
         BRAIN_MASK = main_args.brainMask
+
+
+    print_main_info("Stripping the skull")
+
+    T1_STRIPPED = os.path.join(OUT_SS, "".join([T1_base,"_stripped.nrrd"]))
+    args=[ImageMath, T1_REGISTERED, '-outfile', T1_STRIPPED, '-mask', BRAIN_MASK]
+    call_and_print(args)
+
+    if (T2_exists):
+        T2_STRIPPED = os.path.join(OUT_SS, "".join([T2_base,"_stripped.nrrd"]))
+        args=[ImageMath, T1_REGISTERED, '-outfile', T2_STRIPPED, '-mask', BRAIN_MASK]
+        call_and_print(args)
 
 
     if (main_args.segmentation == "true"):
@@ -126,7 +146,7 @@ def main(main_args):
         print(Segmentation)
         if not(os.path.isfile(Segmentation)):
            print(Segmentation + ' doesnt exist')
-           call([python, tissue_seg_script, '--t1', T1, '--t2', T2,'--at_dir', '--output', OUT_TS])
+           call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', T2_STRIPPED,'--at_dir', '--output', OUT_TS])
         else:
            print('Segmentation already exists')
         print_main_info("Finished running tissue_seg_script.py")
@@ -138,52 +158,55 @@ def main(main_args):
         vent_mask_script = os.path.join(scripts_prefix, "vent_mask_script.py")
         print_main_info("Running " + vent_mask_script)
         OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-        call([python, vent_mask_script, '--t1', T1, '--subjectTissueSeg', Segmentation, '--output',OUT_VR])
-        Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
+        call([python, vent_mask_script, '--t1', T1_STRIPPED, '--subjectTissueSeg', Segmentation, '--output',OUT_VR])
+        Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_stripped_EMS_withoutVent.nrrd"]))
         print_main_info("Finished running "+vent_mask_script)
 
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
     Segmentation_base = os.path.splitext(os.path.basename(Segmentation))[0]
 
-    ######### Stripping the skull ######
-    print_main_info("Stripping the skull")
+    ######### Stripping the skull from segmentation ######
     MID_TEMP00 = os.path.join(OUT_PATH, "".join([T1_base,"_MID00.nrrd"]))
-    args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mul', BRAIN_MASK]
+    args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mask', BRAIN_MASK]
     call_and_print(args)
 
     ######### Cutting below AC-PC line #######
     ### Coronal mask creation
     print_main_info("Cutting below AC-PC line")
 
-    ACPC_unit=main_args.ACPCunit
-    if(ACPC_unit == "index"):
-        ACPC_val=int(main_args.ACPCval)
-    else:
-        ACPC_mm=float(main_args.ACPCval)
-        im=itk.imread(T1)
-        index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
-        ACPC_val=round(index_coord[0])
+    if (main_args.cerebellumMask == ""):
+        ACPC_unit=main_args.ACPCunit
+        if(ACPC_unit == "index"):
+            ACPC_val=int(main_args.ACPCval)
+        else:
+            ACPC_mm=float(main_args.ACPCval)
+            im=itk.imread(T1_REGISTERED)
+            index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
+            ACPC_val=round(index_coord[0])
 
-    Coronal_Mask = "coronal_mask_"+str(ACPC_val)+".nrrd"
-    if not (os.path.isfile(Coronal_Mask)):
-        im=itk.imread(T1)
-        np_copy=itk.GetArrayFromImage(im)
-        if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
-            eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
-            sys.stderr.flush()
-            ACPC_val = 70;
+        Coronal_Mask = "coronal_mask_"+str(ACPC_val)+".nrrd"
+        if not (os.path.isfile(Coronal_Mask)):
+            im=itk.imread(T1_REGISTERED)
+            np_copy=itk.GetArrayFromImage(im)
+            if ((ACPC_val >= np_copy.shape[0]) | (ACPC_val <= 0)):
+                eprint("ACPC index out of range ("+str(ACPC_val)+"), using default coronal mask (slice 70)")
+                sys.stderr.flush()
+                ACPC_val = 70;
 
-        print_main_info('Creating coronal mask')
-        np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=1
-        np_copy[0:ACPC_val-1,:,:]=0
-        itk_np_copy=itk.GetImageViewFromArray(np_copy)
-        itk_np_copy.SetOrigin(im.GetOrigin())
-        itk_np_copy.SetSpacing(im.GetSpacing())
-        itk_np_copy.SetDirection(im.GetDirection())
-        itk.imwrite(itk_np_copy,Coronal_Mask)
-        print_main_info('Coronal mask created')
+            print_main_info('Creating coronal mask')
+            np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=1
+            np_copy[0:ACPC_val-1,:,:]=0
+            itk_np_copy=itk.GetImageViewFromArray(np_copy)
+            itk_np_copy.SetOrigin(im.GetOrigin())
+            itk_np_copy.SetSpacing(im.GetSpacing())
+            itk_np_copy.SetDirection(im.GetDirection())
+            itk.imwrite(itk_np_copy,Coronal_Mask)
+            print_main_info('Coronal mask created')
+        else:
+            print_main_info('Loading ' + Coronal_Mask)
+
     else:
-        print_main_info('Loading ' + Coronal_Mask)
+        Coronal_Mask = main_args.cerebellumMask
 
     ### Mask multiplication
     MID_TEMP01 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID01.nrrd"]))
@@ -199,74 +222,68 @@ def main(main_args):
     args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP03, '-conComp','1']
     call_and_print(args)
 
-    MID_TEMP02_base = os.path.splitext(os.path.basename(MID_TEMP02))[0]
-    MID_TEMP03_base = os.path.splitext(os.path.basename(MID_TEMP03))[0]
+    Erosion_Mask = BRAIN_MASK_base + '_Erosion.nrrd'
+    Erosion_Mask00 = BRAIN_MASK_base + '_Erosion00.nrrd'
+    Erosion_Mask01 = BRAIN_MASK_base + '_Erosion01.nrrd'
+    Erosion_Mask01_inv = BRAIN_MASK_base + '_Erosion01_inv.nrrd'
+    args = [ImageMath, BRAIN_MASK, '-erode', '1,1', '-outfile', Erosion_Mask00]
+    call_and_print(args)
 
-    MINC_MID_TEMP02 = MID_TEMP02_base + ".mnc"
-    MINC_MID_TEMP03 = MID_TEMP03_base + ".mnc"
-    MINC_BRAIN_MASK = BRAIN_MASK_base + ".mnc"
-    MINC_Coronal_Mask = Coronal_Mask[:-5] + ".mnc"
+    args = [ImageMath, Erosion_Mask00, '-erode', '1,1', '-outfile', Erosion_Mask01]
+    call_and_print(args)
 
-    os.system("itk_convert %s %s" %(MID_TEMP03,MINC_MID_TEMP03))
-    os.system("itk_convert %s %s" %(MID_TEMP02,MINC_MID_TEMP02))
-    os.system("itk_convert %s %s" %(BRAIN_MASK,MINC_BRAIN_MASK))
-    os.system("itk_convert %s %s" %(Coronal_Mask,MINC_Coronal_Mask))
+    for i in range(0,12):
+        args = [ImageMath, Erosion_Mask01,  '-erode', '1,1', '-outfile', Erosion_Mask01]
+        call_and_print(args)
 
-    Erosion_Mask = BRAIN_MASK_base + "_Erosion.mnc"
-    os.system("mincmorph -clobber -erosion %s %s" %(MINC_BRAIN_MASK,Erosion_Mask))
-    for i in range(0,20):
-            os.system("mincmorph -clobber -erosion %s %s" %(Erosion_Mask,Erosion_Mask))
+    args = [ImageMath, Erosion_Mask01, '-threshold', '0,0', '-outfile', Erosion_Mask01_inv]
+    call_and_print(args)
 
-    MINC_FINAL_CSF_SEG = Segmentation_base + "_FINAL_Partial_CSF.mnc"
-    FINAL_CSF_SEG = MINC_FINAL_CSF_SEG[:-4]+".nrrd"
-    os.system("minccalc -byte -expr 'if(A[0]==0 && A[1]==1 && A[2]==1){out=1}else{out=A[3]}' %s %s %s %s %s" %(Erosion_Mask,MINC_Coronal_Mask,MINC_MID_TEMP02,MINC_MID_TEMP03,MINC_FINAL_CSF_SEG))
+
+    FINAL_CSF_SEG = Segmentation_base + "_FINAL_Partial_CSF.nrrd"
+
+    args = [ImageMath, MID_TEMP03, '-mask', Erosion_Mask01_inv, '-outfile', FINAL_CSF_SEG]
+    call_and_print(args)
+    args = [ImageMath, FINAL_CSF_SEG, '-mask', Coronal_Mask, '-outfile', FINAL_CSF_SEG]
+    call_and_print(args)
+    args = [ImageMath, FINAL_CSF_SEG, '-mask', MID_TEMP02, '-outfile', FINAL_CSF_SEG]
+    call_and_print(args)
 
     ## add script erase quad....
-    Erosion_MINC = MINC_FINAL_CSF_SEG[:-4] + "_Ero.mnc"
-    Erosion_MINC_MASKING = Erosion_MINC[:-4] + "_Masking.mnc"
-    os.system("mincmorph -erosion %s %s" %(MINC_FINAL_CSF_SEG,Erosion_MINC))
+    Erosion = FINAL_CSF_SEG[:-5] + "_Ero.nrrd"
+    Erosion_MASKING = Erosion[:-5] + "_Masking.nrrd"
+    args = [ImageMath, FINAL_CSF_SEG,  '-erode', '1,1', '-outfile', Erosion]
+    call_and_print(args)
 
-#    for j in range(0,20):
-#            os.system("mincmorph -clobber -erosion %s %s" %(Erosion_Mask,Erosion_Mask))
+    args = [ImageMath, Erosion_Mask01,  '-erode', '1,1', '-outfile', Erosion_Mask]
+    call_and_print(args)
+    for i in range(0,11):
+        args = [ImageMath, Erosion_Mask,  '-erode', '1,1', '-outfile', Erosion_Mask]
+        call_and_print(args)
 
-    os.system("minccalc -byte -expr 'if(A[0]>0){out=A[1]}else{out=0}' %s %s %s" %(Erosion_Mask,Erosion_MINC,Erosion_MINC_MASKING))
+    args = [ImageMath, Erosion, '-mask', Erosion_Mask, '-outfile', Erosion_MASKING]
+    call_and_print(args)
 
-    Erosion_MINC_MASKING_NRRD = Erosion_MINC_MASKING[:-4] + ".nrrd"
-    #os.system("convertITKformats2 %s %s" %(Erosion_MINC_MASKING,Erosion_MINC_MASKING_NRRD))
-    os.system("itk_convert %s %s" %(Erosion_MINC_MASKING,Erosion_MINC_MASKING_NRRD))
 
-    Erosion_MINC_MASKING_NRRD_conComp = Erosion_MINC_MASKING_NRRD[:-5] + "_conComp.nrrd"
-    os.system("ImageMath %s -outfile %s -conComp 1" %(Erosion_MINC_MASKING_NRRD,Erosion_MINC_MASKING_NRRD_conComp))
+    Erosion_MASKING_conComp = Erosion_MASKING[:-5] + "_conComp.nrrd"
+    args = [ImageMath, Erosion_MASKING, '-conComp', '1', '-outfile', Erosion_MASKING_conComp]
+    call_and_print(args)
 
-    Erosion_MINC_MASKING_MINC_conComp=Erosion_MINC_MASKING_NRRD_conComp[:-5] + ".mnc"
-    #os.system("convertITKformats2 %s %s" %(Erosion_MINC_MASKING_NRRD_conComp,Erosion_MINC_MASKING_MINC_conComp))
-    os.system("itk_convert %s %s" %(Erosion_MINC_MASKING_NRRD_conComp,Erosion_MINC_MASKING_MINC_conComp))
 
-    Dilation_comComp = Erosion_MINC_MASKING_MINC_conComp[:-4]+"_dil.mnc"
-    os.system("mincmorph -clobber -dilation %s %s" %(Erosion_MINC_MASKING_MINC_conComp,Dilation_comComp))
+    Dilation_comComp = Erosion_MASKING_conComp[:-5]+"_dil.nrrd"
+    args = [ImageMath, Erosion_MASKING_conComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
+    call_and_print(args)
+
     for k in range(0,8):
-            os.system("mincmorph -clobber -dilation %s %s" %(Dilation_comComp,Dilation_comComp))
-    FIANL_RESULT = MINC_FINAL_CSF_SEG[:-4] + "_QCistern.mnc"
-    os.system("minccalc -byte -expr 'if(A[0]>0){out=0}else{out=A[1]}' %s %s %s" %(Dilation_comComp,MINC_FINAL_CSF_SEG,FIANL_RESULT))
+        args = [ImageMath, Dilation_comComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
+        call_and_print(args)
 
-    FINAL_RESULT_NRRD = FIANL_RESULT[:-4] + ".nrrd"
-    FINAL_RESULT_NII = FIANL_RESULT[:-4] + ".nii.gz"
-    #os.system("convertITKformats2 %s %s" %(FIANL_RESULT,FINAL_RESULT_NRRD))
-    #os.system("convertITKformats2 %s %s" %(FIANL_RESULT,FINAL_RESULT_NII))
-    os.system("itk_convert %s %s" %(FIANL_RESULT,FINAL_RESULT_NRRD))
+    FINAL_RESULT = FINAL_CSF_SEG[:-5] + "_QCistern.nrrd"
 
-    FINAL_RESULT_DILAT = FINAL_RESULT_NRRD[:-5] + '--DIL.nrrd'
-    FINAL_RESULT_ERODE = FINAL_RESULT_DILAT[:-5] + '--ERO.nrrd'
-    os.system("ImageMath %s -dilate 1,1 -outfile %s" %(FINAL_RESULT_NRRD,FINAL_RESULT_DILAT) )
-    os.system("ImageMath %s -erode 1,1 -outfile %s" %(FINAL_RESULT_DILAT,FINAL_RESULT_ERODE) )
-
-    #FINAL_TEMP04 = Segmenataion[:-5] + "_MID4.nrrd"
-    #FINAL_TEMP05 = Segmenataion[:-5] + "_MID5.nrrd"
-    #os.system("ImageMath %s -add %s -outfile %s" %(MID_TEMP03,FINAL_RESULT_ERODE,FINAL_TEMP04) )
-    #os.system("ImageMath %s -threshold 1,2 -outfile %s " %(FINAL_TEMP04,FINAL_TEMP05) )
-
-    #os.system("ImageMath %s -outfile %s -conComp 1" %(FINAL_RESULT_ERODE,FINAL_RESULT_ERODE))
-    os.system("itk_convert %s %s" %(FINAL_RESULT_ERODE,FINAL_RESULT_NII))
+    args = [ImageMath, Dilation_comComp, '-threshold', '0,0', '-outfile', Dilation_comComp]
+    call_and_print(args)
+    args = [ImageMath, FINAL_CSF_SEG, '-mask', Dilation_comComp, '-outfile', FINAL_RESULT]
+    call_and_print(args)
 
 
     if (main_args.computeCSFDensity == "true"):

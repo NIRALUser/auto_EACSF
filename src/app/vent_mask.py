@@ -5,8 +5,6 @@ import sys
 import os
 import argparse
 import subprocess
-import itk
-import numpy as np
 from main_script import eprint
 from main_script import call_and_print
 from main_script import print_aef
@@ -38,50 +36,47 @@ def main(args):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    T1_dir=os.path.dirname(T1)
-    T1_base = os.path.splitext(os.path.basename(T1))[0]
-    TEMPLATE_INV_MASK_VENTRICLE_base = os.path.splitext(os.path.basename(TEMPLATE_INV_MASK_VENTRICLE))[0]
-    TEMPLATE_INV_MASK_VENTRICLE_REG = os.path.join(OUTPUT_DIR, "".join([TEMPLATE_INV_MASK_VENTRICLE_base,"_Registered.nrrd"]))
-    TEMPLATE_T1_VENTRICLE_base = os.path.splitext(os.path.basename(TEMPLATE_T1_VENTRICLE))[0]
-    TEMPLATE_T1_VENTRICLE_REG = os.path.join(OUTPUT_DIR, "".join([TEMPLATE_T1_VENTRICLE_base,"_Registered.nrrd"]))
-    SEG_WithoutVent = os.path.join(OUTPUT_DIR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
-    ANTs_MATRIX_NAME=os.path.join(OUTPUT_DIR, T1_base)
-    ANTs_WARP = os.path.join(OUTPUT_DIR, "".join([T1_base,"Warp.nii.gz"]))
-    ANTs_INV_WARP = os.path.join(OUTPUT_DIR, "".join([T1_base,"Warp.nii.gz"]))
-    ANTs_AFFINE = os.path.join(OUTPUT_DIR, "".join([T1_base,"Affine.txt"]))
+    if (os.path.isfile(TEMPLATE_INV_MASK_VENTRICLE)):
+        T1_dir=os.path.dirname(T1)
+        T1_base = os.path.splitext(os.path.basename(T1))[0]
+        TEMPLATE_INV_MASK_VENTRICLE_base = os.path.splitext(os.path.basename(TEMPLATE_INV_MASK_VENTRICLE))[0]
+        TEMPLATE_INV_MASK_VENTRICLE_REG = os.path.join(OUTPUT_DIR, "".join([TEMPLATE_INV_MASK_VENTRICLE_base,"_Registered.nrrd"]))
+        TEMPLATE_T1_VENTRICLE_base = os.path.splitext(os.path.basename(TEMPLATE_T1_VENTRICLE))[0]
+        TEMPLATE_T1_VENTRICLE_REG = os.path.join(OUTPUT_DIR, "".join([TEMPLATE_T1_VENTRICLE_base,"_Registered.nrrd"]))
+        SEG_WithoutVent = os.path.join(OUTPUT_DIR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
+        ANTs_MATRIX_NAME=os.path.join(OUTPUT_DIR, T1_base)
+        ANTs_WARP = os.path.join(OUTPUT_DIR, "".join([T1_base,"Warp.nii.gz"]))
+        ANTs_INV_WARP = os.path.join(OUTPUT_DIR, "".join([T1_base,"Warp.nii.gz"]))
+        ANTs_AFFINE = os.path.join(OUTPUT_DIR, "".join([T1_base,"Affine.txt"]))
 
-    if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_AFFINE)):
-        args = [ANTS, '3', '-m',SIM_METRIC+'['+T1+','+TEMPLATE_T1_VENTRICLE+','+T1_WEIGHT+','+SIM_PARAMETER+']', '-i',ITERATIONS,'-o',ANTs_MATRIX_NAME, '-t', 'SyN['+TRANSFORMATION_STEP+']', '-r', 'Gauss['+GAUSSIAN+',0]']
+        if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_AFFINE)):
+            args = [ANTS, '3', '-m',SIM_METRIC+'['+T1+','+TEMPLATE_T1_VENTRICLE+','+T1_WEIGHT+','+SIM_PARAMETER+']', '-i',ITERATIONS,'-o',ANTs_MATRIX_NAME, '-t', 'SyN['+TRANSFORMATION_STEP+']', '-r', 'Gauss['+GAUSSIAN+',0]']
+            call_and_print(args)
+        else:
+            print_aef('Ventricle masking : ANTs registration already exists')
+
+        args=[WarpImageMultiTransform, '3', TEMPLATE_INV_MASK_VENTRICLE, TEMPLATE_INV_MASK_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
+        call_and_print(args)
+
+        args=[WarpImageMultiTransform, '3', TEMPLATE_T1_VENTRICLE, TEMPLATE_T1_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
+        call_and_print(args)
+
+        args=[ImageMath, SUBJECT_TISSUE_SEG, '-mul', TEMPLATE_INV_MASK_VENTRICLE_REG, '-outfile', SEG_WithoutVent]
         call_and_print(args)
     else:
-        print_aef('Ventricle masking : ANTs registration already exists')
+        eprint("Template inverse ventricle mask is not a file and cannot be applied")
 
-    args=[WarpImageMultiTransform, '3', TEMPLATE_INV_MASK_VENTRICLE, TEMPLATE_INV_MASK_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
-    call_and_print(args)
-
-    args=[WarpImageMultiTransform, '3', TEMPLATE_T1_VENTRICLE, TEMPLATE_T1_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
-    call_and_print(args)
-
-    args=[ImageMath, SUBJECT_TISSUE_SEG, '-mul', TEMPLATE_INV_MASK_VENTRICLE_REG, '-outfile', SEG_WithoutVent]
-    call_and_print(args)
-
-    if (SUBJECT_VENTRICLE_MASK != ""):
+    if (os.path.isfile(SUBJECT_VENTRICLE_MASK)):
         SUBJECT_VENTRICLE_MASK_base=os.path.splitext(os.path.basename(SUBJECT_VENTRICLE_MASK))[0]
         SUBJECT_VENTRICLE_MASK_INV = os.path.join(OUTPUT_DIR,SUBJECT_VENTRICLE_MASK_base+'_INV.nrrd')
 
-        VM_im = itk.imread(SUBJECT_VENTRICLE_MASK)
-        VM_array = itk.GetArrayFromImage(VM_im)
-        max_val = np.iinfo(VM_array.dtype).max
-        thFilter = itk.BinaryThresholdImageFilter.New(VM_im)
-        thFilter.SetLowerThreshold(1)
-        thFilter.SetUpperThreshold(max_val)
-        thFilter.SetInsideValue(0)
-        thFilter.SetOutsideValue(1)
-
-        itk.imwrite(thFilter,SUBJECT_VENTRICLE_MASK_INV)
+        args = [ImageMath, SUBJECT_VENTRICLE_MASK, '-threshold', '0,0', '-outfile', SUBJECT_VENTRICLE_MASK_INV]
+        call_and_print(args)
 
         args=[ImageMath, SEG_WithoutVent, '-mul', SUBJECT_VENTRICLE_MASK_INV, '-outfile', SEG_WithoutVent]
         call_and_print(args)
+    else:
+        eprint("Subject specific ventricle mask is not a file and cannot be applied")
 
 
 

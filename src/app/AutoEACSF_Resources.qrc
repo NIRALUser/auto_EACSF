@@ -9,8 +9,4 @@
     <qresource prefix="/config">
         <file>default_config.json</file>
     </qresource>
-    <qresource prefix="/masks">
-        <file>Vent_CSF-BIN-RAI-Fusion.nrrd</file>
-        <file>coronal_mask_70.nrrd</file>
-    </qresource>
 </RCC>
