@@ -1,4 +1,4 @@
-
+set(APP_NAME Auto_EACSF_app)
 
 set(${APP_NAME}_moc csfwindow.h)
 set(${APP_NAME}_ui csfwindow.ui)
@@ -25,4 +25,7 @@ target_link_libraries(Auto_EACSF csflib ${QT_LIBRARIES})
 
 add_custom_command(TARGET Auto_EACSF POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR})
+${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR})
+
+
+

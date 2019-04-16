@@ -27,12 +27,9 @@ public:
     ~CSFWindow();
 
 private:
-    void check_tree_type();
-    bool find_data_dir_path();
-    void check_exe_in_folder(QString name, QString path);
+    QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
     void find_executables();
-    void readDefaultConfig();
-    void readConfig(QString filename);
+    void readConfig(QString filename, bool default_config);
     bool writeConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
@@ -46,7 +43,7 @@ private:
     int questionMsgBox(bool checkState, QString maskType, QString action);
     void infoMsgBox(QString message, QMessageBox::Icon type);
 
-    void displayAtlases(QString folder_path);
+    void displayAtlases(QString folder_path, bool T2_provided);
 
     void write_main_script();
     void write_rigid_align();
@@ -77,10 +74,6 @@ private:
     QString Sim_Parameter="4";
     QString Gaussian="3";
     QString T1_Weight="1";
-
-    //Data directory path
-    QString m_data_dir_path;
-    bool m_data_found;
 
     //Other
     bool dataSeemsAligned=false;
@@ -114,6 +107,7 @@ private slots:
     //1st Tab
     void on_pushButton_T1img_clicked();
     void on_pushButton_T2img_clicked();
+    void on_lineEdit_T2img_textChanged();
     void on_pushButton_BrainMask_clicked();
     void on_lineEdit_BrainMask_textChanged();
     void on_pushButton_VentricleMask_clicked();
@@ -147,7 +141,8 @@ private slots:
     //5th Tab
     void on_checkBox_VentricleRemoval_stateChanged(int state);
 
-    void on_pushButton_ROIAtlasT1_clicked();
+    void on_pushButton_templateT1Ventricle_clicked();
+    void on_pushButton_templateInvMaskVentricle_clicked();
 
     //ANTS Registration
     void on_comboBox_RegType_currentTextChanged(const QString &val);
@@ -157,6 +152,11 @@ private slots:
     void on_doubleSpinBox_GaussianSigma_valueChanged(const double val);
     void on_spinBox_T1Weight_valueChanged(const QString &val);
     void on_lineEdit_Iterations_textChanged(const QString &val);
+
+    //CSF Density
+    void on_pushButton_LH_inner_clicked();
+    void on_pushButton_RH_inner_clicked();
+    void on_checkBox_CSFDensity_stateChanged(int state);
 
     //Execution
     void on_pushButton_execute_clicked();

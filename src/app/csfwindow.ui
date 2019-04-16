@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="tab_input">
      <attribute name="title">
@@ -519,9 +519,9 @@
      <widget class="QListWidget" name="listWidget_SSAtlases">
       <property name="geometry">
        <rect>
-        <x>260</x>
+        <x>150</x>
         <y>310</y>
-        <width>501</width>
+        <width>711</width>
         <height>291</height>
        </rect>
       </property>
@@ -552,13 +552,13 @@
     </widget>
     <widget class="QWidget" name="tab_TissueSeg">
      <attribute name="title">
-      <string>3. Tissue Segmentation + Ventricle Masking</string>
+      <string>3. Tissue Segmentation + 4. Ventricle Masking</string>
      </attribute>
      <widget class="QCheckBox" name="checkBox_TissueSeg">
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>30</y>
+        <y>60</y>
         <width>241</width>
         <height>26</height>
        </rect>
@@ -574,7 +574,7 @@
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>70</y>
+        <y>100</y>
         <width>271</width>
         <height>21</height>
        </rect>
@@ -593,7 +593,7 @@
       <property name="geometry">
        <rect>
         <x>360</x>
-        <y>120</y>
+        <y>150</y>
         <width>601</width>
         <height>31</height>
        </rect>
@@ -603,7 +603,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>120</y>
+        <y>150</y>
         <width>261</width>
         <height>31</height>
        </rect>
@@ -612,24 +612,24 @@
        <string>Tissue Segmentation Atlas Directory</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_ROIAtlasT1">
+     <widget class="QPushButton" name="pushButton_templateT1Ventricle">
       <property name="geometry">
        <rect>
         <x>79</x>
-        <y>320</y>
+        <y>350</y>
         <width>261</width>
         <height>31</height>
        </rect>
       </property>
       <property name="text">
-       <string>Atlas T1</string>
+       <string>Ventricle template T1</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_VentricleRemoval">
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>260</y>
+        <y>290</y>
         <width>211</width>
         <height>31</height>
        </rect>
@@ -648,7 +648,7 @@
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>230</y>
+        <y>260</y>
         <width>371</width>
         <height>26</height>
        </rect>
@@ -660,14 +660,57 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_ROIAtlasT1">
+     <widget class="QLineEdit" name="lineEdit_templateT1Ventricle">
       <property name="geometry">
        <rect>
         <x>360</x>
-        <y>320</y>
+        <y>350</y>
         <width>601</width>
         <height>31</height>
        </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_templateInvMaskVentricle">
+      <property name="geometry">
+       <rect>
+        <x>79</x>
+        <y>400</y>
+        <width>261</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Ventricle Mask</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_templateInvMaskVentricle">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>400</y>
+        <width>601</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>270</x>
+        <y>20</y>
+        <width>431</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <italic>true</italic>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>These steps are applied to the skull stripped T1 and T2 images</string>
       </property>
      </widget>
     </widget>
@@ -1041,6 +1084,76 @@
       </item>
      </widget>
     </widget>
+    <widget class="QWidget" name="tab_CSFDensity">
+     <attribute name="title">
+      <string>CSF Density</string>
+     </attribute>
+     <widget class="QCheckBox" name="checkBox_CSFDensity">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>50</y>
+        <width>381</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::PreventContextMenu</enum>
+      </property>
+      <property name="text">
+       <string>Compute CSF Density</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_LH_inner">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>100</y>
+        <width>661</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_LH_inner">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>100</y>
+        <width>231</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Left hemisphere inner surface</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_RH_inner">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>150</y>
+        <width>661</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_RH_inner">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>150</y>
+        <width>231</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Right hemisphere inner surface</string>
+      </property>
+     </widget>
+    </widget>
     <widget class="QWidget" name="tab_Execution">
      <attribute name="title">
       <string>Execution</string>
@@ -1125,11 +1238,6 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Local Volume Computation</string>
-     </attribute>
-    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -1193,7 +1301,7 @@ p, li { white-space: pre-wrap; }
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Show executables</string>
+    <string>Toggle advanced mode</string>
    </property>
   </action>
  </widget>
