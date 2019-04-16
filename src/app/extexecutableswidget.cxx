@@ -52,7 +52,7 @@ void ExtExecutablesWidget::exeQpbTriggered()
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
-    QLineEdit *le;
+    QLineEdit *le = nullptr;
     for (QObject *ch : par->children())
     {
         le = qobject_cast<QLineEdit*>(ch);
@@ -74,7 +74,7 @@ void ExtExecutablesWidget::exeLinedTextChanged(QString new_text)
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
-    QPushButton *bt;
+    QPushButton *bt = nullptr;
     for (QObject *ch : par->children())
     {
         bt =qobject_cast<QPushButton*>(ch);

@@ -34,7 +34,7 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
 # get Auto_EACSF info
-FILE(READ src/Auto_EACSF.xml var)
+FILE(READ src/app/Auto_EACSF.xml var)
 
 string(REGEX MATCH "<title>.*</title>" ext "${var}")
 string(REPLACE "<title>" "" title ${ext})
@@ -158,7 +158,8 @@ endif()
 if (ABC_DIR)
   find_program(ABC_LOCATION
     ABC_CLI
-    HINTS ${ABC_DIR}/StandAloneCLI)
+    PATHS ${ABC_DIR}/ABC-inner-install/bin)
+  set(ABC_LOCATION ${ABC_DIR}/ABC-inner-install/bin/ABC_CLI)
   if(ABC_LOCATION)
     install(PROGRAMS ${ABC_LOCATION}
       DESTINATION ${INSTALL_RUNTIME_DESTINATION}
@@ -322,3 +323,10 @@ install(FILES
 file(GLOB Auto_EACSF_HEADERS "*.h")
 install(FILES ${Auto_EACSF_HEADERS} 
 DESTINATION include)
+
+option(BUILD_TESTING "Build the testing tree" ON)
+
+IF(BUILD_TESTING)
+  include(CTest)
+  ADD_SUBDIRECTORY(Testing)
+ENDIF(BUILD_TESTING)

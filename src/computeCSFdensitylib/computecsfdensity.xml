@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+    <title>Compute CSF Density</title>
+    <description>Takes the inner surface, the CSF probability map and the brain segmentation as inputs to compute the CSF density</description>
+    <contributor>Mahmoud Mostapha, Arthur Le Maout</contributor>
+    <version>1.0</version>
+    <parameters advanced="false">
+        <file>
+            <name>LH_WM_Surf</name>
+            <longflag>LH_WM_Surf</longflag>
+            <flag>l</flag>
+            <label>Input left hemisphere white matter surface</label>
+            <description>Input left hemisphere white matter surface file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>RH_WM_Surf</name>
+            <longflag>RH_WM_Surf</longflag>
+            <flag>r</flag>
+            <label>Input right hemisphere white matter surface</label>
+            <description>Input right hemisphere white matter surface file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>segmentation</name>
+            <longflag>segmentation</longflag>
+            <flag>s</flag>
+            <label>Input segmentation</label>
+            <description>Input segmentation file (.nrrd)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>CSFprobabilityMap</name>
+            <longflag>CSFprobabilityMap</longflag>
+            <flag>c</flag>
+            <label>Input CSF probability map</label>
+            <description>Input CSF probability map file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>LH_streamlines</name>
+            <longflag>LH_streamlines</longflag>
+            <label>Input left hemisphere streamlines</label>
+            <description>Input left hemisphere streamlines file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <file>
+            <name>RH_streamlines</name>
+            <longflag>RH_streamlines</longflag>
+            <label>Input right hemisphere streamlines</label>
+            <description>Input right hemisphere streamlines file (.vtk or .vtp)</description>
+            <channel>input</channel>
+        </file>
+        <string>
+            <name>prefix</name>
+            <longflag>prefix</longflag>
+            <flag>p</flag>
+            <label>Prefix for saved files</label>
+            <description>Prefix for saved files names</description>
+            <channel>output</channel>
+        </string>
+        <string>
+            <name>outputDir</name>
+            <longflag>outputDir</longflag>
+            <flag>d</flag>
+            <label>Output dir for saved files</label>
+            <description>Output directory path for saved files</description>
+            <channel>output</channel>
+        </string>
+    </parameters>
+</executable>

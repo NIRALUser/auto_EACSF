@@ -5,7 +5,7 @@
 	"T1img": "stx_noscale_718312_V24_t1w_RAI.nrrd",
 	"T2img": "stx_noscale_718312_V24_t2w_RAI.nrrd",
 	"TissueSeg": "stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd",
-	"VentricleMask": "Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
+    "SubjectVentricleMask": "Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
 	"output_dir": "Test_Output"
     },
     "parameters": {
@@ -18,20 +18,23 @@
 	"ANTS_sim_metric": "CC",
 	"ANTS_sim_param": 4,
 	"ANTS_transformation_step": 0.25,
-	"ROI_Atlas_T1": "tissueMultiAtlas/5075/atlas_5075_T1w.nii.gz",
-	"Reference_Atlas": "pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
-	"SkullStripping_Atlases_dir": "brainmaskingMultiatlas",
-	"TissueSeg_Atlas_dir": "pediatric-atlas-1year-T1-ABC/DeepGray5Class",
-	"TissueSeg_csf": 3
+    "templateT1Ventricle": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped/template.nrrd",
+    "templateInvMaskVentricle": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped/Vent_CSF-INVMask.nrrd",
+    "registrationAtlas": "pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
+    "skullStrippingAtlasesDirectory": "brainmaskingMultiatlas",
+    "tissueSegAtlasDirectory": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped",
+    "CSFLabel": 3,
+    "LH_innerSurface": "",
+    "RH_innerSurface": ""
     },
     "executables": [
         {
             "name": "ABC_CLI",
-            "path": "/ABC-build/StandAloneCLI/"
+            "path": "/ABC-install/bin/"
         },
         {
             "name": "ANTS",
-            "path": "/ANTs-build/bin"
+            "path": "/ANTs-build/bin/"
         },
         {
             "name": "BRAINSFit",
