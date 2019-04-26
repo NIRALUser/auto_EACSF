@@ -232,7 +232,7 @@ def main(main_args):
     args = [ImageMath, Erosion_Mask00, '-erode', '1,1', '-outfile', Erosion_Mask01]
     call_and_print(args)
 
-    for i in range(0,12):
+    for i in range(0,14):
         args = [ImageMath, Erosion_Mask01,  '-erode', '1,1', '-outfile', Erosion_Mask01]
         call_and_print(args)
 
@@ -257,7 +257,7 @@ def main(main_args):
 
     args = [ImageMath, Erosion_Mask01,  '-erode', '1,1', '-outfile', Erosion_Mask]
     call_and_print(args)
-    for i in range(0,11):
+    for i in range(0,5):
         args = [ImageMath, Erosion_Mask,  '-erode', '1,1', '-outfile', Erosion_Mask]
         call_and_print(args)
 
@@ -274,7 +274,7 @@ def main(main_args):
     args = [ImageMath, Erosion_MASKING_conComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
     call_and_print(args)
 
-    for k in range(0,8):
+    for k in range(0,13):
         args = [ImageMath, Dilation_comComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
         call_and_print(args)
 
@@ -309,7 +309,6 @@ if (__name__ == "__main__"):
     parser.add_argument('--ACPCval', type=str, help='ACPC value', default="@ACPC_VAL@")
     parser.add_argument('--LHInnerSurf', type=str, help='Left hemisphere inner surface', default="@LH_INNER@")
     parser.add_argument('--RHInnerSurf', type=str, help='Right hemisphere inner surface', default="@RH_INNER@")
-    parser.add_argument('--useDfCerMask', type=str, help='Use the default cerebellum mask', default="@USE_DCM@")
     parser.add_argument('--registration', type=str, help='Perform rigid registration', default="@PERFORM_REG@")
     parser.add_argument('--skullStripping', type=str, help='Perform skull stripping', default="@PERFORM_SS@")
     parser.add_argument('--segmentation', type=str, help='Perform tissue segmentation', default="@PERFORM_TSEG@")

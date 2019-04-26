@@ -35,10 +35,11 @@ CSFWindow::CSFWindow(QWidget *m_parent):
     QMainWindow(m_parent)
 {
     this->setupUi(this);
+
     checkBox_VentricleRemoval->setChecked(true);
     label_dataAlignmentMessage->setVisible(false);
     listWidget_SSAtlases->setSelectionMode(QAbstractItemView::NoSelection);
-    prc= new QProcess;
+    prc = new QProcess;
     readConfig(QString(":/config/default_config.json"),true);
 
 #if 0
@@ -804,12 +805,17 @@ void CSFWindow::write_vent_mask()
     v_outfile.close();
 }
 
+
 //SLOTS
 // Logs
 void CSFWindow::disp_output()
 {
     QString output(prc->readAllStandardOutput());
     out_log->append(output);
+    if (!m_GUI)
+    {
+        cout<<output.toStdString()<<endl;
+    }
 }
 
 void CSFWindow::disp_err()
@@ -825,8 +831,15 @@ void CSFWindow::disp_err()
         sc_name=sc_name+".py";
         errors.replace(sc_name,"<b>"+sc_name+"</b>");
     }
+
     err_log->append(errors);
+
+    if (!m_GUI)
+    {
+        std::cerr<<errors.toStdString()<<endl;
+    }
 }
+
 
 void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
     QString exit_message;
@@ -841,6 +854,25 @@ void CSFWindow::prc_finished(int exitCode, QProcess::ExitStatus exitStatus){
     }
     out_log->append(exit_message);
     cout<<exit_message.toStdString()<<endl;
+
+    QString outlog_filename = QDir::cleanPath(output_dir + QString("/output_log.txt"));
+    QFile outlog_file(outlog_filename);
+    outlog_file.open(QIODevice::WriteOnly);
+    QTextStream outlog_stream(&outlog_file);
+    outlog_stream << out_log->toPlainText();
+    outlog_file.close();
+
+    QString errlog_filename = QDir::cleanPath(output_dir + QString("/errors_log.txt"));
+    QFile errlog_file(errlog_filename);
+    errlog_file.open(QIODevice::WriteOnly);
+    QTextStream errlog_stream(&errlog_file);
+    errlog_stream << err_log->toPlainText();
+    errlog_file.close();
+
+    if (!m_GUI)
+    {
+        this->close();
+    }
 }
 
 //File menu
@@ -1204,6 +1236,11 @@ void CSFWindow::on_checkBox_CSFDensity_stateChanged(int state)
 // Execute
 void CSFWindow::on_pushButton_execute_clicked()
 {
+    run_AutoEACSF();
+}
+
+void CSFWindow::run_AutoEACSF()
+{
     //0. WRITE MAIN_SCRIPT
 
     //MAIN_KEY WORDS
@@ -1244,7 +1281,7 @@ void CSFWindow::on_pushButton_execute_clicked()
         tr("Python scripts are running. It may take up to 24 hours to process.")
     );
 
-    // RUN PYTHON    
+    // RUN PYTHON
 
     QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
     QStringList params = QStringList() << main_script;
@@ -1255,4 +1292,11 @@ void CSFWindow::on_pushButton_execute_clicked()
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
     prc->start(executables[QString("python3")], params);
+}
+
+void CSFWindow::runNoGUI(QString configFileName)
+{
+    m_GUI = false;
+    readConfig(configFileName, false);
+    run_AutoEACSF();
 }

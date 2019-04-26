@@ -25,6 +25,7 @@ class CSFWindow : public QMainWindow, public Ui::CSFWindow
 public:
     explicit CSFWindow(QWidget *m_parent = 0);
     ~CSFWindow();
+    void runNoGUI(QString configFileName);
 
 private:
     QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
@@ -52,8 +53,11 @@ private:
     void write_ABCxmlfile(bool T2provided);
     void write_vent_mask();
 
+    void run_AutoEACSF();
+
     static const QString m_github_url;
     QProcess *prc;
+    bool m_GUI = true;
 
     //Inputs
     QString T1img;
@@ -80,14 +84,6 @@ private:
     bool script_running=false;
     bool outlog_file_created=false;
 
-    enum class TreeType
-    {
-        dev_superbuild,
-        release_superbuild,
-        install
-    };
-
-    TreeType m_tree_type;
 
 private slots:
     void disp_output();
