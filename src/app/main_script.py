@@ -61,6 +61,19 @@ def main(main_args):
     if (T2 == ""):
         T2_exists = False
 
+    T1_split=os.path.splitext(os.path.basename(T1))
+    if (T1_split[1] == 'gz'):
+        T1_base = os.path.splitext(T1_split[0])
+    else:
+        T1_base = T1_split[0]
+
+    if (T2_exists):
+        T2_split = os.path.splitext(os.path.basename(T2))
+        if (T2_split[1] == 'gz'):
+            T2_base = os.path.splitext(T2_split[0])
+        else:
+            T2_base = T2_split[0]
+
     ### Executables
     python = main_args.python3
     ImageMath = main_args.ImageMath
@@ -93,18 +106,6 @@ def main(main_args):
         if (T2_exists):
             T2_REGISTERED = T2
 
-    T1_split=os.path.splitext(os.path.basename(T1))
-    if (T1_split[1] == 'gz'):
-        T1_base = os.path.splitext(T1_split[0])
-    else:
-        T1_base = T1_split[0]
-
-    if (T2_exists):
-        T2_split = os.path.splitext(os.path.basename(T2))
-        if (T2_split[1] == 'gz'):
-            T2_base = os.path.splitext(T2_split[0])
-        else:
-            T2_base = T2_split[0]
 
     OUT_SS = os.path.join(OUT_PATH, 'SkullStripping')
     if not os.path.exists(OUT_SS):
@@ -116,7 +117,7 @@ def main(main_args):
 
         BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
         if not(os.path.isfile(BRAIN_MASK)):
-           call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T1_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
+           call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T2_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
         else:
            print('Brainmask already exists')
         print_main_info("Finished running " + make_mask_script)
@@ -132,7 +133,7 @@ def main(main_args):
 
     if (T2_exists):
         T2_STRIPPED = os.path.join(OUT_SS, "".join([T2_base,"_stripped.nrrd"]))
-        args=[ImageMath, T1_REGISTERED, '-outfile', T2_STRIPPED, '-mask', BRAIN_MASK]
+        args=[ImageMath, T2_REGISTERED, '-outfile', T2_STRIPPED, '-mask', BRAIN_MASK]
         call_and_print(args)
 
 
