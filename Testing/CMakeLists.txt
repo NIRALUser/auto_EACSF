@@ -12,11 +12,11 @@ add_test(NAME computecsfdensityVersion COMMAND $<TARGET_FILE:computecsfdensity>
 include(ExternalData)
 
 set(ExternalData_URL_TEMPLATES
-    "file://$ENV{HOME}/Documents/%(algo)/%(hash)"
+    "file://$ENV{HOME}/Documents/md5/a75b2abfc0681e8e95bf418db6469a5d"
 )
 ExternalData_Add_Test(MyData
-  NAME computecsfdensityData
-  COMMAND $<TARGET_FILE:computecsfdensity> -t DATA{blbltest.txt}
+  NAME Auto_EACSF_Data
+  COMMAND $<TARGET_FILE:Auto_EACSF> -t DATA{external_file.txt}
   )
 ExternalData_Add_Target(MyData)
 

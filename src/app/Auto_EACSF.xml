@@ -3,7 +3,7 @@
   <category>PROJECT</category>
   <title>Auto_EACSF</title>
   <description>Automatically extract external CSF from T1 or T1 and T2 images.</description>
-  <version>1.1</version>
+  <version>1.2</version>
   <contributor>Han Bit Yoon, Arthur Le Maout</contributor>
   <parameters advanced="false">
       <file>
@@ -32,6 +32,39 @@
           <description>Input T2 image</description>
           <channel>input</channel>
       </file>
+      <file>
+          <name>BrainMask</name>
+          <longflag>brainmask</longflag>
+          <description>Input brainmask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>TissueSeg</name>
+          <longflag>segmentation</longflag>
+          <description>Input brain segmentation</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>SubjectVentricleMask</name>
+          <longflag>subjectVentricleMask</longflag>
+          <description>Input subject ventricle mask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>CerebMask</name>
+          <longflag>cerebmask</longflag>
+          <description>Input cerebellum mask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>OutputDir</name>
+          <longflag>output_dir</longflag>
+          <description>Output directory</description>
+          <channel>output</channel>
+      </file>
+      <file>
+          <name>Testfile</name>
+          <flag>t</flag>
+      </file>
   </parameters>
 </executable>
-
