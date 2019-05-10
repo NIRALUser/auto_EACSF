@@ -543,8 +543,6 @@ void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
 void CSFWindow::write_main_script()
 {
     QString CSFLabel=QString::number(spinBox_CSFLabel->value());
-    QString CerebMask=lineEdit_CerebellumMask->text();
-    QString BrainMask=lineEdit_BrainMask->text();
 
     QString LH_inner=lineEdit_LH_inner->text();
     QString RH_inner=lineEdit_RH_inner->text();
@@ -766,7 +764,6 @@ void CSFWindow::write_vent_mask()
 {
     QString tenplateT1Ventricle = lineEdit_templateT1Ventricle->text();
     QString templateT1invMask = lineEdit_templateInvMaskVentricle->text();
-    QString subjectVentricleMask = lineEdit_VentricleMask->text();
 
     QFile v_file(QString(":/PythonScripts/vent_mask.py"));
     v_file.open(QIODevice::ReadOnly);
@@ -1239,15 +1236,75 @@ void CSFWindow::on_pushButton_execute_clicked()
     run_AutoEACSF();
 }
 
-void CSFWindow::run_AutoEACSF()
+void CSFWindow::run_AutoEACSF(QString cli_T1, QString cli_T2, QString cli_BrainMask, QString cli_TissueSeg,
+                              QString cli_subjectVMask, QString cli_CerebMask, QString cli_output_dir)
 {
     //0. WRITE MAIN_SCRIPT
 
     //MAIN_KEY WORDS
-    T1img=lineEdit_T1img->text();
-    T2img=lineEdit_T2img->text();
-    TissueSeg=lineEdit_TissueSeg->text();
-    output_dir=lineEdit_OutputDir->text();
+    if (cli_T1.isEmpty())
+    {
+        T1img=lineEdit_T1img->text();
+    }
+    else
+    {
+        T1img=cli_T1;
+    }
+
+    if (cli_T2.isEmpty())
+    {
+        T2img=lineEdit_T2img->text();
+    }
+    else
+    {
+        T2img=cli_T2;
+    }
+
+    if (cli_BrainMask.isEmpty())
+    {
+        BrainMask=lineEdit_BrainMask->text();
+    }
+    else
+    {
+        BrainMask=cli_BrainMask;
+    }
+
+    if (cli_TissueSeg.isEmpty())
+    {
+        TissueSeg=lineEdit_TissueSeg->text();
+    }
+    else
+    {
+        TissueSeg=cli_TissueSeg;
+    }
+
+    if (cli_subjectVMask.isEmpty())
+    {
+        subjectVentricleMask=lineEdit_VentricleMask->text();
+    }
+    else
+    {
+        subjectVentricleMask=cli_subjectVMask;
+    }
+
+    if (cli_CerebMask.isEmpty())
+    {
+        CerebMask=lineEdit_CerebellumMask->text();
+    }
+    else
+    {
+        CerebMask=cli_CerebMask;
+    }
+
+    if (cli_output_dir.isEmpty())
+    {
+        output_dir=lineEdit_OutputDir->text();
+    }
+    else
+    {
+        output_dir=cli_output_dir;
+    }
+
     scripts_dir=QDir::cleanPath(output_dir+QString("/PythonScripts"));
 
     QDir out_dir=QDir();
@@ -1274,13 +1331,6 @@ void CSFWindow::run_AutoEACSF()
     //5. WRITE VENT_MASK_SCRIPT
     write_vent_mask();
 
-    //Notification
-    QMessageBox::information(
-        this,
-        tr("Auto EACSF"),
-        tr("Python scripts are running. It may take up to 24 hours to process.")
-    );
-
     // RUN PYTHON
 
     QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
@@ -1292,11 +1342,27 @@ void CSFWindow::run_AutoEACSF()
     connect(prc, SIGNAL(readyReadStandardError()), this, SLOT(disp_err()));
     prc->setWorkingDirectory(output_dir);
     prc->start(executables[QString("python3")], params);
+
+    //Notification
+    if (m_GUI)
+    {
+        QMessageBox::information(
+            this,
+            tr("Auto EACSF"),
+            tr("Python scripts are running. It may take up to 24 hours to process.")
+        );
+    }
 }
 
-void CSFWindow::runNoGUI(QString configFileName)
+void CSFWindow::runNoGUI(QString configFileName, QString cli_T1, QString cli_T2, QString cli_BrainMask, QString cli_TissueSeg,
+                         QString cli_subjectVMask, QString cli_CerebMask, QString cli_output_dir)
 {
     m_GUI = false;
     readConfig(configFileName, false);
-    run_AutoEACSF();
+    run_AutoEACSF(cli_T1, cli_T2, cli_BrainMask, cli_TissueSeg, cli_subjectVMask, cli_CerebMask, cli_output_dir);
+}
+
+void CSFWindow::setTesttext(QString txt)
+{
+    lineEdit_T1img->setText(txt);
 }

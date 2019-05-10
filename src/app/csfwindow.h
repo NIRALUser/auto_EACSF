@@ -25,7 +25,8 @@ class CSFWindow : public QMainWindow, public Ui::CSFWindow
 public:
     explicit CSFWindow(QWidget *m_parent = 0);
     ~CSFWindow();
-    void runNoGUI(QString configFileName);
+    void runNoGUI(QString configFileName, QString cli_T1, QString cli_T2, QString cli_BrainMask, QString cli_TissueSeg, QString cli_subjectVMask, QString cli_CerebMask, QString cli_output_dir);
+    void setTesttext(QString txt);
 
 private:
     QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
@@ -53,7 +54,8 @@ private:
     void write_ABCxmlfile(bool T2provided);
     void write_vent_mask();
 
-    void run_AutoEACSF();
+    void run_AutoEACSF(QString cli_T1 = "", QString cli_T2 = "", QString cli_BrainMask = "", QString cli_TissueSeg = "",
+                       QString cli_subjectVMask = "", QString cli_CerebMask = "", QString cli_output_dir = "");
 
     static const QString m_github_url;
     QProcess *prc;
@@ -62,7 +64,10 @@ private:
     //Inputs
     QString T1img;
     QString T2img;
+    QString CerebMask;
+    QString BrainMask;
     QString TissueSeg;
+    QString subjectVentricleMask;
     QString output_dir;
     QString scripts_dir;
 
