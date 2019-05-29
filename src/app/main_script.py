@@ -117,7 +117,10 @@ def main(main_args):
 
         BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
         if not(os.path.isfile(BRAIN_MASK)):
-           call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T2_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
+            if (T2_exists):
+                call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T2_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
+            else:
+                call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', '', '--at_dir', '--at_list', '--output',OUT_SS])
         else:
            print('Brainmask already exists')
         print_main_info("Finished running " + make_mask_script)
@@ -143,11 +146,14 @@ def main(main_args):
 
         OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
         OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_labels_EMS.nrrd"]))
+        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_stripped_labels_EMS.nrrd"]))
         print(Segmentation)
         if not(os.path.isfile(Segmentation)):
-           print(Segmentation + ' doesnt exist')
-           call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', T2_STRIPPED,'--at_dir', '--output', OUT_TS])
+            print(Segmentation + ' doesnt exist')
+            if (T2_exists):
+                call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', T2_STRIPPED,'--at_dir', '--output', OUT_TS])
+            else:
+                call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', '','--at_dir', '--output', OUT_TS])
         else:
            print('Segmentation already exists')
         print_main_info("Finished running tissue_seg_script.py")
