@@ -30,11 +30,11 @@ if(NOT DEFINED ABC_SOURCE_DIR)
   #message(STATUS "${__indent}Adding project ${proj}")
 
   if(NOT DEFINED git_protocol)
-    set(git_protocol "https")
+    set(git_protocol "git")
   endif()
 
   ExternalProject_Add(${proj}
-    GIT_REPOSITORY "${git_protocol}://github.com/NIRALUser/ABC.git"
+    GIT_REPOSITORY "https://github.com/NIRALUser/ABC.git"
     #GIT_REPOSITORY "${git_protocol}://github.com/ArthurLeMaout/ABC.git"
     GIT_TAG master
     SOURCE_DIR ${proj}
