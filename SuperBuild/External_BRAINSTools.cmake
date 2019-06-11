@@ -39,7 +39,7 @@ if(NOT DEFINED BRAINSTools_SOURCE_DIR)
   endif()
 
   ExternalProject_Add(${proj}
-    GIT_REPOSITORY "${git_protocol}://github.com/BRAINSia/BRAINSTools.git"
+    GIT_REPOSITORY "https://github.com/BRAINSia/BRAINSTools.git"
     GIT_TAG "${GIT_TAG}"
     SOURCE_DIR ${proj}
     BINARY_DIR ${proj}-build
