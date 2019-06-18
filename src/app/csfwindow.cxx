@@ -114,7 +114,7 @@ void CSFWindow::find_executables(){
     */
     QStringList path_split=env_PATH.split(":");
 
-#ifdef Q_OS_LINUX
+
     QDir CD=QDir::current();
     QStringList unfound_exe = check_exe_in_folder(executables.keys(),CD.absolutePath(),false);
 
@@ -129,12 +129,6 @@ void CSFWindow::find_executables(){
         CD.cdUp();
         unfound_exe = check_exe_in_folder(unfound_exe,CD.absolutePath(),true);
     }
-
-
-#endif
-#ifdef Q_OS_MACOS
-    cout<<"macos"<<endl;
-#endif
 
     //for unfound exe, look in path
 
