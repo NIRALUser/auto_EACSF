@@ -1,0 +1,112 @@
+{
+    "data": {
+	"BrainMask": "stx_noscale_718312_V24_brainmask.nrrd",
+	"CerebellumMask": "CVS_MASK_RAI_Dilate.nrrd",
+	"T1img": "stx_noscale_718312_V24_t1w_RAI.nrrd",
+	"T2img": "stx_noscale_718312_V24_t2w_RAI.nrrd",
+	"TissueSeg": "stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd",
+    "SubjectVentricleMask": "Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
+	"output_dir": "Test_Output"
+    },
+    "parameters": {
+	"ACPC_index": 70,
+	"ACPC_mm": 0,
+	"ANTS_T1_weight": 1,
+	"ANTS_gaussian_sig": 3,
+	"ANTS_iterations_val": "100x50x25",
+	"ANTS_reg_type": "GreedyDiffeo",
+	"ANTS_sim_metric": "CC",
+	"ANTS_sim_param": 4,
+	"ANTS_transformation_step": 0.25,
+    "templateT1Ventricle": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped/template.nrrd",
+    "templateInvMaskVentricle": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped/Vent_CSF-INVMask.nrrd",
+    "registrationAtlas": "pediatric-atlas-1year-T1-ABC/1year-Average-IBIS-MNI-t1w.nrrd",
+    "skullStrippingAtlasesDirectory": "brainmaskingMultiatlas",
+    "tissueSegAtlasDirectory": "pediatric-atlas-1year-T1-ABC/DeepGray5Class_stripped",
+    "CSFLabel": 3,
+    "LH_innerSurface": "",
+    "RH_innerSurface": ""
+    },
+    "executables": [
+        {
+            "name": "ABC_CLI",
+            "path": "/ABC-install/bin/"
+        },
+        {
+            "name": "ANTS",
+            "path": "/ANTs-build/bin/"
+        },
+        {
+            "name": "BRAINSFit",
+            "path": "/BRAINSTools-build/bin/"
+        },
+        {
+            "name": "ImageMath",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "ImageStat",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "WarpImageMultiTransform",
+            "path": "/ANTs-build/bin"
+        },
+        {
+            "name": "bet",
+            "path": ""
+        },
+        {
+            "name": "convertITKformats",
+            "path": "/niral_utilities-build/bin/"
+        },
+        {
+            "name": "python3",
+            "path": ""
+        }
+    ],
+    "scripts": [
+	{
+            "name": "main_script",
+            "executables": [
+		"python3",
+		"ImageMath",
+		"ImageStat",
+		"ABC_CLI"
+	    ]
+        },
+	{
+            "name": "rigid_align",
+            "executables": [
+		"BRAINSFit"
+	    ]
+        },
+	{
+            "name": "make_mask",
+            "executables": [
+		"ImageMath",
+		"bet",
+		"convertITKformats",
+		"ANTS",
+		"WarpImageMultiTransform"
+	    ]
+        },
+	{
+            "name": "tissue_seg",
+            "executables": [
+		"BRAINSFit",
+		"ANTS",
+		"WarpImageMultiTransform",
+		"ABC_CLI"
+	    ]
+        },
+	{
+            "name": "vent_mask",
+            "executables": [
+		"ImageMath",
+		"ANTS",
+		"WarpImageMultiTransform"
+	    ]
+        }
+    ]
+}

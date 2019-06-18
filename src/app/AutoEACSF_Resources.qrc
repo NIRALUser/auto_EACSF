@@ -1,9 +1,12 @@
 <RCC>
     <qresource prefix="/PythonScripts">
         <file>main_script.py</file>
-        <file>ABCparam.xml</file>
         <file>vent_mask.py</file>
         <file>rigid_align.py</file>
         <file>make_mask.py</file>
+        <file>tissue_seg.py</file>
+    </qresource>
+    <qresource prefix="/config">
+        <file>default_config.json</file>
     </qresource>
 </RCC>

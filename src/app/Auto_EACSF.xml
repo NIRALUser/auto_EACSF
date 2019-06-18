@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>PROJECT</category>
+  <title>Auto_EACSF</title>
+  <description>Automatically extract external CSF from T1 or T1 and T2 images.</description>
+  <version>1.3</version>
+  <contributor>Han Bit Yoon, Arthur Le Maout</contributor>
+  <parameters advanced="false">
+      <file>
+          <name>parameters</name>
+          <longflag>param</longflag>
+          <flag>p</flag>
+          <description>Input parameters in a json file</description>
+          <channel>input</channel>
+      </file>
+      <boolean>
+          <name>noGUI</name>
+          <longflag>noGUI</longflag>
+          <description>Use AutoEACSF without the GUI</description>
+          <channel>input</channel>
+          <default>false</default>
+      </boolean>
+      <file>
+          <name>T1</name>
+          <longflag>t1</longflag>
+          <description>Input T1 image</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>T2</name>
+          <longflag>t2</longflag>
+          <description>Input T2 image</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>BrainMask</name>
+          <longflag>brainmask</longflag>
+          <description>Input brainmask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>TissueSeg</name>
+          <longflag>segmentation</longflag>
+          <description>Input brain segmentation</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>SubjectVentricleMask</name>
+          <longflag>subjectVentricleMask</longflag>
+          <description>Input subject ventricle mask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>CerebMask</name>
+          <longflag>cerebmask</longflag>
+          <description>Input cerebellum mask</description>
+          <channel>input</channel>
+      </file>
+      <file>
+          <name>OutputDir</name>
+          <longflag>output_dir</longflag>
+          <description>Output directory</description>
+          <channel>output</channel>
+      </file>
+      <file>
+          <name>Testfile</name>
+          <flag>t</flag>
+      </file>
+  </parameters>
+</executable>

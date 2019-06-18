@@ -1,9 +1,0 @@
-{
-    "T1img": "/NIRAL/work/hbyoon/HanBit_Work/Script/Coronal_70Mask.nrrd",
-    "T2img": "",
-    "BrainMask": "",
-    "VentricleMask":"/NIRAL/work/hbyoon/HanBit_Work/Script/Vent_CSF-BIN-RAI-Fusion_INV.nrrd",
-    "TissueSeg": "/NIRAL/work/hbyoon/HanBit_Work/TEST_Data/stx_noscale_718312_V24_t1w_RAI_FINAL_Seg.nrrd",
-    "CerebellumMask":"/NIRAL/work/hbyoon/HanBit_Work/Script/CVS_MASK_RAI_Dilate.nrrd",
-    "output_dir": "/work/hbyoon/source/auto_EACSF-bin/bin/Test_Output"
-}

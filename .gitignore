@@ -1,1 +1,6 @@
 CMakeLists.txt.user
+data/
+.gitignore.swp
+/src/default_config.json~
+src/app/automaticinterface.cxx
+src/app/automaticinterface.h

@@ -6,6 +6,9 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QtCore>
+#include <QMap>
+#include <QProcess>
+#include <QMessageBox>
 
 #include "ui_csfwindow.h"
 
@@ -20,88 +23,144 @@ class CSFWindow : public QMainWindow, public Ui::CSFWindow
     Q_OBJECT
 
 public:
-    explicit CSFWindow(QWidget *parent = 0);
+    explicit CSFWindow(QWidget *m_parent = 0);
     ~CSFWindow();
+    void runNoGUI(QString configFileName, QString cli_T1, QString cli_T2, QString cli_BrainMask, QString cli_TissueSeg, QString cli_subjectVMask, QString cli_CerebMask, QString cli_output_dir);
+    void setTesttext(QString txt);
 
 private:
-
-    void initializeMenuBar();
-    void writeDataConfiguration_d(QJsonObject &json);
-    void writeDataConfiguration_p(QJsonObject &json);
-    void writeDataConfiguration_sw(QJsonObject &json);
+    QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
+    void find_executables();
+    void readConfig(QString filename, bool default_config);
+    bool writeConfig(QString filename);
     QString OpenFile();
+    QString OpenDir();
+    QString SaveFile();
 
+    bool lineEdit_isEmpty(QLineEdit*& le);
 
-    void read_Software(QJsonObject &json);
-    void write_Software(QJsonObject &json);
+    bool checkOptionalMasks();
+    void setBestDataAlignmentOption();
 
-    QString sName;
-    QString sPath;
+    int questionMsgBox(bool checkState, QString maskType, QString action);
+    void infoMsgBox(QString message, QMessageBox::Icon type);
 
-    int indexVal;
-    double mm;
+    void displayAtlases(QString folder_path, bool T2_provided);
 
-    bool notPreAlign;
-    bool preAlign;
-    bool skullStr;
+    void write_main_script();
+    void write_rigid_align();
+    void write_make_mask();
+    void write_tissue_seg();
+    void write_ABCxmlfile(bool T2provided);
+    void write_vent_mask();
 
-    //Scripts
-    QXmlStreamReader xml;
+    void run_AutoEACSF(QString cli_T1 = "", QString cli_T2 = "", QString cli_BrainMask = "", QString cli_TissueSeg = "",
+                       QString cli_subjectVMask = "", QString cli_CerebMask = "", QString cli_output_dir = "");
 
-public slots:
-    void readyReadStandardOutput();
+    static const QString m_github_url;
+    QProcess *prc;
+    bool m_GUI = true;
+
+    //Inputs
+    QString T1img;
+    QString T2img;
+    QString CerebMask;
+    QString BrainMask;
+    QString TissueSeg;
+    QString subjectVentricleMask;
+    QString output_dir;
+    QString scripts_dir;
+
+    //Executables
+    QMap<QString,QString> executables;
+    QMap<QString,QStringList> script_exe;
+
+    //ANTS Registration_Default
+    QString Registration_Type;
+    QString Transformation_Step="0.25";
+    QString Iterations="100x50x25";
+    QString Sim_Metric="CC";
+    QString Sim_Parameter="4";
+    QString Gaussian="3";
+    QString T1_Weight="1";
+
+    //Other
+    bool dataSeemsAligned=false;
+    bool script_running=false;
+    bool outlog_file_created=false;
+
 
 private slots:
+    void disp_output();
+    void disp_err();
+    void prc_finished(int exitCode, QProcess::ExitStatus exitStatus);
 
     //File
-    void OnLoadDataConfiguration();
-    bool OnSaveDataConfiguration();
-    void OnLoadParameterConfiguration();
-    bool OnSaveParameterConfiguration();
-    void OnLoadSoftwareConfiguration();
-    bool OnSaveSoftwareConfiguration();
+    void on_actionLoad_Configuration_File_triggered();
+    void on_actionSave_Configuration_triggered();
 
-    //1st Tab    
+    //Window
+    void on_actionShow_executables_toggled(bool toggled);
+
+    //About
+    void on_actionAbout_triggered();
+
+    //1st Tab
     void on_pushButton_T1img_clicked();
     void on_pushButton_T2img_clicked();
-    void on_pushButton_TissueSeg_clicked();
+    void on_lineEdit_T2img_textChanged();
     void on_pushButton_BrainMask_clicked();
+    void on_lineEdit_BrainMask_textChanged();
     void on_pushButton_VentricleMask_clicked();
+    void on_pushButton_TissueSeg_clicked();
+    void on_lineEdit_TissueSeg_textChanged();
+    void on_CerebellumMask_clicked();
+    void on_lineEdit_CerebellumMask_textChanged();
+
     void on_pushButton_OutputDir_clicked();
 
-    //2nd Tab
-    void on_pushButton_ABC_clicked();
-    void on_pushButton_ANTS_clicked();
-    void on_pushButton_BRAINSFit_clicked();
-    void on_pushButton_FSLBET_clicked();
-    void on_pushButton_ImageMath_clicked();
-    void on_pushButton_ITK_clicked();
-    void on_pushButton_N4_clicked();
-    void on_pushButton_Python_clicked();
+    void on_radioButton_Index_clicked(const bool checkState);
+    void on_radioButton_mm_clicked(const bool checkState);
 
-    //3rd Tab    
-    void on_pushButton_ReferenceAtlasDir_clicked();
+    //2nd Tab
+    void updateExecutables(QString exeName, QString path);
+
+    //3rd Tab
+    void on_pushButton_ReferenceAtlasFile_clicked();
+
+    void on_checkBox_SkullStripping_clicked(const bool checkState);
+    void on_checkBox_SkullStripping_stateChanged(int state);
+    void on_pushButton_SSAtlasFolder_clicked();
+    void selectAtlases(QListWidgetItem*);
 
     //4th Tab
+    void on_checkBox_TissueSeg_clicked(const bool checkState);
+    void on_checkBox_TissueSeg_stateChanged(int state);
+
     void on_pushButton_TissueSegAtlas_clicked();
-    void on_spinBox_Index_valueChanged(int arg1);
-    void on_doubleSpinBox_mm_valueChanged(double arg1);
-    void on_radioButton_Index_clicked(bool checked);
-    void on_radioButton_mm_clicked(bool checked);
-    void on_radioButton_rigidRegistration_clicked(bool checked);
-    void on_radioButton_preAligned_clicked(bool checked);
-    void on_checkBox_SkullStripping_clicked(bool checked);
-    void on_checkBox_SkullStripping_stateChanged(int arg1);
-    void on_CerebellumMask_clicked();
-    void on_pushButton_execute_clicked();
+
+    //5th Tab
+    void on_checkBox_VentricleRemoval_stateChanged(int state);
+
+    void on_pushButton_templateT1Ventricle_clicked();
+    void on_pushButton_templateInvMaskVentricle_clicked();
 
     //ANTS Registration
-    void on_comboBox_RegType_currentTextChanged(const QString &arg1);
-    void on_comboBox_Metric_currentTextChanged(const QString &arg1);
-    void on_spinBox_SimilarityParameter_valueChanged(const QString &arg1);
-    void on_doubleSpinBox_GaussianSigma_valueChanged(const QString &arg1);
-    void on_spinBox_T1Weight_valueChanged(const QString &arg1);
-    void on_lineEdit_Iterations_textChanged(const QString &arg1);
+    void on_comboBox_RegType_currentTextChanged(const QString &val);
+    void on_doubleSpinBox_TransformationStep_valueChanged();
+    void on_comboBox_Metric_currentTextChanged(const QString &val);
+    void on_spinBox_SimilarityParameter_valueChanged(const int val);
+    void on_doubleSpinBox_GaussianSigma_valueChanged(const double val);
+    void on_spinBox_T1Weight_valueChanged(const QString &val);
+    void on_lineEdit_Iterations_textChanged(const QString &val);
+
+    //CSF Density
+    void on_pushButton_LH_inner_clicked();
+    void on_pushButton_RH_inner_clicked();
+    void on_checkBox_CSFDensity_stateChanged(int state);
+
+    //Execution
+    void on_pushButton_execute_clicked();
 };
 
 #endif // CSFWINDOW_H
