@@ -7,7 +7,7 @@ Requirements: Qt5, Python3 (with packages: itk, numpy)
 Build:
 1. Get files from Github
 ```
-$ git clone http://github.com/ArthurLeMaout/auto_EACSF.git
+$ git clone https://github.com/NIRALUser/auto_EACSF
 ```
 2. Make an out-of-source build directory
 ```
