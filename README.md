@@ -28,6 +28,9 @@ $ ./bin/auto_EACSF
 $ ./Auto_EACSF
 ```
 
+Installation Notes:
+Auto_EACSF generates and then calls a python3 script. For that purpose, the system where Auto_EACSF is run needs a python 3 installation, as well as the python packages itk and numpy installed.
+
 # How to fix an error?
 You can fix an error by utilizing Qtcreator
 1. Open Qtcreator
