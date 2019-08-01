@@ -22,7 +22,7 @@ class ExtExecutablesWidget : public QWidget
      ***/
     Q_OBJECT
 public:
-    explicit ExtExecutablesWidget(QWidget *m_parent = nullptr);
+    explicit ExtExecutablesWidget(QWidget *m_parent = NULL);
     void buildInterface(QMap<QString, QString> exeMap); //Builds the interface
     void setExeDir(QString dir); //Sets the default directory for the QFileDialog
 

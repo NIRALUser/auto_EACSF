@@ -59,7 +59,7 @@ private:
 
     static const QString m_github_url;
     QProcess *prc;
-    bool m_GUI = true;
+    bool m_GUI;
 
     //Inputs
     QString T1img;
@@ -77,17 +77,17 @@ private:
 
     //ANTS Registration_Default
     QString Registration_Type;
-    QString Transformation_Step="0.25";
-    QString Iterations="100x50x25";
-    QString Sim_Metric="CC";
-    QString Sim_Parameter="4";
-    QString Gaussian="3";
-    QString T1_Weight="1";
+    QString Transformation_Step;
+    QString Iterations;
+    QString Sim_Metric;
+    QString Sim_Parameter;
+    QString Gaussian;
+    QString T1_Weight;
 
     //Other
-    bool dataSeemsAligned=false;
-    bool script_running=false;
-    bool outlog_file_created=false;
+    bool dataSeemsAligned;
+    bool script_running;
+    bool outlog_file_created;
 
 
 private slots:

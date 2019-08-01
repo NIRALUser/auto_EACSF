@@ -16,7 +16,7 @@ ExtExecutablesWidget::ExtExecutablesWidget(QWidget *m_parent) :
 void ExtExecutablesWidget::buildInterface(QMap<QString,QString> exeMap)
 {
     QLayout *verticalLayout = new QVBoxLayout();
-    for (QString exeName : exeMap.keys()) //create the buttons/lineEdit for each executable
+    foreach (const QString exeName, exeMap.keys()) //create the buttons/lineEdit for each executable
     {
         QWidget *containerWidget = new QWidget;
         QLayout *horizontalLayout = new QHBoxLayout();
@@ -52,8 +52,8 @@ void ExtExecutablesWidget::exeQpbTriggered()
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
-    QLineEdit *le = nullptr;
-    for (QObject *ch : par->children())
+    QLineEdit *le = NULL;
+    foreach (QObject *ch, par->children())
     {
         le = qobject_cast<QLineEdit*>(ch);
         if (le)
@@ -74,8 +74,8 @@ void ExtExecutablesWidget::exeLinedTextChanged(QString new_text)
 {
     QObject *sd = QObject::sender();
     QObject *par = sd->parent();
-    QPushButton *bt = nullptr;
-    for (QObject *ch : par->children())
+    QPushButton *bt = NULL;
+    foreach (QObject *ch, par->children())
     {
         bt =qobject_cast<QPushButton*>(ch);
         if (bt)

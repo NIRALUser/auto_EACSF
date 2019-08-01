@@ -34,6 +34,19 @@ const QString CSFWindow::m_github_url = "https://github.com/ArthurLeMaout/auto_E
 CSFWindow::CSFWindow(QWidget *m_parent):
     QMainWindow(m_parent)
 {
+    m_GUI = true;
+    Transformation_Step="0.25";
+    Iterations="100x50x25";
+    Sim_Metric="CC";
+    Sim_Parameter="4";
+    Gaussian="3";
+    T1_Weight="1";
+
+    dataSeemsAligned=false;
+    script_running=false;
+    outlog_file_created=false;
+
+
     this->setupUi(this);
 
     checkBox_VentricleRemoval->setChecked(true);
@@ -84,7 +97,7 @@ QStringList CSFWindow::check_exe_in_folder(QStringList exe_list, QString dir_pat
 {
     QString full_path;
     QStringList unfound_executables;
-    for (QString exe_name : exe_list)
+    foreach (QString exe_name, exe_list)
     {
         full_path = dir_path;
         if (use_hint)
@@ -131,11 +144,10 @@ void CSFWindow::find_executables(){
     }
 
     //for unfound exe, look in path
-
-    for (QString exe : unfound_exe)
+    foreach (const QString exe, unfound_exe)
     {
         executables[exe].clear();
-        for (QString p : path_split)
+        foreach (const QString p, path_split)
         {
             QString p_exe = QDir::cleanPath(p + QString("/") + exe);
             QFileInfo check_p_exe(p_exe);
@@ -149,7 +161,7 @@ void CSFWindow::find_executables(){
 
     QString unfoundExecMessage = QString ("Following executables unfound : ");
     bool atLeastOneExeMissing = false;
-    for (QString exe : executables.keys())
+    foreach (QString exe, executables.keys())
     {
         if (executables[exe].isEmpty()) //if exe has not been found
         {
@@ -215,7 +227,7 @@ void CSFWindow::readConfig(QString filename, bool default_config)
     displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 
     QJsonArray exe_array = root_obj["executables"].toArray();
-    for (QJsonValue exe_val : exe_array)
+    foreach (const QJsonValue exe_val, exe_array)
     {
         QJsonObject exe_obj = exe_val.toObject();
         executables[exe_obj["name"].toString()] = exe_obj["path"].toString();
@@ -224,10 +236,10 @@ void CSFWindow::readConfig(QString filename, bool default_config)
     if (default_config)
     {
         QJsonArray script_array = root_obj["scripts"].toArray();
-        for (QJsonValue script_val : script_array)
+        foreach (const QJsonValue script_val, script_array)
         {
             QJsonObject script_obj = script_val.toObject();
-            for (QJsonValue exe_name : script_obj["executables"].toArray())
+            foreach (const QJsonValue exe_name, script_obj["executables"].toArray())
             {
                 script_exe[script_obj["name"].toString()].append(exe_name.toString());
             }
@@ -276,7 +288,7 @@ bool CSFWindow::writeConfig(QString filename)
     root_obj["parameters"]=param_obj;
 
     QJsonArray exe_array;
-    for (QString exe_name : executables.keys())
+    foreach (const QString exe_name, executables.keys())
     {
         QJsonObject exe_obj;
         exe_obj["name"]=exe_name;
@@ -327,7 +339,7 @@ bool CSFWindow::lineEdit_isEmpty(QLineEdit*& le)
     if (le->text().isEmpty()){return true;}
     else
     {
-        for (QChar c : le->text())
+        foreach (const QChar c, le->text())
         {
             if (c != ' ')
             {
@@ -411,17 +423,18 @@ void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
     const QString T1=QString("T1");
     const QString T2=QString("T2");
     const QString bmask=QString("brainmask");
+    const QStringList bmaskList = QStringList(bmask);
     QDir folder(folder_path);
     QStringList itemsList=QStringList(QString("Select all"));
     QStringList invalidItems=QStringList();
-    QMap<QString,QStringList> atlases=QMap<QString,QStringList>();
+    QMap<QString,QStringList> atlases = QMap<QString,QStringList>();
     QStringList splittedName=QStringList();
     QString atlasName=QString();
     QString fileType=QString();
     QStringList fileSplit=QStringList();
     QString fileNameBase=QString();
 
-    for (QString fileName : folder.entryList())
+    foreach (const QString fileName, folder.entryList())
     {
         fileSplit=fileName.split('.');
         fileNameBase=fileSplit.at(0);
@@ -455,7 +468,7 @@ void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
 
                 if(fileType == bmask)
                 {
-                    atlases.insert(atlasName,{bmask});
+                    atlases.insert(atlasName,bmaskList);
                 }
                 else if((fileType == T1) && atlases.contains(atlasName))
                 {
@@ -475,7 +488,7 @@ void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
 
     }
 
-    for (QString atlas : atlases.keys())
+    foreach (const QString atlas, atlases.keys())
     {
         QString itemLabel=QString();
         if (atlases[atlas].size() == 2)
@@ -580,7 +593,7 @@ void CSFWindow::write_main_script()
     script.replace("@PERFORM_VR@", QString(checkBox_VentricleRemoval->isChecked() ? "true" : "false"));
     script.replace("@COMPUTE_CSFDENS@", QString(checkBox_CSFDensity->isChecked() ? "true" : "false"));
 
-    for (QString exe_name : script_exe[QString("main_script")])
+    foreach (const QString exe_name, script_exe[QString("main_script")])
     {
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
@@ -617,7 +630,7 @@ void CSFWindow::write_rigid_align()
     }
     rgd_script.replace("@ATLAS@", RefAtlasFile);
 
-    for (QString exe_name : script_exe[QString("rigid_align")])
+    foreach (const QString exe_name, script_exe[QString("rigid_align")])
     {
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
@@ -684,7 +697,7 @@ void CSFWindow::write_make_mask()
     msk_script.replace("@ATLASES_DIR@", SSAtlases_dir);
     msk_script.replace("@ATLASES_LIST@", SSAtlases_selected);
 
-    for (QString exe_name : script_exe[QString("make_mask")])
+    foreach (const QString exe_name, script_exe[QString("make_mask")])
     {
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
@@ -714,7 +727,7 @@ void CSFWindow::write_tissue_seg()
     seg_script.replace("@T2IMG@", T2img);
     seg_script.replace("@ATLASES_DIR@", TS_Atlas_dir);
 
-    for (QString exe_name : script_exe[QString("tissue_seg")])
+    foreach (const QString exe_name, script_exe[QString("tissue_seg")])
     {
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
@@ -777,7 +790,7 @@ void CSFWindow::write_vent_mask()
     v_script.replace("@GAUSSIAN@", Gaussian);
     v_script.replace("@T1_WEIGHT@", T1_Weight);
 
-    for (QString exe_name : script_exe[QString("vent_mask")])
+    foreach (const QString exe_name, script_exe[QString("vent_mask")])
     {
         QString str_code = QString("@")+exe_name+QString("_PATH@");
         QString exe_path = executables[exe_name];
@@ -813,7 +826,7 @@ void CSFWindow::disp_err()
 {
     QString errors(prc->readAllStandardError());
     errors="<font color=\"red\"><b>While running : </b></font>"+executables["python3"]+"<br><font color=\"red\"><b>Following error(s) occured : </b></font><br>"+errors;
-    for (QString sc_name : script_exe.keys())
+    foreach (QString sc_name, script_exe.keys())
     {
         if (sc_name!="main_script")
         {
