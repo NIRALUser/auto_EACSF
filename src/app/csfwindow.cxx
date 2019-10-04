@@ -19,17 +19,17 @@
 #endif
 
 #ifndef Auto_EACSF_CONTRIBUTORS
-#define Auto_EACSF_CONTRIBUTORS "Han Bit Yoon, Arthur Le Maout"
+#define Auto_EACSF_CONTRIBUTORS "Han Bit Yoon, Arthur Le Maout, Martin Styner"
 #endif
 
 #ifndef Auto_EACSF_VERSION
-#define Auto_EACSF_VERSION ""
+#define Auto_EACSF_VERSION "1.5"
 #endif
 
 using std::endl;
 using std::cout;
 
-const QString CSFWindow::m_github_url = "https://github.com/ArthurLeMaout/auto_EACSF";
+const QString CSFWindow::m_github_url = "https://github.com/NIRALUser/auto_EACSF";
 
 CSFWindow::CSFWindow(QWidget *m_parent):
     QMainWindow(m_parent)
@@ -954,7 +954,7 @@ void CSFWindow::on_actionAbout_triggered()
     QString messageBoxTitle = "About " + QString( Auto_EACSF_TITLE );
         QString aboutFADTTS;
         aboutFADTTS = "<b>Version:</b> " + QString( Auto_EACSF_VERSION ) + "<br>"
-                "<b>Contributor(s):</b> " + QString( Auto_EACSF_CONTRIBUTORS ) + "<br>"
+                "<b>Contributors:</b> " + QString( Auto_EACSF_CONTRIBUTORS ) + "<br>"
                 "<b>License:</b> Apache 2.0<br>" +
                 "<b>Github:</b> <a href=" + m_github_url + ">Click here</a><br>";
     QMessageBox::information( this, tr( qPrintable( messageBoxTitle ) ), tr( qPrintable( aboutFADTTS ) ), QMessageBox::Ok );
