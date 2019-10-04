@@ -1,5 +1,5 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
+##	by Han Bit Yoon, Arthur Le Maout, Martin Styner
 #########################################################################################################  
 import sys
 import os

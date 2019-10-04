@@ -750,17 +750,39 @@ void CSFWindow::write_ABCxmlfile(bool T2provided)
     QFile xmlFile(QDir::cleanPath(output_dir+QString("/ABCparam.xml")));
     xmlFile.open(QIODevice::WriteOnly);
     QTextStream xmlStream(&xmlFile);
+    
+    //check number of classes in atlas dir
+    // check number of files that match *.mha where * is a number in 
+    QString atlasFolder = lineEdit_TissueSegAtlas->text();
+    QDir atlasfolderEntries(atlasFolder,"?.mha",QDir::Name, QDir::Files);
+    int numExtraClasses = atlasfolderEntries.count() - 4;
+
+    std::cout << "numClasses " << numExtraClasses << std::endl;
+
     xmlStream << "<?xml version=\"1.0\"?>" << '\n' << "<!DOCTYPE SEGMENTATION-PARAMETERS>" << '\n' << "<SEGMENTATION-PARAMETERS>" << '\n';
-    xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/TissueSegAtlas")) << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
-    xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
-    xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T1_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
+    xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/TissueSegAtlas")) 
+        << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
+    xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" 
+        << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
+    xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T1_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' 
+        << "</IMAGE>" << '\n';
     if (T2provided)
     {
-        xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T2_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' << "</IMAGE>" << '\n';
+        xmlStream << "<IMAGE>" << '\n' << "\t<FILE>@T2_INSEG_IMG@</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' 
+        << "</IMAGE>" << '\n';
     }
-    xmlStream << "<FILTER-ITERATIONS>10</FILTER-ITERATIONS>" << '\n' << "<FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>" << '\n' << "<FILTER-METHOD>Curvature flow</FILTER-METHOD>" << '\n';
-    xmlStream << "<MAX-BIAS-DEGREE>4</MAX-BIAS-DEGREE>" << '\n' << "<PRIOR>1.3</PRIOR>" << '\n' << "<PRIOR>1</PRIOR>" << '\n' << "<PRIOR>0.7</PRIOR>" << '\n';
-    xmlStream << "<PRIOR>1</PRIOR>" << '\n' << "<PRIOR>0.8</PRIOR>" << '\n' << "<INITIAL-DISTRIBUTION-ESTIMATOR>robust</INITIAL-DISTRIBUTION-ESTIMATOR>" << '\n';
+    xmlStream << "<FILTER-ITERATIONS>10</FILTER-ITERATIONS>" << '\n' << "<FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>" << '\n' 
+        << "<FILTER-METHOD>Curvature flow</FILTER-METHOD>" << '\n' << "<MAX-BIAS-DEGREE>4</MAX-BIAS-DEGREE>" << '\n';
+    
+    xmlStream << "<PRIOR>1.3</PRIOR>" << '\n' << "<PRIOR>1</PRIOR>" << '\n' << "<PRIOR>0.7</PRIOR>" << '\n';
+
+    for (int extraclass = 0; extraclass < numExtraClasses; extraclass++ )
+    {
+        xmlStream << "<PRIOR>1</PRIOR>" << '\n';
+    }
+    xmlStream << "<PRIOR>0.8</PRIOR>" << '\n' ;
+
+    xmlStream << "<INITIAL-DISTRIBUTION-ESTIMATOR>robust</INITIAL-DISTRIBUTION-ESTIMATOR>" << '\n';
     xmlStream << "<DO-ATLAS-WARP>0</DO-ATLAS-WARP>" << '\n' << "<ATLAS-WARP-FLUID-ITERATIONS>50</ATLAS-WARP-FLUID-ITERATIONS>" << '\n';
     xmlStream << "<ATLAS-WARP-FLUID-MAX-STEP>0.1</ATLAS-WARP-FLUID-MAX-STEP>" << '\n' << "<ATLAS-LINEAR-MAP-TYPE>id</ATLAS-LINEAR-MAP-TYPE>" << '\n';
     xmlStream << "<IMAGE-LINEAR-MAP-TYPE>id</IMAGE-LINEAR-MAP-TYPE>" << '\n' << "</SEGMENTATION-PARAMETERS>" << endl;

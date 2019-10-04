@@ -1,5 +1,5 @@
 #!/tools/Python/Python-3.6.2/bin/python3
-##	by Han Bit Yoon, Arthur Le Maout (alemaout@email.unc.edu)
+##	by Han Bit Yoon, Arthur Le Maout, Martin Styner
 #########################################################################################################
 from __future__ import print_function
 import argparse
@@ -89,15 +89,22 @@ def main(main_args):
     ### Scripts
     scripts_prefix = os.path.join(OUT_PATH, "PythonScripts")
 
+
+    current_suffix = ""
+
+    registration_suffix = "_stx"
     if (main_args.registration == "true"):
         rigid_align_script = os.path.join(scripts_prefix, "rigid_align_script.py")
         print_main_info("Running " + rigid_align_script)
 
         OUT_RR = os.path.join(OUT_PATH,'RigidRegistration')
-        call([python, rigid_align_script, '--output', OUT_RR])
-        T1_REGISTERED = os.path.join(OUT_RR, "".join([T1_base,"_stx.nrrd"]))
+        current_suffix = current_suffix + registration_suffix
+        T1_REGISTERED = os.path.join(OUT_RR, T1_base + current_suffix + ".nrrd")
         if (T2_exists):
-           T2_REGISTERED = os.path.join(OUT_RR, "".join([T2_base,"_stx.nrrd"]))
+           T2_REGISTERED = os.path.join(OUT_RR, T2_base + current_suffix +".nrrd")
+
+        if not(os.path.isfile(T1_REGISTERED)):
+            call([python, rigid_align_script, '--output', OUT_RR])
 
         print_main_info("Finished running "+rigid_align_script)
 
@@ -105,7 +112,6 @@ def main(main_args):
         T1_REGISTERED = T1
         if (T2_exists):
             T2_REGISTERED = T2
-
 
     OUT_SS = os.path.join(OUT_PATH, 'SkullStripping')
     if not os.path.exists(OUT_SS):
@@ -115,11 +121,13 @@ def main(main_args):
         make_mask_script = os.path.join(scripts_prefix, "make_mask_script.py")
         print_main_info("Running " + make_mask_script)
 
-        BRAIN_MASK = os.path.join(OUT_SS, "".join([T1_base,"_FinalBrainMask.nrrd"]))
+        BRAIN_MASK = os.path.join(OUT_SS, T1_base + current_suffix + "_FinalBrainMask.nrrd")
         if not(os.path.isfile(BRAIN_MASK)):
             if (T2_exists):
+                print_main_info("masking with T2")
                 call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T2_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
             else:
+                print_main_info("masking without T2")
                 call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', '', '--at_dir', '--at_list', '--output',OUT_SS])
         else:
            print('Brainmask already exists')
@@ -127,15 +135,14 @@ def main(main_args):
     else:
         BRAIN_MASK = main_args.brainMask
 
-
     print_main_info("Stripping the skull")
-
-    T1_STRIPPED = os.path.join(OUT_SS, "".join([T1_base,"_stripped.nrrd"]))
+    current_suffix = current_suffix + "_stripped"
+    T1_STRIPPED = os.path.join(OUT_SS, T1_base + current_suffix +".nrrd")
     args=[ImageMath, T1_REGISTERED, '-outfile', T1_STRIPPED, '-mask', BRAIN_MASK]
     call_and_print(args)
 
     if (T2_exists):
-        T2_STRIPPED = os.path.join(OUT_SS, "".join([T2_base,"_stripped.nrrd"]))
+        T2_STRIPPED = os.path.join(OUT_SS, T2_base + current_suffix + ".nrrd")
         args=[ImageMath, T2_REGISTERED, '-outfile', T2_STRIPPED, '-mask', BRAIN_MASK]
         call_and_print(args)
 
@@ -146,7 +153,7 @@ def main(main_args):
 
         OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
         OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-        Segmentation = os.path.join(OUT_ABC, "".join([T1_base,"_stripped_labels_EMS.nrrd"]))
+        Segmentation = os.path.join(OUT_ABC, T1_base + current_suffix + "_labels_EMS.nrrd")
         print(Segmentation)
         if not(os.path.isfile(Segmentation)):
             print(Segmentation + ' doesnt exist')
@@ -161,19 +168,28 @@ def main(main_args):
     else:
         Segmentation = main_args.tissueSeg
 
+
     if (main_args.removeVentricles == "true"):
         vent_mask_script = os.path.join(scripts_prefix, "vent_mask_script.py")
         print_main_info("Running " + vent_mask_script)
         OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-        call([python, vent_mask_script, '--t1', T1_STRIPPED, '--subjectTissueSeg', Segmentation, '--output',OUT_VR])
-        Segmentation = os.path.join(OUT_VR, "".join([T1_base,"_stripped_EMS_withoutVent.nrrd"]))
+        SegmentationWithoutVent = os.path.join(OUT_VR, T1_base + current_suffix + "_EMS_withoutVent.nrrd")
+        if not(os.path.isfile(SegmentationWithoutVent)):
+            call([python, vent_mask_script, '--t1', T1_STRIPPED, '--subjectTissueSeg', Segmentation, '--output',OUT_VR])
+        else:
+           print('Ventricle masked segmentation already exists')
+        Segmentation = SegmentationWithoutVent
         print_main_info("Finished running "+vent_mask_script)
 
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
     Segmentation_base = os.path.splitext(os.path.basename(Segmentation))[0]
 
+    OUT_FM = os.path.join(OUT_PATH, 'FinalMasking')
+    if not os.path.exists(OUT_FM):
+        os.makedirs(OUT_FM)
+
     ######### Stripping the skull from segmentation ######
-    MID_TEMP00 = os.path.join(OUT_PATH, "".join([T1_base,"_MID00.nrrd"]))
+    MID_TEMP00 = os.path.join(OUT_FM, "".join([T1_base,"_MID00.nrrd"]))
     args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mask', BRAIN_MASK]
     call_and_print(args)
 
@@ -191,7 +207,7 @@ def main(main_args):
             index_coord=im.TransformPhysicalPointToContinuousIndex([ACPC_mm,0,0])
             ACPC_val=round(index_coord[0])
 
-        Coronal_Mask = "coronal_mask_"+str(ACPC_val)+".nrrd"
+        Coronal_Mask = os.path.join(OUT_FM,"coronal_mask_"+str(ACPC_val)+".nrrd")
         if not (os.path.isfile(Coronal_Mask)):
             im=itk.imread(T1_REGISTERED)
             np_copy=itk.GetArrayFromImage(im)
@@ -216,9 +232,9 @@ def main(main_args):
         Coronal_Mask = main_args.cerebellumMask
 
     ### Mask multiplication
-    MID_TEMP01 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID01.nrrd"]))
-    MID_TEMP02 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID02.nrrd"]))
-    MID_TEMP03 = os.path.join(OUT_PATH,"".join([Segmentation_base,"_MID03.nrrd"]))
+    MID_TEMP01 = os.path.join(OUT_FM,"".join([Segmentation_base,"_MID01.nrrd"]))
+    MID_TEMP02 = os.path.join(OUT_FM,"".join([Segmentation_base,"_MID02.nrrd"]))
+    MID_TEMP03 = os.path.join(OUT_FM,"".join([Segmentation_base,"_MID03.nrrd"]))
 
     args=[ImageMath, MID_TEMP00, '-outfile', MID_TEMP01, '-mask', Coronal_Mask]
     call_and_print(args)
@@ -229,10 +245,10 @@ def main(main_args):
     args=[ImageMath, MID_TEMP02, '-outfile', MID_TEMP03, '-conComp','1']
     call_and_print(args)
 
-    Erosion_Mask = BRAIN_MASK_base + '_Erosion.nrrd'
-    Erosion_Mask00 = BRAIN_MASK_base + '_Erosion00.nrrd'
-    Erosion_Mask01 = BRAIN_MASK_base + '_Erosion01.nrrd'
-    Erosion_Mask01_inv = BRAIN_MASK_base + '_Erosion01_inv.nrrd'
+    Erosion_Mask = os.path.join(OUT_FM,BRAIN_MASK_base + '_Erosion.nrrd')
+    Erosion_Mask00 = os.path.join(OUT_FM,BRAIN_MASK_base + '_Erosion00.nrrd')
+    Erosion_Mask01 = os.path.join(OUT_FM,BRAIN_MASK_base + '_Erosion01.nrrd')
+    Erosion_Mask01_inv = os.path.join(OUT_FM,BRAIN_MASK_base + '_Erosion01_inv.nrrd')
     args = [ImageMath, BRAIN_MASK, '-erode', '1,1', '-outfile', Erosion_Mask00]
     call_and_print(args)
 
@@ -247,7 +263,7 @@ def main(main_args):
     call_and_print(args)
 
 
-    FINAL_CSF_SEG = Segmentation_base + "_FINAL_Partial_CSF.nrrd"
+    FINAL_CSF_SEG = os.path.join(OUT_FM, Segmentation_base + "_Partial_CSF.nrrd")
 
     args = [ImageMath, MID_TEMP03, '-mask', Erosion_Mask01_inv, '-outfile', FINAL_CSF_SEG]
     call_and_print(args)
@@ -257,8 +273,8 @@ def main(main_args):
     call_and_print(args)
 
     ## add script erase quad....
-    Erosion = FINAL_CSF_SEG[:-5] + "_Ero.nrrd"
-    Erosion_MASKING = Erosion[:-5] + "_Masking.nrrd"
+    Erosion = os.path.join(OUT_FM, Segmentation_base + "Partial_Ero.nrrd")
+    Erosion_MASKING = os.path.join(OUT_FM,Segmentation_base + "Partial_Masking.nrrd")
     args = [ImageMath, FINAL_CSF_SEG,  '-erode', '1,1', '-outfile', Erosion]
     call_and_print(args)
 
@@ -272,12 +288,12 @@ def main(main_args):
     call_and_print(args)
 
 
-    Erosion_MASKING_conComp = Erosion_MASKING[:-5] + "_conComp.nrrd"
+    Erosion_MASKING_conComp = os.path.join(OUT_FM, Segmentation_base + "Partial_conComp.nrrd")
     args = [ImageMath, Erosion_MASKING, '-conComp', '1', '-outfile', Erosion_MASKING_conComp]
     call_and_print(args)
 
 
-    Dilation_comComp = Erosion_MASKING_conComp[:-5]+"_dil.nrrd"
+    Dilation_comComp = os.path.join(OUT_FM, Segmentation_base + "Partial_conComp_dil.nrrd")
     args = [ImageMath, Erosion_MASKING_conComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
     call_and_print(args)
 
@@ -285,13 +301,15 @@ def main(main_args):
         args = [ImageMath, Dilation_comComp,  '-dilate', '1,1', '-outfile', Dilation_comComp]
         call_and_print(args)
 
-    FINAL_RESULT = FINAL_CSF_SEG[:-5] + "_QCistern.nrrd"
+    FINAL_RESULT = os.path.join(OUT_PATH, Segmentation_base + "_FINAL_QCistern.nrrd")
 
     args = [ImageMath, Dilation_comComp, '-threshold', '0,0', '-outfile', Dilation_comComp]
     call_and_print(args)
     args = [ImageMath, FINAL_CSF_SEG, '-mask', Dilation_comComp, '-outfile', FINAL_RESULT]
     call_and_print(args)
 
+    args = [ImageStat, FINAL_RESULT, '-label', FINAL_RESULT, '-volumeSummary']
+    call_and_print(args)
 
     if (main_args.computeCSFDensity == "true"):
         LH_INNER_SURF = main_args.LHInnerSurf
