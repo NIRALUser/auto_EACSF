@@ -12,14 +12,13 @@ qt5_add_resources(${APP_NAME}_generated_rcc ${${APP_NAME}_rcc})
 
 list(APPEND ${APP_NAME}_src
 	    csfwindow.cxx
-	    csfwindow.h
+      csfscripts.cxx
 	    extexecutableswidget.cxx
-	    extexecutableswidget.h
 	    ${${APP_NAME}_generated_moc}
 	    ${${APP_NAME}_generated_ui}
 	    ${${APP_NAME}_generated_rcc}
 )
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 #add_library(csflib ${${APP_NAME}_src})
 
 find_package(SlicerExecutionModel REQUIRED)

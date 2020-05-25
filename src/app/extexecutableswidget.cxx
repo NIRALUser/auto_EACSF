@@ -3,7 +3,6 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
-#include <QLineEdit>
 #include <QFileDialog>
 
 ExtExecutablesWidget::ExtExecutablesWidget(QWidget *m_parent) :
@@ -13,9 +12,11 @@ ExtExecutablesWidget::ExtExecutablesWidget(QWidget *m_parent) :
     this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
-void ExtExecutablesWidget::buildInterface(QMap<QString,QString> exeMap)
+vector<QString> ExtExecutablesWidget::buildInterface(QMap<QString,QString> exeMap)
 {
     QLayout *verticalLayout = new QVBoxLayout();
+    vector<QString> notFound;
+
     foreach (const QString exeName, exeMap.keys()) //create the buttons/lineEdit for each executable
     {
         QWidget *containerWidget = new QWidget;
@@ -33,13 +34,60 @@ void ExtExecutablesWidget::buildInterface(QMap<QString,QString> exeMap)
         lined->setMinimumHeight(31);
         lined->setMaximumHeight(31);
         lined->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        lined->setText(exeMap.value(exeName));
+        
+        QString exe_name = findExecutable(exeName, exeMap[exeName]);
+
+        if(!exe_name.isEmpty()){
+            lined->setText(exe_name);
+        }else{
+            notFound.push_back(exeMap[exeName]);
+        }
+
         QObject::connect(lined,SIGNAL(textChanged(QString)),this,SLOT(exeLinedTextChanged(QString)));
+        m_ExeMap[exeName] = lined;
+
         horizontalLayout->addWidget(qpb);
         horizontalLayout->addWidget(lined);
         containerWidget->setLayout(horizontalLayout);
     }
     this->setLayout(verticalLayout);
+
+    return notFound;
+}
+
+QString ExtExecutablesWidget::findExecutable(QString exe_name, QString exe_path){
+
+     QFileInfo info = QFileInfo(exe_path);
+
+     if(info.exists()){
+        return exe_path;
+     }else{
+
+        QString env_PATH(qgetenv("PATH"));
+        QStringList hints = env_PATH.split(":");
+
+        QString current_dir = QDir::cleanPath(QDir::current().path());
+
+        hints.push_front(current_dir + QString("./"));
+        hints.push_front(current_dir + QString("/../auto_EACSF-inner-install/bin/"));
+
+        QString found_exe("");
+
+        foreach (const QString hint, hints){
+
+            QFileInfo info = QFileInfo(QDir::cleanPath(hint + exe_name));
+
+            if(info.exists()){
+                found_exe = info.absoluteFilePath();
+                break;
+            }
+
+        }
+
+        return found_exe;
+
+     }
+
 }
 
 void ExtExecutablesWidget::setExeDir(QString dir)
@@ -84,4 +132,32 @@ void ExtExecutablesWidget::exeLinedTextChanged(QString new_text)
         }
     }
     emit newExePath(bt->text(),new_text);
+}
+
+
+QJsonArray ExtExecutablesWidget::GetExeArray(){
+
+    QJsonArray exe_array;
+
+    foreach (const QString exe_name, m_ExeMap.keys())
+    {
+        QJsonObject exe_obj;
+        exe_obj["name"] = exe_name;
+        exe_obj["path"] = m_ExeMap[exe_name]->text();
+        exe_array.append(exe_obj);
+    }
+
+    return exe_array;
+}
+
+QMap<QString, QString> ExtExecutablesWidget::GetExeMap(){
+
+    QMap<QString, QString> exe_map;
+
+    foreach (const QString exe_name, m_ExeMap.keys())
+    {
+        exe_map[exe_name] = m_ExeMap[exe_name]->text();
+    }
+
+    return exe_map;
 }

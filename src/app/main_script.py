@@ -93,8 +93,8 @@ def main(main_args):
     current_suffix = ""
 
     registration_suffix = "_stx"
-    if (main_args.registration == "true"):
-        rigid_align_script = os.path.join(scripts_prefix, "rigid_align_script.py")
+    if (main_args.registration):
+        rigid_align_script = os.path.join(scripts_prefix, "rigid_align.py")
         print_main_info("Running " + rigid_align_script)
 
         OUT_RR = os.path.join(OUT_PATH,'RigidRegistration')
@@ -117,8 +117,8 @@ def main(main_args):
     if not os.path.exists(OUT_SS):
         os.makedirs(OUT_SS)
 
-    if (main_args.skullStripping == "true"):
-        make_mask_script = os.path.join(scripts_prefix, "make_mask_script.py")
+    if (main_args.skullStripping):
+        make_mask_script = os.path.join(scripts_prefix, "make_mask.py")
         print_main_info("Running " + make_mask_script)
 
         BRAIN_MASK = os.path.join(OUT_SS, T1_base + current_suffix + "_FinalBrainMask.nrrd")
@@ -147,8 +147,8 @@ def main(main_args):
         call_and_print(args)
 
 
-    if (main_args.segmentation == "true"):
-        tissue_seg_script = os.path.join(scripts_prefix, "tissue_seg_script.py")
+    if (main_args.segmentation):
+        tissue_seg_script = os.path.join(scripts_prefix, "tissue_seg.py")
         print_main_info("Running " + tissue_seg_script)
 
         OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
@@ -163,14 +163,14 @@ def main(main_args):
                 call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', '','--at_dir', '--output', OUT_TS])
         else:
            print('Segmentation already exists')
-        print_main_info("Finished running tissue_seg_script.py")
+        print_main_info("Finished running tissue_seg.py")
 
     else:
         Segmentation = main_args.tissueSeg
 
 
-    if (main_args.removeVentricles == "true"):
-        vent_mask_script = os.path.join(scripts_prefix, "vent_mask_script.py")
+    if (main_args.removeVentricles):
+        vent_mask_script = os.path.join(scripts_prefix, "vent_mask.py")
         print_main_info("Running " + vent_mask_script)
         OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
         SegmentationWithoutVent = os.path.join(OUT_VR, T1_base + current_suffix + "_EMS_withoutVent.nrrd")
@@ -329,16 +329,16 @@ if (__name__ == "__main__"):
     parser.add_argument('--brainMask', type=str, help='Brain mask', default="@BRAIN_MASK@")
     parser.add_argument('--cerebellumMask', type=str, help='Cereb Mask', default="@CEREB_MASK@")
     parser.add_argument('--tissueSeg', type=str, help='Tissue Segmentation', default="@TISSUE_SEG@")
-    parser.add_argument('--CSFLabel', type=str, help='CSF Label in segmentation', default="@CSF_LABEL@")
+    parser.add_argument('--CSFLabel', type=int, help='CSF Label in segmentation', default=@CSF_LABEL@)
     parser.add_argument('--ACPCunit', type=str, help='ACPC unit (mm/index)', default="@ACPC_UNIT@")
-    parser.add_argument('--ACPCval', type=str, help='ACPC value', default="@ACPC_VAL@")
+    parser.add_argument('--ACPCval', type=float, help='ACPC value', default=@ACPC_VAL@)
     parser.add_argument('--LHInnerSurf', type=str, help='Left hemisphere inner surface', default="@LH_INNER@")
     parser.add_argument('--RHInnerSurf', type=str, help='Right hemisphere inner surface', default="@RH_INNER@")
-    parser.add_argument('--registration', type=str, help='Perform rigid registration', default="@PERFORM_REG@")
-    parser.add_argument('--skullStripping', type=str, help='Perform skull stripping', default="@PERFORM_SS@")
-    parser.add_argument('--segmentation', type=str, help='Perform tissue segmentation', default="@PERFORM_TSEG@")
-    parser.add_argument('--removeVentricles', type=str, help='Perform tissue segmentation', default="@PERFORM_VR@")
-    parser.add_argument('--computeCSFDensity', type=str, help='Compute CSF density', default="@COMPUTE_CSFDENS@")
+    parser.add_argument('--registration', type=bool, help='Perform rigid registration', default=@PERFORM_REG@)
+    parser.add_argument('--skullStripping', type=bool, help='Perform skull stripping', default=@PERFORM_SS@)
+    parser.add_argument('--segmentation', type=bool, help='Perform tissue segmentation', default=@PERFORM_TSEG@)
+    parser.add_argument('--removeVentricles', type=bool, help='Perform tissue segmentation', default=@PERFORM_VR@)
+    parser.add_argument('--computeCSFDensity', type=bool, help='Compute CSF density', default=@COMPUTE_CSFDENS@)
     parser.add_argument('--python3', type=str, help='Python3 executable path', default='@python3_PATH@')
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--ImageStat', type=str, help='ImageStat executable path', default='@ImageStat_PATH@')

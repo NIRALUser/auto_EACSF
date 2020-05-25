@@ -12,7 +12,8 @@
 
 #include "ui_csfwindow.h"
 
-
+#include "extexecutableswidget.h"
+#include "csfscripts.h"
 
 namespace Ui {
 class CSFWindow;
@@ -28,10 +29,15 @@ public:
     void runNoGUI(QString configFileName, QString cli_T1, QString cli_T2, QString cli_BrainMask, QString cli_TissueSeg, QString cli_subjectVMask, QString cli_CerebMask, QString cli_output_dir);
     void setTesttext(QString txt);
 
+public: 
+
+    void setConfig(QJsonObject root_obj);
+    QJsonObject getConfig();
+
 private:
-    QStringList check_exe_in_folder(QStringList exe_list, QString dir_path, bool use_hint);
-    void find_executables();
-    void readConfig(QString filename, bool default_config);
+    
+    QJsonObject readConfig(QString filename);
+    
     bool writeConfig(QString filename);
     QString OpenFile();
     QString OpenDir();
@@ -47,47 +53,17 @@ private:
 
     void displayAtlases(QString folder_path, bool T2_provided);
 
-    void write_main_script();
-    void write_rigid_align();
-    void write_make_mask();
-    void write_tissue_seg();
-    void write_ABCxmlfile(bool T2provided);
-    void write_vent_mask();
-
-    void run_AutoEACSF(QString cli_T1 = "", QString cli_T2 = "", QString cli_BrainMask = "", QString cli_TissueSeg = "",
-                       QString cli_subjectVMask = "", QString cli_CerebMask = "", QString cli_output_dir = "");
+    void run_AutoEACSF(QJsonObject root_obj);
 
     static const QString m_github_url;
     QProcess *prc;
     bool m_GUI;
 
-    //Inputs
-    QString T1img;
-    QString T2img;
-    QString CerebMask;
-    QString BrainMask;
-    QString TissueSeg;
-    QString subjectVentricleMask;
-    QString output_dir;
-    QString scripts_dir;
+    CSFScripts m_CSFScripts;
 
-    //Executables
-    QMap<QString,QString> executables;
-    QMap<QString,QStringList> script_exe;
+    ExtExecutablesWidget* m_exeWidget;
 
-    //ANTS Registration_Default
-    QString Registration_Type;
-    QString Transformation_Step;
-    QString Iterations;
-    QString Sim_Metric;
-    QString Sim_Parameter;
-    QString Gaussian;
-    QString T1_Weight;
-
-    //Other
-    bool dataSeemsAligned;
-    bool script_running;
-    bool outlog_file_created;
+    void run_AutoEACSF();
 
 
 private slots:
@@ -108,7 +84,7 @@ private slots:
     //1st Tab
     void on_pushButton_T1img_clicked();
     void on_pushButton_T2img_clicked();
-    void on_lineEdit_T2img_textChanged();
+    
     void on_pushButton_BrainMask_clicked();
     void on_lineEdit_BrainMask_textChanged();
     void on_pushButton_VentricleMask_clicked();
@@ -146,13 +122,13 @@ private slots:
     void on_pushButton_templateInvMaskVentricle_clicked();
 
     //ANTS Registration
-    void on_comboBox_RegType_currentTextChanged(const QString &val);
-    void on_doubleSpinBox_TransformationStep_valueChanged();
-    void on_comboBox_Metric_currentTextChanged(const QString &val);
-    void on_spinBox_SimilarityParameter_valueChanged(const int val);
-    void on_doubleSpinBox_GaussianSigma_valueChanged(const double val);
-    void on_spinBox_T1Weight_valueChanged(const QString &val);
-    void on_lineEdit_Iterations_textChanged(const QString &val);
+    // void on_comboBox_RegType_currentTextChanged(const QString &val);
+    // void on_doubleSpinBox_TransformationStep_valueChanged();
+    // void on_comboBox_Metric_currentTextChanged(const QString &val);
+    // void on_spinBox_SimilarityParameter_valueChanged(const int val);
+    // void on_doubleSpinBox_GaussianSigma_valueChanged(const double val);
+    // void on_spinBox_T1Weight_valueChanged(const QString &val);
+    // void on_lineEdit_Iterations_textChanged(const QString &val);
 
     //CSF Density
     void on_pushButton_LH_inner_clicked();

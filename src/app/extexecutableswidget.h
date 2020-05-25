@@ -3,6 +3,13 @@
 
 #include <QWidget>
 #include <QMap>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QLineEdit>
+
+#include <iostream>
+
+using namespace std;
 
 class ExtExecutablesWidget : public QWidget
 {
@@ -23,11 +30,16 @@ class ExtExecutablesWidget : public QWidget
     Q_OBJECT
 public:
     explicit ExtExecutablesWidget(QWidget *m_parent = NULL);
-    void buildInterface(QMap<QString, QString> exeMap); //Builds the interface
+    vector<QString> buildInterface(QMap<QString, QString> exeMap); //Builds the interface
     void setExeDir(QString dir); //Sets the default directory for the QFileDialog
+    QJsonArray GetExeArray();
+    QMap<QString, QString> GetExeMap();
+
+    QString findExecutable(QString, QString);
 
 private:
     QString m_exeDir; //Default directory for the QFileDialog
+    QMap<QString, QLineEdit*> m_ExeMap;
 
 signals:
     void newExePath(QString exeName,QString path); //Signal emitted when an executable's path has been changed by the user (to be connected to the application)

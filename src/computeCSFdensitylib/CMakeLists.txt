@@ -18,8 +18,12 @@ list(APPEND computeCSFdensity_src
 )
 
 #add_library(computeCSFdensitylib ${computeCSFdensity_src})
+if(APPLE)
+  find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
+else()
+  find_package(Qt5 COMPONENTS Widgets OpenGL X11Extras REQUIRED)
+endif()
 
-find_package(Qt5 COMPONENTS Widgets OpenGL X11Extras REQUIRED)
 set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
 
 find_package(VTK REQUIRED)
