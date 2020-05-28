@@ -62,6 +62,8 @@ private:
     CSFScripts m_CSFScripts;
 
     ExtExecutablesWidget* m_exeWidget;
+    // Map<QString,QStringList> m_atlases;
+    QJsonObject m_atlases;
 
     void run_AutoEACSF();
 

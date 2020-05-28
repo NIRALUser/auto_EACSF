@@ -4,6 +4,9 @@
 #include <QFile>
 #include <QJsonObject>
 #include <QString>
+#include <QFileInfo>
+#include <QProcess>
+#include <QObject>
 
 #include "csfwindow.h"
 #include "Auto_EACSFCLP.h"
@@ -54,11 +57,53 @@ int main (int argc, char *argv[])
     data_obj["output_dir"] = checkStringValue(OutputDir,  data_obj["output_dir"]);
     root_obj["data"]=data_obj;
 
+    QString output_dir = QDir::cleanPath(data_obj["output_dir"].toString());
+    QFileInfo info = QFileInfo(output_dir);
+    if(!info.exists()){
+        QDir out_dir = QDir();
+        out_dir.mkpath(output_dir);
+    }
+
+    
+
     if (noGUI)
     {
         CSFScripts csfscripts;
         csfscripts.setConfig(root_obj);
         csfscripts.run_AutoEACSF();
+
+        QString scripts_dir = QDir::cleanPath(output_dir + QString("/PythonScripts"));
+
+        QString main_script = QDir::cleanPath(scripts_dir + QString("/main_script.py"));
+        
+        QStringList params = QStringList() << main_script;
+
+        QProcess* prc =  new QProcess;
+        prc->setWorkingDirectory(output_dir);
+
+        QObject::connect(prc, &QProcess::readyReadStandardOutput, [prc](){
+            QString output = prc->readAllStandardOutput();
+            cout<< output.toStdString() <<endl;
+        });
+
+        QObject::connect(prc, &QProcess::readyReadStandardError, [prc](){
+            QString err = prc->readAllStandardError();
+            cerr << err.toStdString() <<endl;
+        });
+
+        QObject::connect(prc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+            cout<<"Finished!"<<endl;
+        });
+
+        QMap<QString, QString> executables = csfscripts.GetExecutablesMap();
+
+        cout<<executables["python3"].toStdString()<<" "<<params.join(" ").toStdString()<<endl;
+        
+        prc->start(executables["python3"], params);
+
+        prc->waitForFinished(-1);
+
+        prc->close();
 
         return EXIT_SUCCESS;
     }

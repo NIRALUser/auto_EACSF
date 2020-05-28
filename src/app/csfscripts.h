@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include <QMap>
 #include <QTextStream>
+#include <QRegularExpressionMatch>
 
 using namespace std;
 
@@ -40,6 +41,14 @@ class CSFScripts
 			}
 		}
 
+		QString checkBoolValue(QJsonValue str_value){
+			if(str_value.isUndefined()){
+				return QString("false");
+			}else{
+				return QString("%1").arg(str_value.toBool());
+			}
+		}
+
 		QString checkDoubleValue(QJsonValue str_value){
 			if(str_value.isUndefined()){
 				return QString("0");
@@ -55,11 +64,11 @@ class CSFScripts
 		void write_main_script();
 	    void write_rigid_align();
 	    void write_make_mask();
+	    void write_skull_strip();
 	    void write_tissue_seg();
-	    void write_ABCxmlfile();
 	    void write_vent_mask();
 
-
+	    QString findFile(QString pattern, QStringList hints);
 
     private:
 

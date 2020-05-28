@@ -9,70 +9,52 @@ import subprocess
 from subprocess import call
 import itk
 import numpy as np
-
-def print_main_info(info):
-    info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="blue">'+info+"</font></b>"
-    print(info)
-    sys.stdout.flush()
-
-def print_aef(info):
-    #print already existing file infos
-    info="<b>>>> "+os.path.basename(sys.argv[0])+' : <font color="yellow">'+info+"</font></b>"
-    sys.stdout.flush()
-
-def eprint(*err_args, **err_kwargs):
-    #print errors function
-    print(*err_args, file=sys.stderr, **err_kwargs)
+import re
 
 def call_and_print(args):
     #external process calling function with output and errors printing
-    exe_path=args.pop(0)
-    exe_dir=os.path.dirname(exe_path)
-    exe_name=os.path.basename(exe_path)
-    print("<b>   >>> "+os.path.basename(sys.argv[0])+' : <font color="blue">Running: </font></b>'+exe_dir+'/<b><font color="blue">'+exe_name+'</font></b> '+" ".join(args)+'\n')
-    sys.stdout.flush()
-    args.insert(0,exe_path)
+    exe_path = args[0]
+    print(" ".join(args))
+    
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
+    
     out=out.decode('utf-8')
     err=err.decode('utf-8')
     if(out!=''):
-        print(out+"\n")
-        sys.stdout.flush()
+        print(out)
     if(err!='' and err !='.'):
-        eprint('<font color="red"><b>While running : </b></font>'+exe_dir+'/<b><font color="red">'+exe_name+'</font></b> '+" ".join(args)+'\n')
-        eprint('<font color="red"><b>Following error(s) occured : </b></font>\n')
-        eprint(err+'\n')
-        sys.stderr.flush()
-        print('\n<font color="blue"><b>'+args[0]+' :</b></font> <font color="red">errors occured, see errors log for more details</font>\n\n')
-        sys.stdout.flush()
+        print(err, file=sys.stderr)
     else:
-        print('\n<font color="blue"><b>'+args[0]+' :</b></font> <font color="green">exit with success</font>\n\n')
-        sys.stdout.flush()
+        print('exit with success')
+
+def find_file(pattern, directory):
+    filename = None
+    regex = re.compile(pattern)
+    for root, dirs, files in os.walk(directory):
+        for name in files:
+            if regex.match(name) is not None:
+                filename = os.path.join(root, name)
+                break
+    return filename
+
 
 def main(main_args):
-    print("<b>>>> Running "+os.path.basename(sys.argv[0])+"</b>\n")
-    sys.stdout.flush()
-
+    print(os.path.basename(sys.argv[0])+"\n")
     ### Inputs
     T1 = main_args.t1
     T2 = main_args.t2
+    BRAIN_MASK = main_args.brainMask
     T2_exists = True
     if (T2 == ""):
         T2_exists = False
 
-    T1_split=os.path.splitext(os.path.basename(T1))
-    if (T1_split[1] == 'gz'):
-        T1_base = os.path.splitext(T1_split[0])
-    else:
-        T1_base = T1_split[0]
+    T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1))[0])[0]
 
     if (T2_exists):
-        T2_split = os.path.splitext(os.path.basename(T2))
-        if (T2_split[1] == 'gz'):
-            T2_base = os.path.splitext(T2_split[0])
-        else:
-            T2_base = T2_split[0]
+        T2_base = os.path.splitext(os.path.splitext(T2)[0])[0]
+
+    SEGMENTATION = main_args.tissueSeg
 
     ### Executables
     python = main_args.python3
@@ -95,94 +77,38 @@ def main(main_args):
     registration_suffix = "_stx"
     if (main_args.registration):
         rigid_align_script = os.path.join(scripts_prefix, "rigid_align.py")
-        print_main_info("Running " + rigid_align_script)
-
-        OUT_RR = os.path.join(OUT_PATH,'RigidRegistration')
-        current_suffix = current_suffix + registration_suffix
-        T1_REGISTERED = os.path.join(OUT_RR, T1_base + current_suffix + ".nrrd")
-        if (T2_exists):
-           T2_REGISTERED = os.path.join(OUT_RR, T2_base + current_suffix +".nrrd")
-
-        if not(os.path.isfile(T1_REGISTERED)):
-            call([python, rigid_align_script, '--output', OUT_RR])
-
-        print_main_info("Finished running "+rigid_align_script)
-
-    else:
-        T1_REGISTERED = T1
-        if (T2_exists):
-            T2_REGISTERED = T2
-
-    OUT_SS = os.path.join(OUT_PATH, 'SkullStripping')
-    if not os.path.exists(OUT_SS):
-        os.makedirs(OUT_SS)
+        print("Running " + rigid_align_script)
+        call_and_print([python, rigid_align_script])
 
     if (main_args.skullStripping):
         make_mask_script = os.path.join(scripts_prefix, "make_mask.py")
-        print_main_info("Running " + make_mask_script)
+        print("Running " + make_mask_script)
+        call_and_print([python, make_mask_script])
 
-        BRAIN_MASK = os.path.join(OUT_SS, T1_base + current_suffix + "_FinalBrainMask.nrrd")
-        if not(os.path.isfile(BRAIN_MASK)):
-            if (T2_exists):
-                print_main_info("masking with T2")
-                call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', T2_REGISTERED, '--at_dir', '--at_list', '--output',OUT_SS])
-            else:
-                print_main_info("masking without T2")
-                call([python, make_mask_script, '--t1', T1_REGISTERED, '--t2', '', '--at_dir', '--at_list', '--output',OUT_SS])
-        else:
-           print('Brainmask already exists')
-        print_main_info("Finished running " + make_mask_script)
-    else:
-        BRAIN_MASK = main_args.brainMask
-
-    print_main_info("Stripping the skull")
-    current_suffix = current_suffix + "_stripped"
-    T1_STRIPPED = os.path.join(OUT_SS, T1_base + current_suffix +".nrrd")
-    args=[ImageMath, T1_REGISTERED, '-outfile', T1_STRIPPED, '-mask', BRAIN_MASK]
-    call_and_print(args)
-
-    if (T2_exists):
-        T2_STRIPPED = os.path.join(OUT_SS, T2_base + current_suffix + ".nrrd")
-        args=[ImageMath, T2_REGISTERED, '-outfile', T2_STRIPPED, '-mask', BRAIN_MASK]
-        call_and_print(args)
-
+    skull_strip_script = os.path.join(scripts_prefix, "skull_strip.py")
+    print("Running " + skull_strip_script)
+    call_and_print([python, skull_strip_script])
 
     if (main_args.segmentation):
         tissue_seg_script = os.path.join(scripts_prefix, "tissue_seg.py")
-        print_main_info("Running " + tissue_seg_script)
-
-        OUT_TS=os.path.join(OUT_PATH,'TissueSegAtlas')
-        OUT_ABC=os.path.join(OUT_PATH,'ABC_Segmentation')
-        Segmentation = os.path.join(OUT_ABC, T1_base + current_suffix + "_labels_EMS.nrrd")
-        print(Segmentation)
-        if not(os.path.isfile(Segmentation)):
-            print(Segmentation + ' doesnt exist')
-            if (T2_exists):
-                call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', T2_STRIPPED,'--at_dir', '--output', OUT_TS])
-            else:
-                call([python, tissue_seg_script, '--t1', T1_STRIPPED, '--t2', '','--at_dir', '--output', OUT_TS])
-        else:
-           print('Segmentation already exists')
-        print_main_info("Finished running tissue_seg.py")
-
-    else:
-        Segmentation = main_args.tissueSeg
+        print("Running " + tissue_seg_script)
+        call_and_print([python, tissue_seg_script])
+        SEGMENTATION = find_file(".*_labels_EMS.nrrd", os.path.join(OUT_PATH, "ABC_Segmentation"))
 
 
     if (main_args.removeVentricles):
         vent_mask_script = os.path.join(scripts_prefix, "vent_mask.py")
-        print_main_info("Running " + vent_mask_script)
-        OUT_VR=os.path.join(OUT_PATH,'VentricleMasking')
-        SegmentationWithoutVent = os.path.join(OUT_VR, T1_base + current_suffix + "_EMS_withoutVent.nrrd")
-        if not(os.path.isfile(SegmentationWithoutVent)):
-            call([python, vent_mask_script, '--t1', T1_STRIPPED, '--subjectTissueSeg', Segmentation, '--output',OUT_VR])
-        else:
-           print('Ventricle masked segmentation already exists')
-        Segmentation = SegmentationWithoutVent
-        print_main_info("Finished running "+vent_mask_script)
+        print("Running " + vent_mask_script)
+        call_and_print([python, vent_mask_script])
+        
+        SEGMENTATION = find_file(".*_withoutVent.nrrd", os.path.join(OUT_PATH, "VentricleMasking"))
+        print("Finished running "+vent_mask_script)
+
+    if(not os.path.exists(BRAIN_MASK)):
+        BRAIN_MASK = find_file(".*_FinalBrainMask.nrrd", os.path.join(OUT_PATH, "SkullStripping"))
 
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
-    Segmentation_base = os.path.splitext(os.path.basename(Segmentation))[0]
+    Segmentation_base = os.path.splitext(os.path.basename(SEGMENTATION))[0]
 
     OUT_FM = os.path.join(OUT_PATH, 'FinalMasking')
     if not os.path.exists(OUT_FM):
@@ -190,12 +116,20 @@ def main(main_args):
 
     ######### Stripping the skull from segmentation ######
     MID_TEMP00 = os.path.join(OUT_FM, "".join([T1_base,"_MID00.nrrd"]))
-    args=[ImageMath, Segmentation, '-outfile', MID_TEMP00, '-mask', BRAIN_MASK]
+    args=[ImageMath, SEGMENTATION, '-outfile', MID_TEMP00, '-mask', BRAIN_MASK]
     call_and_print(args)
 
     ######### Cutting below AC-PC line #######
     ### Coronal mask creation
-    print_main_info("Cutting below AC-PC line")
+    print("Cutting below AC-PC line")
+
+    T1_REGISTERED = T1
+    if main_args.registration:
+        T1_REGISTERED = os.path.join(OUT_PATH, "RigidRegistration", T1_base + "_stx.nrrd")
+        T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1_REGISTERED))[0])[0]
+
+    if main_args.skullStripping:
+        T1_REGISTERED = os.path.join(OUT_PATH, "SkullStripping", T1_base + "_stripped.nrrd")
 
     if (main_args.cerebellumMask == ""):
         ACPC_unit=main_args.ACPCunit
@@ -216,7 +150,7 @@ def main(main_args):
                 sys.stderr.flush()
                 ACPC_val = 70;
 
-            print_main_info('Creating coronal mask')
+            print('Creating coronal mask')
             np_copy[ACPC_val-1:np_copy.shape[0]-1,:,:]=1
             np_copy[0:ACPC_val-1,:,:]=0
             itk_np_copy=itk.GetImageViewFromArray(np_copy)
@@ -224,9 +158,9 @@ def main(main_args):
             itk_np_copy.SetSpacing(im.GetSpacing())
             itk_np_copy.SetDirection(im.GetDirection())
             itk.imwrite(itk_np_copy,Coronal_Mask)
-            print_main_info('Coronal mask created')
+            print('Coronal mask created')
         else:
-            print_main_info('Loading ' + Coronal_Mask)
+            print('Loading ' + Coronal_Mask)
 
     else:
         Coronal_Mask = main_args.cerebellumMask
@@ -318,7 +252,7 @@ def main(main_args):
         args = ['computecsfdensity', '-l', LH_INNER_SURF, '-r', RH_INNER_SURF, '-s', Segmentation, '-c', FINAL_OUTERCSF, '-o', OUT_CCD, '-p', Segmentation_base]
         call_and_print(args)
 
-    print_main_info("Auto_EACSF finished")
+    print("Auto_EACSF finished")
 
     sys.exit(0);
 

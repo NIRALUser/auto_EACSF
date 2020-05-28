@@ -158,18 +158,21 @@ void CSFWindow::setConfig(QJsonObject root_obj)
 
     displayAtlases(lineEdit_SSAtlasFolder->text(),!lineEdit_isEmpty(lineEdit_T2img));
 
-    QJsonArray atlas_list = param_obj["atlas_list"].toArray();
+    m_atlases = param_obj["atlas_obj"].toObject();
 
-    foreach(const QJsonValue al, atlas_list){
-        for (int i = 0 ; i < listWidget_SSAtlases->count(); i++){
-            QListWidgetItem *item = listWidget_SSAtlases->item(i);
-            if(item->text().compare(al["name"].toString()) == 0 && al["selected"].toBool()){
-                item->setCheckState(Qt::Checked);
-            }else{
-                item->setCheckState(Qt::Unchecked);
-            }
-        }    
-    }
+    for (int i = 0 ; i < listWidget_SSAtlases->count(); i++){
+        QListWidgetItem *item = listWidget_SSAtlases->item(i);
+
+        QString name = item->text().split(":")[0];
+
+        QJsonObject atlas = m_atlases[name].toObject();
+    
+        if(atlas["selected"].toBool()){
+            item->setCheckState(Qt::Checked);
+        }else{
+            item->setCheckState(Qt::Unchecked);
+        }
+    } 
 
     foreach (const QJsonValue exe_val, exe_array)
     {
@@ -253,21 +256,7 @@ QJsonObject CSFWindow::getConfig(){
     param_obj["PERFORM_VR"] = checkBox_VentricleRemoval->isChecked();
     param_obj["COMPUTE_CSFDENS"] = checkBox_CSFDensity->isChecked();
     
-
-    QJsonArray SSAtlases_list;
-
-    for (int i = 0; i<listWidget_SSAtlases->count(); i++)
-    {
-        QListWidgetItem *item = listWidget_SSAtlases->item(i);
-
-        QJsonObject atlas_item;
-
-        atlas_item["name"] = item->text();
-        atlas_item["selected"] = item->checkState() == Qt::Checked;
-        
-        SSAtlases_list.append(atlas_item);
-    }
-    param_obj["atlas_list"] = SSAtlases_list;
+    param_obj["atlas_obj"] = m_atlases;
 
     QJsonObject root_obj;
     root_obj["data"] = data_obj;
@@ -409,129 +398,122 @@ void CSFWindow::infoMsgBox(QString message, QMessageBox::Icon type)
 void CSFWindow::displayAtlases(QString folder_path, bool T2_provided)
 {
     listWidget_SSAtlases->clear();
-    const QString T1=QString("T1");
-    const QString T2=QString("T2");
-    const QString bmask=QString("brainmask");
-    const QStringList bmaskList = QStringList(bmask);
+    
     QDir folder(folder_path);
     QStringList itemsList;
     QStringList invalidItems=QStringList();
-    QMap<QString,QStringList> atlases = QMap<QString,QStringList>();
+    
+    // m_atlases = QMap<QString,QStringList>();
+    m_atlases = QJsonObject();
+    
     QStringList splittedName=QStringList();
-    QString atlasName=QString();
     QString fileType=QString();
     QStringList fileSplit=QStringList();
     QString fileNameBase=QString();
 
     foreach (const QString fileName, folder.entryList())
     {
-        fileSplit=fileName.split('.');
-        fileNameBase=fileSplit.at(0);
+        QFileInfo atlas_file_info = QFileInfo(fileName);
 
-        if (fileSplit.size()>3 || fileSplit.size()<2)
+        QString ext = atlas_file_info.completeSuffix();
+
+        QRegularExpression re("nii.gz|nrrd");
+        QRegularExpressionMatch match = re.match(ext);
+
+        if (match.hasMatch())
         {
-            invalidItems.append("Non atlas file : " + fileName);
+
+            QString atlasFileName = atlas_file_info.baseName();
+            QString atlasName = atlas_file_info.baseName().split("_")[0];
+
+            if(m_atlases[atlasName].isUndefined()){
+                m_atlases[atlasName] = QJsonObject();
+            }
+
+            QJsonObject atlas = m_atlases[atlasName].toObject();
+
+            if(QRegularExpression("brainmask").match(atlasFileName).hasMatch())
+            {
+                atlas["brainmask"] = QDir::cleanPath(folder_path + QString("/") + fileName) ;
+            }
+            else if(QRegularExpression("T1").match(atlasFileName).hasMatch())
+            {
+                atlas["T1"] = QDir::cleanPath(folder_path + QString("/") + fileName) ;;
+            }
+            else if(QRegularExpression("T2").match(atlasFileName).hasMatch())
+            {
+                atlas["T2"] = QDir::cleanPath(folder_path + QString("/") + fileName) ;;
+            }
+
+            m_atlases[atlasName] = atlas;
         }
-        else
-        {
-            QString ext=QString();
-            QString ext_ref=QString();
-            if (fileSplit.size()==3)
-            {
-                ext=fileSplit.at(1)+fileSplit.at(2);
-                ext_ref=QString("niigz");
-            }
-            else
-            {
-                ext=fileSplit.at(1);
-                ext_ref=QString("nrrd");
-            }
-
-            if (ext == ext_ref)
-            {
-                splittedName=fileNameBase.split('_');
-                fileType=splittedName.at(splittedName.size()-1);
-                splittedName.pop_back();
-                atlasName=QString(splittedName.join('_'));
-
-
-                if(fileType == bmask)
-                {
-                    atlases.insert(atlasName,bmaskList);
-                }
-                else if((fileType == T1) && atlases.contains(atlasName))
-                {
-                    atlases[atlasName].append(T1);
-                }
-                else if((fileType == T2) && atlases.contains(atlasName))
-                {
-                    atlases[atlasName].append(T2);
-                }
-            }
-            else if((fileName != QString(".")) && (fileName != QString("..")))
-            {
-                invalidItems.append("Non atlas file : " + fileName);
-            }
-        }
-
 
     }
 
-    foreach (const QString atlas, atlases.keys())
+    // QJsonDocument doc(m_atlases);
+    // cout<<doc.toJson(QJsonDocument::Compact).toStdString()<<endl;
+
+    foreach (const QString name, m_atlases.keys())
     {
-        QString itemLabel=QString();
-        if (atlases[atlas].size() == 2)
-        {
-            itemLabel = atlas+QString(" : ")+atlases[atlas].at(0)+QString(" and ")+atlases[atlas].at(1)+QString(" image detected");
-            if ((atlases[atlas].at(1) == "T2") && !T2_provided)
-            {
-                itemLabel.append(" (You must provide T2 image to use this atlas)");
+        
+        QJsonObject atlas = m_atlases[name].toObject();
+
+        QString itemLabel = name + QString(":");
+
+        QListWidgetItem* item = new QListWidgetItem();
+
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Checked);
+
+        atlas["selected"] = true;
+
+        if(!atlas["brainmask"].isUndefined() && atlas["brainmask"].toString().compare("") != 0){
+            itemLabel += QString(" brainmask ");
+        }
+
+        if(!atlas["T1"].isUndefined() && atlas["T1"].toString().compare("") != 0){
+            itemLabel += QString(" T1 ");
+        }
+
+        if(!atlas["T2"].isUndefined() && atlas["T2"].toString().compare("") != 0){
+            itemLabel += QString(" T2 ");
+            if(!T2_provided){
+                item->setFlags((item->flags() | Qt::ItemIsUserCheckable) & !Qt::ItemIsEnabled);
+                item->setCheckState(Qt::Unchecked);
             }
         }
-        else if(atlases[atlas].size() == 3)
-        {
-            itemLabel = atlas+QString(" : ")+atlases[atlas].at(0)+QString(", ")+atlases[atlas].at(1)+QString(" and ")+atlases[atlas].at(2)+QString(" images detected");
-            if (!T2_provided)
-            {
-                itemLabel.append(" (You must provide T2 image to use this atlas)");
-            }
-        }
-        itemsList.append(itemLabel);
-    }
+        
+        item->setText(itemLabel);
 
-    listWidget_SSAtlases->addItems(itemsList);
-    
-    for (int i = 0 ; i < listWidget_SSAtlases->count(); i++)
-    {
-        QListWidgetItem *item = listWidget_SSAtlases->item(i);
-        if (!item->text().endsWith(")"))
-        {
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            item->setCheckState(Qt::Checked);
-        }
-        else
-        {
-            item->setFlags((item->flags() | Qt::ItemIsUserCheckable) & !Qt::ItemIsEnabled);
-            item->setCheckState(Qt::Unchecked);
-        }
-
-        if (i==0)
-        {
-            QFont b_font=QFont();
-            b_font.setBold(true);
-            item->setFont(b_font);
-        }
-    }
-    int count=listWidget_SSAtlases->count();
-
-    listWidget_SSAtlases->addItems(invalidItems);
-    for (int i = count ; i < listWidget_SSAtlases->count(); i++)
-    {
-        QListWidgetItem *item = listWidget_SSAtlases->item(i);
-        item->setFlags(item->flags() & !Qt::ItemIsEnabled);
+        m_atlases[name] = atlas;
+        listWidget_SSAtlases->addItem(item);
     }
 
     QObject::connect(listWidget_SSAtlases, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(selectAtlases(QListWidgetItem*)));
+    
+    // for (int i = 0 ; i < listWidget_SSAtlases->count(); i++)
+    // {
+    //     QListWidgetItem *item = listWidget_SSAtlases->item(i);
+    //     if (!item->text().endsWith(")"))
+    //     {
+    //         item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    //         item->setCheckState(Qt::Checked);
+    //     }
+    //     else
+    //     {
+    //         item->setFlags((item->flags() | Qt::ItemIsUserCheckable) & !Qt::ItemIsEnabled);
+    //         item->setCheckState(Qt::Unchecked);
+    //     }
+
+    //     if (i==0)
+    //     {
+    //         QFont b_font=QFont();
+    //         b_font.setBold(true);
+    //         item->setFont(b_font);
+    //     }
+    // }
+
+    // QObject::connect(listWidget_SSAtlases, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(selectAtlases(QListWidgetItem*)));
 }
 
 // void CSFWindow::write_main_script()
@@ -1096,18 +1078,11 @@ void CSFWindow::on_pushButton_SSAtlasFolder_clicked()
 
 void CSFWindow::selectAtlases(QListWidgetItem *item)
 {
-    if (item->text() == QString("Select all"))
-    {
-        QListWidgetItem *it=0;
-        for (int i = 0; i < listWidget_SSAtlases->count(); i++)
-        {
-            it=listWidget_SSAtlases->item(i);
-            if (it->flags() != (it->flags() & !Qt::ItemIsEnabled))
-            {
-                it->setCheckState(item->checkState());
-            }
-        }
-    }
+    QString atlasName = item->text().split(":")[0];
+    QJsonObject atlas = m_atlases[atlasName].toObject();
+    
+    atlas["selected"] = item->checkState();
+    m_atlases[atlasName] = atlas;
 }
 
 // 4th Tab - 3.Tissue Seg
@@ -1239,17 +1214,12 @@ void CSFWindow::run_AutoEACSF(){
     QMap<QString, QString> executables = m_exeWidget->GetExeMap();
     
     prc->start(executables[QString("python3")], params);
-
-    //Notification
-    if (m_GUI)
-    {
-        QMessageBox::information(
-            this,
-            tr("Auto EACSF"),
-            tr("Python scripts are running. It may take up to 24 hours to process.")
-        );
-    }
-
+    
+    QMessageBox::information(
+        this,
+        tr("Auto EACSF"),
+        tr("Is running.")
+    );
 
 }
 

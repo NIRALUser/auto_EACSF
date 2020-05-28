@@ -4,6 +4,7 @@
         <file>vent_mask.py</file>
         <file>rigid_align.py</file>
         <file>make_mask.py</file>
+        <file>skull_strip.py</file>
         <file>tissue_seg.py</file>
     </qresource>
     <qresource prefix="/config">

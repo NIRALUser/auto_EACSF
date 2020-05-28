@@ -6,9 +6,8 @@ import sys
 import os
 import argparse
 import subprocess
-from main_script import eprint
+
 from main_script import call_and_print
-from main_script import print_aef
 
 def main(args):
     sys.stdout.flush()
@@ -20,9 +19,7 @@ def main(args):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    T2_exists=True
-    if (T2 == ""):
-        T2_exists=False
+    T2_exists=os.path.exists(T2)
 
     T1_dir=os.path.dirname(T1)
 
@@ -34,7 +31,13 @@ def main(args):
 
     STX_T1 = os.path.join(OUTPUT_DIR, "".join([T1_base,"_stx.nrrd"]))
 
+    if (not os.path.exists(STX_T1)):
+        args=[BRAINSFit, '--fixedVolume', ATLAS, '--movingVolume', T1, '--outputVolume', STX_T1, '--useRigid',\
+        '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
+        call_and_print(args)
+
     if (T2_exists):
+
         T2_dir=os.path.dirname(T2)
         T2_split=os.path.splitext(os.path.basename(T2))
         if (T2_split[1] == 'gz'):
@@ -43,20 +46,10 @@ def main(args):
             T2_base=T2_split[0]
         STX_T2 = os.path.join(OUTPUT_DIR, "".join([T2_base,"_stx.nrrd"]))
 
-    if (not os.path.isfile(STX_T1)):
-        args=[BRAINSFit, '--fixedVolume', ATLAS, '--movingVolume', T1, '--outputVolume', STX_T1, '--useRigid',\
-        '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
-        call_and_print(args)
-    else:
-        print_aef("T1 image already aligned")
-
-    if (T2_exists):
-        if (not os.path.isfile(STX_T2)):
+        if (not os.path.exists(STX_T2)):
             args=[BRAINSFit, '--fixedVolume', STX_T1, '--movingVolume', T2, '--outputVolume', STX_T2, '--useRigid',\
             '--initializeTransformMode', 'useCenterOfHeadAlign', '--outputVolumePixelType', 'short']
             call_and_print(args)
-        else:
-            print_aef("T2 image already aligned")
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Calculates segmentation w/o ventricle mask. Computes deformation field with T1 vs ATLAS, applies warp to ventricle mask and masks tissue-seg')

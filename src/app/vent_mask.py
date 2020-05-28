@@ -5,9 +5,8 @@ import sys
 import os
 import argparse
 import subprocess
-from main_script import eprint
+
 from main_script import call_and_print
-from main_script import print_aef
 
 def main(args):
     sys.stdout.flush()
@@ -53,7 +52,7 @@ def main(args):
             args = [ANTS, '3', '-m',SIM_METRIC+'['+T1+','+TEMPLATE_T1_VENTRICLE+','+T1_WEIGHT+','+SIM_PARAMETER+']', '-i',ITERATIONS,'-o',ANTs_MATRIX_NAME, '-t', 'SyN['+TRANSFORMATION_STEP+']', '-r', 'Gauss['+GAUSSIAN+',0]']
             call_and_print(args)
         else:
-            print_aef('Ventricle masking : ANTs registration already exists')
+            print('Ventricle masking : ANTs registration already exists')
 
         args=[WarpImageMultiTransform, '3', TEMPLATE_INV_MASK_VENTRICLE, TEMPLATE_INV_MASK_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
         call_and_print(args)
@@ -61,24 +60,23 @@ def main(args):
         args=[WarpImageMultiTransform, '3', TEMPLATE_T1_VENTRICLE, TEMPLATE_T1_VENTRICLE_REG, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
         call_and_print(args)
 
-        args=[ImageMath, SUBJECT_TISSUE_SEG, '-mul', TEMPLATE_INV_MASK_VENTRICLE_REG, '-outfile', SEG_WithoutVent]
-        call_and_print(args)
+        if SUBJECT_TISSUE_SEG is not None and os.path.exists(SUBJECT_TISSUE_SEG):
+            args=[ImageMath, SUBJECT_TISSUE_SEG, '-mul', TEMPLATE_INV_MASK_VENTRICLE_REG, '-outfile', SEG_WithoutVent]
+            call_and_print(args)
     else:
-        eprint("Template inverse ventricle mask is not a file and cannot be applied")
+        print("Template inverse ventricle mask is not a file and cannot be applied")
 
-    if (os.path.isfile(SUBJECT_VENTRICLE_MASK)):
+    if (os.path.isfile(SUBJECT_VENTRICLE_MASK) and TEMPLATE_INV_MASK_VENTRICLE == "" ):
         SUBJECT_VENTRICLE_MASK_base=os.path.splitext(os.path.basename(SUBJECT_VENTRICLE_MASK))[0]
         SUBJECT_VENTRICLE_MASK_INV = os.path.join(OUTPUT_DIR,SUBJECT_VENTRICLE_MASK_base+'_INV.nrrd')
 
         args = [ImageMath, SUBJECT_VENTRICLE_MASK, '-threshold', '0,0', '-outfile', SUBJECT_VENTRICLE_MASK_INV]
         call_and_print(args)
 
-        args=[ImageMath, SEG_WithoutVent, '-mul', SUBJECT_VENTRICLE_MASK_INV, '-outfile', SEG_WithoutVent]
+        SEG_WithoutVent = os.path.join(OUTPUT_DIR, "".join([T1_base,"_EMS_withoutVent.nrrd"]))
+        
+        args=[ImageMath, SUBJECT_TISSUE_SEG, '-mul', SUBJECT_VENTRICLE_MASK_INV, '-outfile', SEG_WithoutVent]
         call_and_print(args)
-    else:
-        eprint("Subject specific ventricle mask is not a file and cannot be applied")
-
-
 
 
 if (__name__ == "__main__"):
@@ -98,7 +96,7 @@ if (__name__ == "__main__"):
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--ANTS', type=str, help='ANTS executable path', default='@ANTS_PATH@')
     parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WarpImageMultiTransform_PATH@')
-    parser.add_argument('--output', nargs='?', type=str, help='Output directory', const="@OUTPUT_DIR@")
+    parser.add_argument('--output', type=str, help='Output directory', default="@OUTPUT_DIR@")
     #parser.add_argument('--outputName', type=str, help='Output masked tissue-seg', default="@OUTPUT_MASK@")
     args = parser.parse_args()
     main(args)

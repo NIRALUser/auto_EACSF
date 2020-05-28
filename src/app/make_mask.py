@@ -5,18 +5,19 @@ import sys
 import os
 import argparse
 import subprocess
-from main_script import eprint
+import json
+
 from main_script import call_and_print
-from main_script import print_aef
 
 def main(args):
     T1 = args.t1
     T2 = args.t2
-    T2_exists=True
-    if (T2 == ""):
-        T2_exists=False
-    atlases_dir = args.at_dir
-    atlases_list = args.at_list
+    
+    T2_exists = False
+    if(T2 is not None):
+        T2_exists = os.path.exists(T2)
+    # atlases_list = args.at_list
+    at_selected = args.at_selected
     ImageMath = args.ImageMath
     FSLBET = args.FSLBET
     convertITKformats = args.convertITKformats
@@ -26,60 +27,62 @@ def main(args):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    atlases_list = atlases_list.split(',')
 
-    l=len(atlases_list)
-    if (l%2 != 0):
-        exit('Atlases list : wrong format')
+    with open(at_selected, 'r') as atlas_file:
+        data = atlas_file.read()
+        atlas_obj = json.loads(data)
 
-    atlases_nb=int(l/2)
+
+
+    # atlases_list = atlases_list.split(',')
+
+    # l=len(atlases_list)
+    # if (l%2 != 0):
+    #     exit('Atlases list : wrong format')
+
+    # atlases_nb=int(l/2)
 
     ### Convert to *.nii.gz
-    T1_dir = os.path.dirname(T1)
+    
     T1_split = os.path.splitext(os.path.basename(T1))
     T1_base = T1_split[0]
     if (T1_split[1] != '.gz'):
-        Input_T1_NII = os.path.join(T1_dir, "".join([T1_base,".nii.gz"]))
+        Output_T1_NII = os.path.join(output_dir, "".join([T1_base,".nii.gz"]))
+        if(not os.path.exists(Output_T1_NII)):
+            args = [convertITKformats, T1, Output_T1_NII]
+            call_and_print(args)
+        T1 = Output_T1_NII
     else:
         T1_base = os.path.splitext(os.path.basename(T1_base))[0]
-        Input_T1_NII = T1
+    
+    Input_T1_NII = T1
 
-    args_maj_vote=[ImageMath,Input_T1_NII,'-majorityVoting']
+    args_maj_vote=[ImageMath,T1,'-majorityVoting']
 
     if (T2_exists):
         T2_dir = os.path.dirname(T2)
         T2_split = os.path.splitext(os.path.basename(T2))
         T2_base = T2_split[0]
         if (T2_split[1] != '.gz'):
-            Input_T2_NII = os.path.join(T2_dir, "".join([T2_base,".nii.gz"]))
+            Output_T2_NII = os.path.join(T2_dir, "".join([T2_base,".nii.gz"]))
+            if(not os.path.exists(Output_T2_NII)):
+                args = [convertITKformats, T2, Output_T2_NII]
+                call_and_print(args)
+            T2 = Output_T2_NII
         else:
             T2_base = os.path.splitext(os.path.basename(T2_base))[0]
-            Input_T2_NII = T2
 
-    if (T1 != Input_T1_NII):
-        args=[convertITKformats, T1, Input_T1_NII]
-        if not(os.path.isfile(Input_T1_NII)):
-            call_and_print(args)
-        else:
-            print_aef('T1 image already converted to nii.gz')
+    Input_T2_NII = T2
 
-    if (T2_exists):
-        if (T2 != Input_T2_NII):
-            if not(os.path.isfile(Input_T2_NII)):
-                args=[convertITKformats, T2, Input_T2_NII]
-                call_and_print(args)
-            else:
-                print_aef('T2 image already converted to nii.gz')
-
-    T1_Only_Mask = os.path.join(T1_dir, "".join([T1_base,"_T1only"]))
+    T1_Only_Mask = os.path.join(output_dir, "".join([T1_base,"_T1only"]))
 
     if (T2_exists):
         T2_Only_Mask = os.path.join(T2_dir, "".join([T2_base,"_T2only"]))
 
         ##--> T2 Jointly T1 (FSL BET)
-        T2_Joint_T1_Mask = os.path.join(T1_dir, "".join([T1_base,"_T2JointT1_mask.nii.gz"]))
-        T2_Joint_T1_Mask1 = os.path.join(T1_dir, "".join([T1_base,"_T2JointT1_tmp1"]))
-        T2_Joint_T1_Mask2 = os.path.join(T1_dir, "".join([T1_base,"_T2JointT1_tmp2"]))
+        T2_Joint_T1_Mask = os.path.join(output_dir, "".join([T1_base,"_T2JointT1_mask.nii.gz"]))
+        T2_Joint_T1_Mask1 = os.path.join(output_dir, "".join([T1_base,"_T2JointT1_tmp1"]))
+        T2_Joint_T1_Mask2 = os.path.join(output_dir, "".join([T1_base,"_T2JointT1_tmp2"]))
 
         if not(os.path.isfile(T2_Joint_T1_Mask)):
             args=[FSLBET, Input_T2_NII, T2_Joint_T1_Mask1, '-f', '0.52', '-g', '0.2', '-m', '-n', '-A2', Input_T1_NII, '-R']
@@ -103,8 +106,8 @@ def main(args):
             args=[ImageMath, T2_Joint_T1_Mask, '-erode', '1,1', '-outfile', T2_Joint_T1_Mask]
             call_and_print(args)
 
-            Input_T1_NII_255 = os.path.join(T1_dir, "".join([T1_base,"_255.nii.gz"]))
-            Pre_SkullMask = os.path.join(T1_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
+            Input_T1_NII_255 = os.path.join(output_dir, "".join([T1_base,"_255.nii.gz"]))
+            Pre_SkullMask = os.path.join(output_dir, "".join([T1_base,"_255_Skull.nii.gz"]))
 
             args=[ImageMath, Input_T1_NII, '-rescale', '0,255', '-outfile', Input_T1_NII_255]
             call_and_print(args)
@@ -132,77 +135,172 @@ def main(args):
                 call_and_print(args)
 
         else:
-            print_aef('T2 Joint T1 mask already exists')
+            print('T2 Joint T1 mask already exists')
 
         args_maj_vote.append(T2_Joint_T1_Mask)
 
 
-    for k in range(0,atlases_nb):
-        atlas_base=atlases_list[2*k]
-        atlas_type=int(atlases_list[2*k+1])
+    for atlas_key in atlas_obj.keys():
+        atlas = atlas_obj[atlas_key]
 
-        if (atlas_type == 1):
-            ATLAS_suffix = '_T1.nrrd'
+        if atlas["selected"]:
+            
             IM_base = T1_base
-            Input = Input_T1_NII
-
-            ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
-            ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
-            OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+            atlas_base = atlas_key
 
             ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
             ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
             ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
             ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
-
-            args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
-
-        elif ((atlas_type == 2) and T2_exists):
-            ATLAS_suffix = '_T2.nrrd'
-            IM_base = T2_base
-            Input = Input_T2_NII
-
-            ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
-            ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
             OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
 
-            ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
-            ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
-            ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
-            ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+            if atlas["brainmask"]:
+                ATLAS_MASK = atlas["brainmask"]
 
-            args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+            if atlas["T1"]:
+                T1_ATLAS = atlas["T1"]
+                args = [ANTS, '3', '-m', 'CC['+T1+','+T1_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
 
-        else:
-            if (T2_exists):
-                T1_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T1.nrrd']))
-                T2_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T2.nrrd']))
-                ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
-                OUT_MASK = os.path.join(output_dir,''.join([T2_base,'_joined_',atlas_base,'_mask.nii.gz']))
-                ANTs_MATRIX_NAME = os.path.join(output_dir, "".join([T2_base,'_joined_',atlas_base,'_']))
-                ANTs_WARP = ''.join([ANTs_MATRIX_NAME, 'Warp.nii.gz'])
-                ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
-                ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME, 'Affine.txt'])
+            if atlas["T2"] and T2_exists:
+                T2_ATLAS = atlas["T2"]
+                args = [ANTS, '3', '-m', 'CC['+T1+','+T1_ATLAS+',1,4]', '-m', 'CC['+T2+','+T2_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t','SyN[0.25]', '-r', 'Gauss[3,0]']
 
-                args=[ANTS, '3', '-m', 'CC['+Input_T1_NII+','+T1_ATLAS+',1,4]', '-m', 'CC['+Input_T2_NII+','+T2_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t','SyN[0.25]', '-r', 'Gauss[3,0]']
-
-
-        if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_INV_WARP) and os.path.isfile(ANTs_AFFINE)):
-            call_and_print(args)
-        else:
-            print_aef('ANTs already executed')
-
-        if not (os.path.isfile(OUT_MASK)):
-            if (atlas_type == 2):
-                args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T2_NII, '--use-NN']
+            if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_INV_WARP) and os.path.isfile(ANTs_AFFINE)):
+                call_and_print(args)
             else:
-                args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T1_NII, '--use-NN']
+                print('ANTs already executed')
 
-            call_and_print(args)
-        else:
-            print_aef(OUT_MASK + ' already exists')
+            if not (os.path.isfile(OUT_MASK)):
+                if atlas["T2"] and T2_exists:
+                    args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T2, '--use-NN']
+                else:
+                    args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', T1, '--use-NN']
 
-        args_maj_vote.append(OUT_MASK)
+                call_and_print(args)
+            else:
+                print(OUT_MASK + ' already exists')
+
+            args_maj_vote.append(OUT_MASK)
+
+
+        # atlas_base = atlases_list[2*k]
+        # atlas_type = int(atlases_list[2*k+1])
+
+        # if (atlas_type == 1):
+        #     ATLAS_suffix = '_T1.nrrd'
+        #     IM_base = T1_base
+        #     Input = Input_T1_NII
+
+        #     ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
+        #     ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+        #     OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+
+        #     ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
+        #     ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+        #     ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+        #     ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+
+            
+
+        # elif ((atlas_type == 2) and T2_exists):
+        #     ATLAS_suffix = '_T2.nrrd'
+        #     IM_base = T2_base
+        #     Input = Input_T2_NII
+
+        #     ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
+        #     ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+        #     OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+
+        #     ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
+        #     ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+        #     ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+        #     ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+
+
+        #     args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+
+        # else:
+        #     if (T2_exists):
+        #         T1_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T1.nrrd']))
+        #         T2_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T2.nrrd']))
+        #         ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+        #         OUT_MASK = os.path.join(output_dir,''.join([T2_base,'_joined_',atlas_base,'_mask.nii.gz']))
+        #         ANTs_MATRIX_NAME = os.path.join(output_dir, "".join([T2_base,'_joined_',atlas_base,'_']))
+        #         ANTs_WARP = ''.join([ANTs_MATRIX_NAME, 'Warp.nii.gz'])
+        #         ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+        #         ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME, 'Affine.txt'])
+
+
+
+
+            
+
+    # for  in range(0,atlases_nb):
+    #     atlas_base=atlases_list[2*k]
+    #     atlas_type=int(atlases_list[2*k+1])
+
+    #     if (atlas_type == 1):
+    #         ATLAS_suffix = '_T1.nrrd'
+    #         IM_base = T1_base
+    #         Input = Input_T1_NII
+
+    #         ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
+    #         ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+    #         OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+
+    #         ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
+    #         ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+    #         ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+    #         ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+
+    #         args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+
+    #     elif ((atlas_type == 2) and T2_exists):
+    #         ATLAS_suffix = '_T2.nrrd'
+    #         IM_base = T2_base
+    #         Input = Input_T2_NII
+
+    #         ATLAS = os.path.join(atlases_dir,''.join([atlas_base,ATLAS_suffix]))
+    #         ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+    #         OUT_MASK = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_mask.nii.gz']))
+
+    #         ANTs_MATRIX_NAME = os.path.join(output_dir,''.join([IM_base,'_',atlas_base,'_']))
+    #         ANTs_WARP = ''.join([ANTs_MATRIX_NAME,'Warp.nii.gz'])
+    #         ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+    #         ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME,'Affine.txt'])
+
+    #         args = [ANTS, '3', '-m', 'CC['+Input+','+ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t', 'SyN[0.25]', '-r', 'Gauss[3,0]']
+
+    #     else:
+    #         if (T2_exists):
+    #             T1_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T1.nrrd']))
+    #             T2_ATLAS = os.path.join(atlases_dir,''.join([atlas_base,'_T2.nrrd']))
+    #             ATLAS_MASK = os.path.join(atlases_dir,''.join([atlas_base,'_brainmask.nrrd']))
+    #             OUT_MASK = os.path.join(output_dir,''.join([T2_base,'_joined_',atlas_base,'_mask.nii.gz']))
+    #             ANTs_MATRIX_NAME = os.path.join(output_dir, "".join([T2_base,'_joined_',atlas_base,'_']))
+    #             ANTs_WARP = ''.join([ANTs_MATRIX_NAME, 'Warp.nii.gz'])
+    #             ANTs_INV_WARP = ''.join([ANTs_MATRIX_NAME,'InverseWarp.nii.gz'])
+    #             ANTs_AFFINE = ''.join([ANTs_MATRIX_NAME, 'Affine.txt'])
+
+    #             args=[ANTS, '3', '-m', 'CC['+Input_T1_NII+','+T1_ATLAS+',1,4]', '-m', 'CC['+Input_T2_NII+','+T2_ATLAS+',1,4]', '-i', '100x50x25', '-o', ANTs_MATRIX_NAME, '-t','SyN[0.25]', '-r', 'Gauss[3,0]']
+
+
+    #     if not (os.path.isfile(ANTs_WARP) and os.path.isfile(ANTs_INV_WARP) and os.path.isfile(ANTs_AFFINE)):
+    #         call_and_print(args)
+    #     else:
+    #         print_aef('ANTs already executed')
+
+    #     if not (os.path.isfile(OUT_MASK)):
+    #         if (atlas_type == 2):
+    #             args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T2_NII, '--use-NN']
+    #         else:
+    #             args=[WarpImageMultiTransform, '3', ATLAS_MASK, OUT_MASK, ANTs_WARP, ANTs_AFFINE, '-R', Input_T1_NII, '--use-NN']
+
+    #         call_and_print(args)
+    #     else:
+    #         print_aef(OUT_MASK + ' already exists')
+
+    #     args_maj_vote.append(OUT_MASK)
 
 
 
@@ -222,28 +320,27 @@ def main(args):
         args=[ImageMath,Weighted_Majority_Mask, '-dilate', '1,1', '-outfile', Weighted_Majority_Mask]
         call_and_print(args)
     else:
-        print_aef('Weighted majority mask already exists')
+        print('Weighted majority mask already exists')
 
-    FINAL_MASK = os.path.join(output_dir, "".join([T1_base,"_FinalBrainMask.nrrd"]))
+    FINAL_MASK = os.path.join(output_dir, T1_base + "_FinalBrainMask.nrrd")
     if not (os.path.isfile(FINAL_MASK)):
         args=[ImageMath,Weighted_Majority_Mask, '-erode', '1,1', '-outfile', FINAL_MASK]
         call_and_print(args)
     else:
-        print_aef('Final mask already exists')
+        print('Final mask already exists')
 
 ##############################################################################################################
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Creates brain mask from template and T1&T2 images')
-    parser.add_argument('--t1', nargs='?', type=str, help='T1 Image to calculate deformation field against atlas', const="@T1IMG@")
-    parser.add_argument('--t2', nargs='?', type=str, help='T2 Image to calculate deformation field against atlas', const="@T2IMG@")
-    parser.add_argument('--at_dir', nargs='?', type=str, help='atlases directory', const="@ATLASES_DIR@")
-    parser.add_argument('--at_list', nargs='?', type=str, help='atlases list', const="@ATLASES_LIST@")
+    parser.add_argument('--t1', type=str, help='T1 Image to calculate deformation field against atlas', default="@T1IMG@")
+    parser.add_argument('--t2', type=str, help='T2 Image to calculate deformation field against atlas', default="@T2IMG@")
+    parser.add_argument('--at_selected', type=str, help='param object with selected atlases', default="@SELECTED_ATLAS@")
     parser.add_argument('--ImageMath', type=str, help='ImageMath executable path', default='@ImageMath_PATH@')
     parser.add_argument('--FSLBET', type=str, help='FSL BET executable path', default='@bet_PATH@')
     parser.add_argument('--convertITKformats', type=str, help='convertITKformats executable path', default='@convertITKformats_PATH@')
     parser.add_argument('--ANTS', type=str, help='ANTS executable path', default='@ANTS_PATH@')
     parser.add_argument('--WarpImageMultiTransform', type=str, help='WarpImageMultiTransform executable path', default='@WarpImageMultiTransform_PATH@')
-    parser.add_argument('--output', nargs='?', type=str, help='Output directory', const="@OUTPUT_DIR@")
+    parser.add_argument('--output', type=str, help='Output directory', default="@OUTPUT_DIR@")
     args = parser.parse_args()
     main(args)

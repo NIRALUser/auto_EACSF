@@ -41,11 +41,11 @@ void CSFScripts::run_AutoEACSF()
     //2. WRITE MAKE_MASK_SCRIPT
     write_make_mask();
 
+    //2.1 SKULL STRIP
+    write_skull_strip();
+
     // //3. WRITE TISSUE_SEG_SCRIPT
     write_tissue_seg();
-
-    // //4. WRITE Auto_SEG XML
-    write_ABCxmlfile();
 
     // //5. WRITE VENT_MASK_SCRIPT
     write_vent_mask();
@@ -100,12 +100,12 @@ void CSFScripts::write_main_script()
     script.replace("@ACPC_UNIT@", checkStringValue(param_obj["ACPC_UNIT"]));
     script.replace("@ACPC_VAL@", checkDoubleValue(param_obj["ACPC_VAL"]));
 
-    script.replace("@USE_DCM@", checkIntValue(param_obj["USE_DCM"]));
-    script.replace("@PERFORM_REG@", checkIntValue(param_obj["PERFORM_REG"]));
-    script.replace("@PERFORM_SS@", checkIntValue(param_obj["PERFORM_SS"]));
-    script.replace("@PERFORM_TSEG@", checkIntValue(param_obj["PERFORM_TSEG"]));
-    script.replace("@PERFORM_VR@", checkIntValue(param_obj["PERFORM_VR"]));
-    script.replace("@COMPUTE_CSFDENS@", checkIntValue(param_obj["COMPUTE_CSFDENS"]));
+    script.replace("@USE_DCM@", checkBoolValue(param_obj["USE_DCM"]));
+    script.replace("@PERFORM_REG@", checkBoolValue(param_obj["PERFORM_REG"]));
+    script.replace("@PERFORM_SS@", checkBoolValue(param_obj["PERFORM_SS"]));
+    script.replace("@PERFORM_TSEG@", checkBoolValue(param_obj["PERFORM_TSEG"]));
+    script.replace("@PERFORM_VR@", checkBoolValue(param_obj["PERFORM_VR"]));
+    script.replace("@COMPUTE_CSFDENS@", checkBoolValue(param_obj["COMPUTE_CSFDENS"]));
 
     QJsonArray exe_array = m_Root_obj["executables"].toArray();
     foreach (const QJsonValue exe_val, exe_array)
@@ -149,7 +149,7 @@ void CSFScripts::write_rigid_align()
     
     rgd_script.replace("@BRAINSFit_PATH@", checkStringValue(m_Executables["BRAINSFit"]));
 
-    rgd_script.replace("@OUTPUT_DIR@", checkStringValue(data_obj["output_dir"]));
+    rgd_script.replace("@OUTPUT_DIR@", QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration")));
 
     QString scripts_dir = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + m_PythonScripts);
 
@@ -166,26 +166,44 @@ void CSFScripts::write_make_mask()
 {
     QJsonObject data_obj = m_Root_obj["data"].toObject();
     QJsonObject param_obj = m_Root_obj["parameters"].toObject();
+    QJsonObject selected_atlas = param_obj["atlas_obj"].toObject();
+
+    QString scripts_dir = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + m_PythonScripts);
+
+
+    QString selected_atlas_filename = QDir::cleanPath(scripts_dir + QString("/selected_atlas.json"));
+    cout<<selected_atlas_filename.toStdString()<<endl;
+    QFile selected_atlas_outfile(selected_atlas_filename);
+    selected_atlas_outfile.open(QIODevice::WriteOnly);
+    selected_atlas_outfile.write(QJsonDocument(selected_atlas).toJson());
+    selected_atlas_outfile.close();
+
 
     QString SSAtlases_dir = param_obj["skullStrippingAtlasesDirectory"].toString();
-
-    QStringList SSAtlases_list;
-
-    foreach(QJsonValue val, m_Root_obj["atlas_list"].toArray()){
-        SSAtlases_list.append(val.toString());
-    }
-    
-    QString SSAtlases_selected = SSAtlases_list.join(',');
 
     QFile msk_file(QString(":/PythonScripts/make_mask.py"));
     msk_file.open(QIODevice::ReadOnly);
     QString msk_script = msk_file.readAll();
     msk_file.close();
 
-    msk_script.replace("@T1IMG@", checkStringValue(data_obj["T1img"]));
-    msk_script.replace("@T2IMG@", checkStringValue(data_obj["T2img"]));
-    msk_script.replace("@ATLASES_DIR@", SSAtlases_dir);
-    msk_script.replace("@ATLASES_LIST@", SSAtlases_selected);
+    QString T1 = checkStringValue(data_obj["T1img"]);
+    QString T2 = checkStringValue(data_obj["T2img"]);
+
+    if(param_obj["PERFORM_REG"].toBool()){
+        QFileInfo t1_info(T1);
+        if(t1_info.exists()){
+            T1 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
+        }
+
+        QFileInfo t2_info(T2);
+        if(t2_info.exists()){
+            T2 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t2_info.baseName() + QString("_stx.nrrd"));
+        }
+    }
+
+    msk_script.replace("@T1IMG@", T1);
+    msk_script.replace("@T2IMG@", T2);
+    msk_script.replace("@SELECTED_ATLAS@", selected_atlas_filename);
 
     msk_script.replace("@ImageMath_PATH@", checkStringValue(m_Executables["ImageMath"]));
     msk_script.replace("@bet_PATH@", checkStringValue(m_Executables["bet"]));
@@ -193,9 +211,7 @@ void CSFScripts::write_make_mask()
     msk_script.replace("@ANTS_PATH@", checkStringValue(m_Executables["ANTS"]));
     msk_script.replace("@WarpImageMultiTransform_PATH@", checkStringValue(m_Executables["WarpImageMultiTransform"]));
 
-    msk_script.replace("@OUTPUT_DIR@", checkStringValue(data_obj["output_dir"]));
-
-    QString scripts_dir = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + m_PythonScripts);
+    msk_script.replace("@OUTPUT_DIR@", QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping")));
 
     QString make_mask_script = QDir::cleanPath(scripts_dir + QString("/make_mask.py"));
     QFile msk_outfile(make_mask_script);
@@ -203,6 +219,55 @@ void CSFScripts::write_make_mask()
     QTextStream msk_outstream(&msk_outfile);
     msk_outstream << msk_script;
     msk_outfile.close();
+}
+
+void CSFScripts::write_skull_strip(){
+    QFile skull_script_file(QString(":/PythonScripts/skull_strip.py"));
+    skull_script_file.open(QIODevice::ReadOnly);
+    QString skull_script = skull_script_file.readAll();
+    skull_script_file.close();
+
+    QJsonObject data_obj = m_Root_obj["data"].toObject();
+    QJsonObject param_obj = m_Root_obj["parameters"].toObject();
+
+    QString T1 = checkStringValue(data_obj["T1img"]);
+    QString T2 = checkStringValue(data_obj["T2img"]);
+    QString BrainMask = checkStringValue(data_obj["BrainMask"]);
+
+    if(param_obj["PERFORM_REG"].toBool()){
+        QFileInfo t1_info(T1);
+        if(t1_info.exists()){
+            T1 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
+        }
+
+        QFileInfo t2_info(T2);
+        if(t2_info.exists()){
+            T2 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t2_info.baseName() + QString("_stx.nrrd"));
+        }
+    }
+
+    if(param_obj["PERFORM_SS"].toBool()){
+        QFileInfo t1_info(T1);
+        BrainMask = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t1_info.baseName() + QString("_FinalBrainMask.nrrd"));
+    }
+
+    skull_script.replace("@T1IMG@", T1);
+    skull_script.replace("@T2IMG@", T2);
+    skull_script.replace("@BRAINMASKIMG@", BrainMask);
+    skull_script.replace("@OUTPUT_DIR@", QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping")));
+
+    skull_script.replace("@ImageMath_PATH@", checkStringValue(m_Executables["ImageMath"]));
+
+    QString scripts_dir = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + m_PythonScripts);
+
+
+    QString skull_script_filename = QDir::cleanPath(scripts_dir + QString("/skull_strip.py"));
+    QFile skull_script_outfile(skull_script_filename);
+    skull_script_outfile.open(QIODevice::WriteOnly);
+    QTextStream skull_script_outstream(&skull_script_outfile);
+    skull_script_outstream << skull_script;
+    skull_script_outfile.close();
+
 }
 
 void CSFScripts::write_tissue_seg()
@@ -216,10 +281,44 @@ void CSFScripts::write_tissue_seg()
     QJsonObject data_obj = m_Root_obj["data"].toObject();
     QJsonObject param_obj = m_Root_obj["parameters"].toObject();
 
-    seg_script.replace("@T1IMG@", checkStringValue(data_obj["T1img"]));
-    seg_script.replace("@T2IMG@", checkStringValue(data_obj["T2img"]));
+    QString T1 = checkStringValue(data_obj["T1img"]);
+    QString T2 = checkStringValue(data_obj["T2img"]);
+
+    if(param_obj["PERFORM_REG"].toBool()){
+        QFileInfo t1_info(T1);
+        if(t1_info.exists()){
+            T1 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
+        }
+
+        QFileInfo t2_info(T2);
+        if(t2_info.exists()){
+            T2 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t2_info.baseName() + QString("_stx.nrrd"));
+        }
+    }
+    
+    QFileInfo t1_info(T1);
+
+    if(t1_info.exists()){
+        QString T1_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t1_info.baseName() + QString("_stripped.nrrd"));
+        if(QFileInfo(T1_stripped).exists()){
+            T1 = T1_stripped;
+        }
+    }
+
+    QFileInfo t2_info(T2);
+
+    if(t2_info.exists()){
+        QString T2_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t2_info.baseName() + QString("_stripped.nrrd"));
+        if(QFileInfo(T2_stripped).exists()){
+            T2 = T2_stripped;
+        }
+    }
+
+    seg_script.replace("@T1IMG@", T1);
+    seg_script.replace("@T2IMG@", T2);
+
     seg_script.replace("@ATLASES_DIR@", checkStringValue(param_obj["tissueSegAtlasDirectory"]));
-    seg_script.replace("@OUTPUT_DIR@", checkStringValue(data_obj["output_dir"]));
+    seg_script.replace("@OUTPUT_DIR@", QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/ABC_Segmentation")));
 
     seg_script.replace("@BRAINSFit_PATH@", checkStringValue(m_Executables["BRAINSFit"]));
     seg_script.replace("@ANTS_PATH@", checkStringValue(m_Executables["ANTS"]));
@@ -234,61 +333,7 @@ void CSFScripts::write_tissue_seg()
     QTextStream seg_outstream(&seg_outfile);
     seg_outstream << seg_script;
     seg_outfile.close();
-}
-
-void CSFScripts::write_ABCxmlfile()
-{
-
-    QJsonObject data_obj = m_Root_obj["data"].toObject();
-    QJsonObject param_obj = m_Root_obj["parameters"].toObject();
-
-    QString T1img = checkStringValue(data_obj["T1img"]);
-    QString T2img = checkStringValue(data_obj["T2img"]);
-    QString output_dir = checkStringValue(data_obj["output_dir"]);
-
-    QFile xmlFile(QDir::cleanPath(output_dir + QString("/ABCparam.xml")));
-    xmlFile.open(QIODevice::WriteOnly);
-    QTextStream xmlStream(&xmlFile);
     
-    //check number of classes in atlas dir
-    // check number of files that match *.mha where * is a number in 
-    // QString atlasFolder = lineEdit_TissueSegAtlas->text();
-    QString atlasFolder = checkStringValue(param_obj["tissueSegAtlasDirectory"]);
-    QDir atlasfolderEntries(atlasFolder,"?.mha",QDir::Name, QDir::Files);
-    int numExtraClasses = atlasfolderEntries.count() - 4;
-
-    std::cout << "numClasses " << numExtraClasses << std::endl;
-
-    xmlStream << "<?xml version=\"1.0\"?>" << '\n' << "<!DOCTYPE SEGMENTATION-PARAMETERS>" << '\n' << "<SEGMENTATION-PARAMETERS>" << '\n';
-    xmlStream << "<SUFFIX>EMS</SUFFIX>" << '\n' << "<ATLAS-DIRECTORY>" << atlasFolder 
-        << "</ATLAS-DIRECTORY>" << '\n' << "<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>" <<'\n';
-    xmlStream << "<OUTPUT-DIRECTORY>" << QDir::cleanPath(output_dir+QString("/ABC_Segmentation")) << "</OUTPUT-DIRECTORY>" 
-        << '\n' << "<OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>" << '\n';
-    xmlStream << "<IMAGE>" << '\n' << "\t<FILE>"<<T1img<<"</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' 
-        << "</IMAGE>" << '\n';
-
-    if (!T2img.isEmpty())
-    {
-        xmlStream << "<IMAGE>" << '\n' << "\t<FILE>"<<T2img<<"</FILE>" << '\n' << "\t<ORIENTATION>file</ORIENTATION>" << '\n' 
-        << "</IMAGE>" << '\n';
-    }
-
-    xmlStream << "<FILTER-ITERATIONS>10</FILTER-ITERATIONS>" << '\n' << "<FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>" << '\n' 
-        << "<FILTER-METHOD>Curvature flow</FILTER-METHOD>" << '\n' << "<MAX-BIAS-DEGREE>4</MAX-BIAS-DEGREE>" << '\n';
-    
-    xmlStream << "<PRIOR>1.3</PRIOR>" << '\n' << "<PRIOR>1</PRIOR>" << '\n' << "<PRIOR>0.7</PRIOR>" << '\n';
-
-    for (int extraclass = 0; extraclass < numExtraClasses; extraclass++ )
-    {
-        xmlStream << "<PRIOR>1</PRIOR>" << '\n';
-    }
-    xmlStream << "<PRIOR>0.8</PRIOR>" << '\n' ;
-
-    xmlStream << "<INITIAL-DISTRIBUTION-ESTIMATOR>robust</INITIAL-DISTRIBUTION-ESTIMATOR>" << '\n';
-    xmlStream << "<DO-ATLAS-WARP>0</DO-ATLAS-WARP>" << '\n' << "<ATLAS-WARP-FLUID-ITERATIONS>50</ATLAS-WARP-FLUID-ITERATIONS>" << '\n';
-    xmlStream << "<ATLAS-WARP-FLUID-MAX-STEP>0.1</ATLAS-WARP-FLUID-MAX-STEP>" << '\n' << "<ATLAS-LINEAR-MAP-TYPE>id</ATLAS-LINEAR-MAP-TYPE>" << '\n';
-    xmlStream << "<IMAGE-LINEAR-MAP-TYPE>id</IMAGE-LINEAR-MAP-TYPE>" << '\n' << "</SEGMENTATION-PARAMETERS>" << endl;
-    xmlFile.close();
 }
 
 void CSFScripts::write_vent_mask()
@@ -301,14 +346,35 @@ void CSFScripts::write_vent_mask()
     v_file.open(QIODevice::ReadOnly);
     QString v_script = v_file.readAll();
     v_file.close();
-    
 
-    v_script.replace("@T1IMG@", checkStringValue(data_obj["T1img"]));
+
+    QString T1 = checkStringValue(data_obj["T1img"]);
+    QString output_dir = checkStringValue(data_obj["output_dir"]);
+
+    if(param_obj["PERFORM_REG"].toBool()){
+        QFileInfo t1_info(T1);
+        if(t1_info.exists()){
+            T1 = QDir::cleanPath(output_dir + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
+        }
+    }
+
+    QFileInfo t1_info(T1);
+
+    if(t1_info.exists()){
+        QString T1_stripped = QDir::cleanPath(output_dir + QString("/SkullStripping/") + t1_info.baseName() + QString("_stripped.nrrd"));
+        if(QFileInfo(T1_stripped).exists()){
+            T1 = T1_stripped;
+        }
+    }
+
+    QString tissue_seg = findFile("_labels_EMS.", { QDir::cleanPath(output_dir + QString("/ABC_Segmentation")) });
+
+    v_script.replace("@T1IMG@", T1);
     v_script.replace("@SUB_VMASK@" , checkStringValue(data_obj["SubjectVentricleMask"]));
 
     v_script.replace("@TEMPT1VENT@", checkStringValue(param_obj["templateT1Ventricle"]));
     v_script.replace("@TEMP_INV_VMASK@", checkStringValue(param_obj["templateInvMaskVentricle"]));
-    v_script.replace("@TISSUE_SEG@", checkStringValue(param_obj["tissueSegAtlasDirectory"]));
+    v_script.replace("@TISSUE_SEG@", tissue_seg);
     
     v_script.replace("@REG_TYPE@", checkStringValue(param_obj["ANTS_reg_type"]));
     v_script.replace("@TRANS_STEP@", checkDoubleValue(param_obj["ANTS_transformation_step"]));
@@ -322,15 +388,35 @@ void CSFScripts::write_vent_mask()
     v_script.replace("@WarpImageMultiTransform_PATH@", checkStringValue(m_Executables["WarpImageMultiTransform"]));
     v_script.replace("@ImageMath_PATH@", checkStringValue(m_Executables["ImageMath"]));
 
-    v_script.replace("@OUTPUT_DIR@", checkStringValue(data_obj["output_dir"]));
+
+    v_script.replace("@OUTPUT_DIR@", QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/VentricleMasking")));
     v_script.replace("@OUTPUT_MASK@", "_AtlasToVent.nrrd");
 
     QString scripts_dir = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + m_PythonScripts);
 
-    QString vent_mask_script = QDir::cleanPath(scripts_dir + QString("/vent_mask_script.py"));
+    QString vent_mask_script = QDir::cleanPath(scripts_dir + QString("/vent_mask.py"));
     QFile v_outfile(vent_mask_script);
     v_outfile.open(QIODevice::WriteOnly);
     QTextStream v_outstream(&v_outfile);
     v_outstream << v_script;
     v_outfile.close();
+}
+
+QString CSFScripts::findFile(QString pattern, QStringList hints){
+
+    QString found("");
+
+    foreach(QString hint, hints){
+        QFileInfoList list = QDir(hint).entryInfoList();
+        foreach(QFileInfo fileInfo, list){
+            QRegularExpression reg(pattern);
+            QRegularExpressionMatch match = reg.match(fileInfo.fileName());
+
+            if (match.hasMatch()){
+                found = fileInfo.absoluteFilePath();
+            }
+        }
+    }
+
+    return found;
 }
