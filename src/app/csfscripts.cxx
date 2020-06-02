@@ -367,7 +367,8 @@ void CSFScripts::write_vent_mask()
         }
     }
 
-    QString tissue_seg = findFile("_labels_EMS.", { QDir::cleanPath(output_dir + QString("/ABC_Segmentation")) });
+    QString tissue_seg = checkStringValue(data_obj["TissueSeg"]);
+    // findFile("_labels_EMS.", { QDir::cleanPath(output_dir + QString("/ABC_Segmentation")) });
 
     v_script.replace("@T1IMG@", T1);
     v_script.replace("@SUB_VMASK@" , checkStringValue(data_obj["SubjectVentricleMask"]));

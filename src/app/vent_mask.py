@@ -7,6 +7,7 @@ import argparse
 import subprocess
 
 from main_script import call_and_print
+from main_script import find_file
 
 def main(args):
     sys.stdout.flush()
@@ -32,6 +33,12 @@ def main(args):
     WarpImageMultiTransform = args.WarpImageMultiTransform
 
     OUTPUT_DIR = args.output
+
+    if SUBJECT_TISSUE_SEG == "":
+        tissue_seg = find_file(".*_labels_EMS.nrrd", os.path.join(OUTPUT_DIR, "ABC_Segmentation"))
+        if tissue_seg is not None:
+            SUBJECT_TISSUE_SEG = tissue_seg
+
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
