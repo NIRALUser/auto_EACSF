@@ -336,7 +336,7 @@ if(UNIX AND NOT APPLE)
           COMPONENT RuntimePlugins)
   endforeach()
 
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Auto_EACSF.sh "\#!/bin/bash\nSCRIPT=$(realpath -s $0)\nSCRIPTPATH=$(dirname $SCRIPT)\nexport LD_LIBRARY_PATH=$SCRIPTPATH/lib:$LD_LIBRARY_PATH\n$SCRIPTPATH/bin/Auto_EACSF $@\n")
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Auto_EACSF.sh "\#!/bin/bash\nSCRIPT=$(readlink -f $(realpath -s $0))\nSCRIPTPATH=$(dirname $SCRIPT)\nexport LD_LIBRARY_PATH=$SCRIPTPATH/lib:$LD_LIBRARY_PATH\n$SCRIPTPATH/bin/Auto_EACSF $@\n")
 
   install(CODE "
     file(
