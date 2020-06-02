@@ -21,7 +21,7 @@
 #endif
 
 #ifndef Auto_EACSF_VERSION
-#define Auto_EACSF_VERSION "1.5"
+#define Auto_EACSF_VERSION "1.7"
 #endif
 
 using std::endl;

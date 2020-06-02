@@ -97,7 +97,7 @@ if(NOT ( DEFINED "USE_SYSTEM_${extProjName}" AND "${USE_SYSTEM_${extProjName}}" 
   ### --- End Project specific additions
 
   set(${proj}_GIT_TAG "v8.1.1")
-  set(${proj}_REPOSITORY https://vtk.org/VTK.git)
+  set(${proj}_REPOSITORY https://github.com/Kitware/VTK.git)
 
   ExternalProject_Add(${proj}
     GIT_REPOSITORY ${${proj}_REPOSITORY}

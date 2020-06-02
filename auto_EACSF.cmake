@@ -26,7 +26,11 @@ endif(NOT INSTALL_ARCHIVE_DESTINATION)
 # Find the QtWidgets library
 
 # find Qt5 headers
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+if(UNIX AND NOT APPLE)
+  find_package(Qt5 COMPONENTS Widgets Gui X11Extras DBus REQUIRED)
+else(UNIX AND NOT APPLE)
+  find_package(Qt5 COMPONENTS Widgets REQUIRED)
+endif(UNIX AND NOT APPLE)
 
 include_directories(${Qt5Widgets_INCLUDE_DIRS})
 add_definitions(${Qt5Widgets_DEFINITIONS})
@@ -171,6 +175,8 @@ option(CREATE_BUNDLE "Create a bundle" OFF)
 
 # Generate a bundle
 if(CREATE_BUNDLE)
+  
+  set(CPACK_PACKAGE_VERSION ${version})
 
   if(APPLE)
     set(OS_BUNDLE MACOSX_BUNDLE)
@@ -261,6 +267,11 @@ if(CREATE_BUNDLE)
   install(CODE "
     include(BundleUtilities)
     fixup_bundle(\"${APPS}\" \"${QT_PLUGINS};\" \"${Qt5_location}\")
+    file(GLOB qt_libs \${CMAKE_INSTALL_PREFIX}/bin/*.so*)
+      foreach(qt_lib \${qt_libs})
+        get_filename_component(qt_file \"\${qt_lib}\" NAME)
+        file(RENAME \${qt_lib} \${CMAKE_INSTALL_PREFIX}/lib/\${qt_file})
+      endforeach()
    "
     COMPONENT Runtime)
  
@@ -272,18 +283,29 @@ if(CREATE_BUNDLE)
 endif()
 
 
-if(UNIX)
- # when building, don't use the install RPATH already
- # (but later on when installing)
- SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
- # the RPATH to be used when installing
- SET(CMAKE_INSTALL_RPATH "../lib")
+if(UNIX AND NOT APPLE)
+ # # when building, don't use the install RPATH already
+ # # (but later on when installing)
+ # SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+ # # the RPATH to be used when installing
+
+  string(REPLACE "." ";" VERSION_LIST ${version})
+  list(GET VERSION_LIST 0 CPACK_PACKAGE_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 CPACK_PACKAGE_VERSION_MINOR)
+
+  SET(CMAKE_INSTALL_RPATH "../lib")
   
   get_target_property(QtWidgets_location Qt5::Widgets LOCATION)
   get_target_property(QtCore_location Qt5::Core LOCATION)
   get_target_property(QtGui_location Qt5::Gui LOCATION)
+  get_target_property(QtX11Extras_location Qt5::X11Extras LOCATION)
+  get_target_property(QtDBus_location Qt5::DBus LOCATION)
   
-  #get_target_property(QtWidgets_SOFT Qt5::Widgets IMPORTED_SONAME_RELEASE)
+  get_target_property(QtWidgets_SOFT Qt5::Widgets IMPORTED_SONAME_RELEASE)
+  get_target_property(QtCore_SOFT Qt5::Core IMPORTED_SONAME_RELEASE)
+  get_target_property(QtGui_SOFT Qt5::Gui IMPORTED_SONAME_RELEASE)
+  get_target_property(QtX11Extras_SOFT Qt5::X11Extras IMPORTED_SONAME_RELEASE)
+  get_target_property(QtDBus_SOFT Qt5::DBus IMPORTED_SONAME_RELEASE)
 
   get_target_property(Qt5_location Qt5::Widgets LOCATION)  
   string(FIND ${Qt5_location} "libQt5Widgets" length)
@@ -293,9 +315,36 @@ if(UNIX)
   #    DESTINATION lib
   #    COMPONENT Runtime)  
 
-  install(FILES ${QtWidgets_location} ${QtCore_location} ${QtGui_location} ${Qt5_location}/libicui18n.so.56.1 ${Qt5_location}/libicuuc.so.56.1 ${Qt5_location}/libicudata.so.56.1 #${QtOpenGL_location}
+  install(FILES ${QtWidgets_location} ${QtCore_location} ${QtGui_location} ${QtDBus_location} ${QtX11Extras_location}
+    ${Qt5_location}/${QtWidgets_SOFT} ${Qt5_location}/${QtCore_SOFT} ${Qt5_location}/${QtGui_SOFT} ${Qt5_location}/${QtX11Extras_SOFT} ${Qt5_location}/${QtDBus_SOFT}
+    ${Qt5_location}/libQt5XcbQpa.so.5.11.2 ${Qt5_location}/libQt5XcbQpa.so.5
+    ${Qt5_location}/libicui18n.so.56.1 ${Qt5_location}/libicuuc.so.56.1 ${Qt5_location}/libicudata.so.56.1 ${Qt5_location}/libicui18n.so.56 ${Qt5_location}/libicuuc.so.56 ${Qt5_location}/libicudata.so.56
       DESTINATION lib
       COMPONENT Runtime)
+
+  set(QT_PLUGINS "")
+  set(qt_plugins Qt5::QXcbIntegrationPlugin)
+  foreach(qt_plugin ${qt_plugins})
+
+    get_target_property(_qt_plugin_path "${qt_plugin}" LOCATION)
+    get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
+    get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
+    get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
+
+    install(PROGRAMS "${_qt_plugin_path}"
+          DESTINATION "bin/${_qt_plugin_type}"
+          COMPONENT RuntimePlugins)
+  endforeach()
+
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Auto_EACSF.sh "\#!/bin/bash\nSCRIPT=$(realpath -s $0)\nSCRIPTPATH=$(dirname $SCRIPT)\nexport LD_LIBRARY_PATH=$SCRIPTPATH/lib:$LD_LIBRARY_PATH\n$SCRIPTPATH/bin/Auto_EACSF $@\n")
+
+  install(CODE "
+    file(
+      COPY ${CMAKE_CURRENT_BINARY_DIR}/Auto_EACSF.sh
+      DESTINATION \${CMAKE_INSTALL_PREFIX}
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+    " COMPONENT Runtime)
 
 endif()
 
