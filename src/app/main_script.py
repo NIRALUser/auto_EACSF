@@ -102,10 +102,10 @@ def main(main_args):
         call_and_print([python, vent_mask_script])
         
         SEGMENTATION = find_file(".*_withoutVent.nrrd", os.path.join(OUT_PATH, "VentricleMasking"))
-        print("Finished running "+vent_mask_script)
+        print("Finished running "+ vent_mask_script)
 
     if(not os.path.exists(BRAIN_MASK)):
-        BRAIN_MASK = find_file(".*_FinalBrainMask.nrrd", os.path.join(OUT_PATH, "SkullStripping"))
+        BRAIN_MASK = SEGMENTATION
 
     BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
     Segmentation_base = os.path.splitext(os.path.basename(SEGMENTATION))[0]
@@ -200,10 +200,6 @@ def main(main_args):
     FINAL_CSF_SEG = os.path.join(OUT_FM, Segmentation_base + "_Partial_CSF.nrrd")
 
     args = [ImageMath, MID_TEMP03, '-mask', Erosion_Mask01_inv, '-outfile', FINAL_CSF_SEG]
-    call_and_print(args)
-    args = [ImageMath, FINAL_CSF_SEG, '-mask', Coronal_Mask, '-outfile', FINAL_CSF_SEG]
-    call_and_print(args)
-    args = [ImageMath, FINAL_CSF_SEG, '-mask', MID_TEMP02, '-outfile', FINAL_CSF_SEG]
     call_and_print(args)
 
     ## add script erase quad....
