@@ -35,7 +35,7 @@ def main(args):
     OUTPUT_DIR = args.output
 
     if SUBJECT_TISSUE_SEG == "":
-        tissue_seg = find_file(".*_labels_EMS.nrrd", os.path.join(OUTPUT_DIR, "ABC_Segmentation"))
+        tissue_seg = find_file(".*_labels_EMS.nrrd", os.path.normpath(os.path.join(OUTPUT_DIR, "..", "ABC_Segmentation")))
         if tissue_seg is not None:
             SUBJECT_TISSUE_SEG = tissue_seg
 

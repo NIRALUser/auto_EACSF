@@ -93,7 +93,9 @@ def main(main_args):
         tissue_seg_script = os.path.join(scripts_prefix, "tissue_seg.py")
         print("Running " + tissue_seg_script)
         call_and_print([python, tissue_seg_script])
-        SEGMENTATION = find_file(".*_labels_EMS.nrrd", os.path.join(OUT_PATH, "ABC_Segmentation"))
+        abc_seg = find_file(".*_labels_EMS.nrrd", os.path.join(OUT_PATH, "ABC_Segmentation"))
+        if(abc_seg is not None):
+            SEGMENTATION = abc_seg
 
 
     if (main_args.removeVentricles):
@@ -101,7 +103,9 @@ def main(main_args):
         print("Running " + vent_mask_script)
         call_and_print([python, vent_mask_script])
         
-        SEGMENTATION = find_file(".*_withoutVent.nrrd", os.path.join(OUT_PATH, "VentricleMasking"))
+        ventricleMasking_seg = find_file(".*_withoutVent.nrrd", os.path.join(OUT_PATH, "VentricleMasking"))
+        if(VentricleMasking_seg is not None):
+            SEGMENTATION = ventricleMasking_seg
         print("Finished running "+ vent_mask_script)
 
     if(not os.path.exists(BRAIN_MASK)):
