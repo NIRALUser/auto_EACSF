@@ -104,7 +104,7 @@ def main(main_args):
         call_and_print([python, vent_mask_script])
         
         ventricleMasking_seg = find_file(".*_withoutVent.nrrd", os.path.join(OUT_PATH, "VentricleMasking"))
-        if(VentricleMasking_seg is not None):
+        if(ventricleMasking_seg is not None):
             SEGMENTATION = ventricleMasking_seg
         print("Finished running "+ vent_mask_script)
 
