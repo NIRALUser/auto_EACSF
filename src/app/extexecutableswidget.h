@@ -32,6 +32,7 @@ public:
     explicit ExtExecutablesWidget(QWidget *m_parent = NULL);
     vector<QString> buildInterface(QMap<QString, QString> exeMap); //Builds the interface
     void setExeDir(QString dir); //Sets the default directory for the QFileDialog
+    void setExecutable(QString exe, QString path);
     QJsonArray GetExeArray();
     QMap<QString, QString> GetExeMap();
 

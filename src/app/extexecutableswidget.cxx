@@ -95,6 +95,12 @@ void ExtExecutablesWidget::setExeDir(QString dir)
     m_exeDir = dir;
 }
 
+void ExtExecutablesWidget::setExecutable(QString exe, QString path){
+    if(m_ExeMap.find(exe) != m_ExeMap.end()){
+        m_ExeMap[exe]->setText(path);    
+    }
+}
+
 //SLOTS
 void ExtExecutablesWidget::exeQpbTriggered()
 {

@@ -177,7 +177,9 @@ void CSFWindow::setConfig(QJsonObject root_obj)
     foreach (const QJsonValue exe_val, exe_array)
     {
         QJsonObject exe_obj = exe_val.toObject();
-        emit m_exeWidget->newExePath(exe_obj["name"].toString(), exe_obj["path"].toString());
+        cout<<exe_obj["path"].toString().toStdString()<<endl;
+
+        this->updateExecutables(exe_obj["name"].toString(), exe_obj["path"].toString());
     }
 
     // QJsonArray script_array = root_obj["scripts"].toArray();
@@ -1028,7 +1030,7 @@ void CSFWindow::on_radioButton_mm_clicked(const bool checkState)
 // Executables tab
 void CSFWindow::updateExecutables(QString exeName, QString path)
 {
-    emit m_exeWidget->newExePath(exeName, path);
+    m_exeWidget->setExecutable(exeName, path);
 }
 
 // 3rd Tab - 1.Reference Alignment, 2.Skull Stripping
