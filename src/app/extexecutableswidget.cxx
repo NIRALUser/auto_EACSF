@@ -69,17 +69,15 @@ QString ExtExecutablesWidget::findExecutable(QString exe_name, QString exe_path)
 
         QString app_path = QDir::cleanPath(QCoreApplication::applicationDirPath());
 
-        cout<<app_path.toStdString()<<endl;
-
-        hints.push_front(app_path + QString("./"));
-        hints.push_front(app_path + QString("./bin/"));
+        hints.push_front(app_path);
+        hints.push_front(app_path + QString("/bin/"));
         hints.push_front(app_path + QString("/../auto_EACSF-inner-install/bin/"));
 
         QString found_exe("");
 
         foreach (const QString hint, hints){
-
-            QFileInfo info = QFileInfo(QDir::cleanPath(hint + exe_name));
+            
+            QFileInfo info = QFileInfo(QDir::cleanPath(hint + "/" + exe_name));
 
             if(info.exists()){
                 found_exe = info.absoluteFilePath();
