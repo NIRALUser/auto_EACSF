@@ -108,15 +108,18 @@ def main(main_args):
             SEGMENTATION = ventricleMasking_seg
         print("Finished running "+ vent_mask_script)
 
-    if(not os.path.exists(BRAIN_MASK)):
-        BRAIN_MASK = SEGMENTATION
-
-    BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
-    Segmentation_base = os.path.splitext(os.path.basename(SEGMENTATION))[0]
-
     OUT_FM = os.path.join(OUT_PATH, 'FinalMasking')
     if not os.path.exists(OUT_FM):
         os.makedirs(OUT_FM)
+
+    if(not os.path.exists(BRAIN_MASK)):
+        BRAIN_MASK = find_file(".*_FinalBrainMask.nrrd", os.path.join(OUT_PATH, "SkullStripping"))
+        # BRAIN_MASK = os.path.join(OUT_PATH, 'FinalMasking', os.path.splitext(os.path.basename(SEGMENTATION))[0] + "_brainMask.nrrd")
+        # args=[ImageMath, SEGMENTATION, '-outfile', BRAIN_MASK, '-threshold', "1,999999"]
+        # call_and_print(args)
+
+    BRAIN_MASK_base = os.path.splitext(os.path.basename(BRAIN_MASK))[0]
+    Segmentation_base = os.path.splitext(os.path.basename(SEGMENTATION))[0]
 
     ######### Stripping the skull from segmentation ######
     MID_TEMP00 = os.path.join(OUT_FM, "".join([T1_base,"_MID00.nrrd"]))
