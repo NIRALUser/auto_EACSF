@@ -28,7 +28,7 @@ def main(args):
 			args=[ImageMath, T1, '-mask', BrainMask, '-outfile', T1_STRIPPED]
 			call_and_print(args)
 
-		if(T2 is not None and os.path.exists(T1)):
+		if(T2 is not None and os.path.exists(T2)):
 			T2_Base = os.path.splitext(os.path.basename(T2))[0]
 			T2_STRIPPED = os.path.join(output_dir, T2_Base + "_stripped.nrrd")
 			args=[ImageMath, T2, '-mask', BrainMask, '-outfile', T2_STRIPPED]
