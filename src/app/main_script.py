@@ -135,8 +135,11 @@ def main(main_args):
         T1_REGISTERED = os.path.join(OUT_PATH, "RigidRegistration", T1_base + "_stx.nrrd")
         T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1_REGISTERED))[0])[0]
 
-    if main_args.skullStripping:
-        T1_REGISTERED = os.path.join(OUT_PATH, "SkullStripping", T1_base + "_stripped.nrrd")
+    
+    T1_STRIPPED = os.path.join(OUT_PATH, "SkullStripping", T1_base + "_stripped.nrrd")
+    if(T1_STRIPPED is not None):
+        T1_REGISTERED = T1_STRIPPED
+        T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1_REGISTERED))[0])[0]
 
     if (main_args.cerebellumMask == ""):
         ACPC_unit=main_args.ACPCunit

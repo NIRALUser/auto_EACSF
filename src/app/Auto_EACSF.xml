@@ -3,7 +3,7 @@
   <category>PROJECT</category>
   <title>Auto_EACSF</title>
   <description>Automatically extract external CSF from T1 or T1 and T2 images.</description>
-  <version>1.7.4</version>
+  <version>1.7.5</version>
   <contributor>Han Bit Yoon, Arthur Le Maout, Martin Styner</contributor>
   <parameters advanced="false">
       <file>

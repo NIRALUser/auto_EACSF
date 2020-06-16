@@ -17,6 +17,9 @@ def main(args):
 	output_dir = args.output
 	ImageMath = args.ImageMath
 
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
 	if(BrainMask is not None and os.path.exists(BrainMask)):
 		print("Skull stripping ...")
 		if(T1 is not None and os.path.exists(T1)):
