@@ -69,6 +69,7 @@ QString ExtExecutablesWidget::findExecutable(QString exe_name, QString exe_path)
         QString current_dir = QDir::cleanPath(QDir::current().path());
 
         hints.push_front(current_dir + QString("./"));
+        hints.push_front(current_dir + QString("./bin"));
         hints.push_front(current_dir + QString("/../auto_EACSF-inner-install/bin/"));
 
         QString found_exe("");
