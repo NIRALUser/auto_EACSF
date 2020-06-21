@@ -6,6 +6,7 @@ import os
 import argparse
 import subprocess
 import json
+from shutil import copyfile
 
 from main_script import call_and_print
 
@@ -33,6 +34,19 @@ def main(args):
 			T2_STRIPPED = os.path.join(output_dir, T2_Base + "_stripped.nrrd")
 			args=[ImageMath, T2, '-mask', BrainMask, '-outfile', T2_STRIPPED]
 			call_and_print(args)
+	else:
+		print("Warning! No brain mask provided or computed. The input T1/T2 will be used in the following steps...")
+		if(T1 is not None and os.path.exists(T1)):
+			T1_Base = os.path.splitext(os.path.basename(T1))[0]
+			T1_STRIPPED = os.path.join(output_dir, T1_Base + "_stripped.nrrd")
+			print("cp ", T1, T1_STRIPPED)
+			copyfile(T1, T1_STRIPPED)
+		if(T2 is not None and os.path.exists(T2)):
+			T2_Base = os.path.splitext(os.path.basename(T2))[0]
+			T2_STRIPPED = os.path.join(output_dir, T2_Base + "_stripped.nrrd")
+			print("cp ", T2, T2_STRIPPED)
+			copyfile(T2, T2_STRIPPED)
+
 
 if (__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Skull strip the images')

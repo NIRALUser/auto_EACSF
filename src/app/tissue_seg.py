@@ -42,11 +42,7 @@ def main(args):
 <FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>\n\
 <FILTER-METHOD>Curvature flow</FILTER-METHOD>\n\
 <MAX-BIAS-DEGREE>4</MAX-BIAS-DEGREE>\n\
-<PRIOR>1.3</PRIOR>\n\
-<PRIOR>1</PRIOR>\n\
-<PRIOR>0.7</PRIOR>\n\
-@EXTRA_PRIOR@\n\
-<PRIOR>0.8</PRIOR>\n\
+@PRIORS@\n\
 <INITIAL-DISTRIBUTION-ESTIMATOR>robust</INITIAL-DISTRIBUTION-ESTIMATOR>\n\
 <DO-ATLAS-WARP>0</DO-ATLAS-WARP>\n\
 <ATLAS-WARP-FLUID-ITERATIONS>50</ATLAS-WARP-FLUID-ITERATIONS>\n\
@@ -122,7 +118,7 @@ def main(args):
     
     segfiledata = ABC_TEMPLATE.replace('@T1_INSEG_IMG@',T1)
     segfiledata = segfiledata.replace('@T2_INSEG_IMG@',T2)
-    segfiledata = segfiledata.replace('@ATLAS_DIR@',ATLAS_DIR)
+    segfiledata = segfiledata.replace('@ATLAS_DIR@',OUTPUT_DIR_TISSUE_ATLAS)
     segfiledata = segfiledata.replace('@PRIORS@',PRIORS)
 
     abc_params = os.path.join(OUTPUT_DIR,'ABCparam.xml')

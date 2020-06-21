@@ -24,8 +24,8 @@ def main(args):
     T1_dir=os.path.dirname(T1)
 
     T1_split=os.path.splitext(os.path.basename(T1))
-    if (T1_split[1] == 'gz'):
-        T1_base=os.path.splitext(T1_split[0])
+    if (T1_split[1] == '.gz'):
+        T1_base=os.path.splitext(T1_split[0])[0]
     else:
         T1_base=T1_split[0]
 
@@ -40,8 +40,8 @@ def main(args):
 
         T2_dir=os.path.dirname(T2)
         T2_split=os.path.splitext(os.path.basename(T2))
-        if (T2_split[1] == 'gz'):
-            T2_base=os.path.splitext(T2_split[0])
+        if (T2_split[1] == '.gz'):
+            T2_base=os.path.splitext(T2_split[0])[0]
         else:
             T2_base=T2_split[0]
         STX_T2 = os.path.join(OUTPUT_DIR, "".join([T2_base,"_stx.nrrd"]))

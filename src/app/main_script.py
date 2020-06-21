@@ -136,7 +136,7 @@ def main(main_args):
         T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1_REGISTERED))[0])[0]
 
     
-    T1_STRIPPED = os.path.join(OUT_PATH, "SkullStripping", T1_base + "_stripped.nrrd")
+    T1_STRIPPED = find_file(T1_base + "_stripped.nrrd", os.path.join(OUT_PATH, "SkullStripping"))
     if(T1_STRIPPED is not None):
         T1_REGISTERED = T1_STRIPPED
         T1_base = os.path.splitext(os.path.splitext(os.path.basename(T1_REGISTERED))[0])[0]

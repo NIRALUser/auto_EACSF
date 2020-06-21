@@ -284,34 +284,32 @@ void CSFScripts::write_tissue_seg()
     QString T1 = checkStringValue(data_obj["T1img"]);
     QString T2 = checkStringValue(data_obj["T2img"]);
 
+    QFileInfo t1_info(T1);
+    QFileInfo t2_info(T2);
+
     if(param_obj["PERFORM_REG"].toBool()){
-        QFileInfo t1_info(T1);
         if(t1_info.exists()){
             T1 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
         }
-
-        QFileInfo t2_info(T2);
         if(t2_info.exists()){
             T2 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t2_info.baseName() + QString("_stx.nrrd"));
         }
     }
-    
-    QFileInfo t1_info(T1);
 
     if(t1_info.exists()){
-        QString T1_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t1_info.baseName() + QString("_stripped.nrrd"));
-        if(QFileInfo(T1_stripped).exists()){
-            T1 = T1_stripped;
-        }
+        //Update T1 info with the RigidRegistration info if it was performed
+        QString t1_basename = QFileInfo(T1).baseName();
+        QString T1_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t1_basename + QString("_stripped.nrrd"));
+        //The stripped image exists regardless.
+        T1 = T1_stripped;
     }
 
-    QFileInfo t2_info(T2);
-
     if(t2_info.exists()){
-        QString T2_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t2_info.baseName() + QString("_stripped.nrrd"));
-        if(QFileInfo(T2_stripped).exists()){
-            T2 = T2_stripped;
-        }
+        //Update T1 info with the RigidRegistration info if it was performed
+        QString t2_basename = QFileInfo(T2).baseName();
+        QString T2_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t2_basename + QString("_stripped.nrrd"));
+        //The stripped image exists regardless.
+        T2 = T2_stripped;
     }
 
     seg_script.replace("@T1IMG@", T1);
@@ -351,20 +349,20 @@ void CSFScripts::write_vent_mask()
     QString T1 = checkStringValue(data_obj["T1img"]);
     QString output_dir = checkStringValue(data_obj["output_dir"]);
 
+    QFileInfo t1_info(T1);
+
     if(param_obj["PERFORM_REG"].toBool()){
-        QFileInfo t1_info(T1);
         if(t1_info.exists()){
-            T1 = QDir::cleanPath(output_dir + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
+            T1 = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/RigidRegistration/") + t1_info.baseName() + QString("_stx.nrrd"));
         }
     }
 
-    QFileInfo t1_info(T1);
-
     if(t1_info.exists()){
-        QString T1_stripped = QDir::cleanPath(output_dir + QString("/SkullStripping/") + t1_info.baseName() + QString("_stripped.nrrd"));
-        if(QFileInfo(T1_stripped).exists()){
-            T1 = T1_stripped;
-        }
+        //Update T1 info with the RigidRegistration info if it was performed
+        QString t1_basename = QFileInfo(T1).baseName();
+        QString T1_stripped = QDir::cleanPath(checkStringValue(data_obj["output_dir"]) + QString("/SkullStripping/") + t1_basename + QString("_stripped.nrrd"));
+        //The stripped image exists regardless.
+        T1 = T1_stripped;
     }
 
     QString tissue_seg = checkStringValue(data_obj["TissueSeg"]);
@@ -381,7 +379,7 @@ void CSFScripts::write_vent_mask()
     v_script.replace("@TRANS_STEP@", checkDoubleValue(param_obj["ANTS_transformation_step"]));
     v_script.replace("@ITERATIONS@", checkStringValue(param_obj["ANTS_iterations_val"]));
     v_script.replace("@SIM_METRIC@", checkStringValue(param_obj["ANTS_sim_metric"]));
-    v_script.replace("@SIM_PARAMETER@", checkStringValue(param_obj["ANTS_sim_param"]));
+    v_script.replace("@SIM_PARAMETER@", checkIntValue(param_obj["ANTS_sim_param"]));
     v_script.replace("@GAUSSIAN@", checkDoubleValue(param_obj["ANTS_gaussian_sig"]));
     v_script.replace("@T1_WEIGHT@", checkDoubleValue(param_obj["ANTS_T1_weight"]));
 
