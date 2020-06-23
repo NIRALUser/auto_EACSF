@@ -30,14 +30,8 @@ def main(args):
 <ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>\n\
 <OUTPUT-DIRECTORY>@OUTPUT_DIR@</OUTPUT-DIRECTORY>\n\
 <OUTPUT-FORMAT>Nrrd</OUTPUT-FORMAT>\n\
-<IMAGE>\n\
-\t<FILE>@T1_INSEG_IMG@</FILE>\n\
-\t<ORIENTATION>file</ORIENTATION>\n\
-</IMAGE>\n\
-<IMAGE>\n\
-\t<FILE>@T2_INSEG_IMG@</FILE>\n\
-\t<ORIENTATION>file</ORIENTATION>\n\
-</IMAGE>\n\
+@T1_INSEG_IMG@\
+@T2_INSEG_IMG@\
 <FILTER-ITERATIONS>10</FILTER-ITERATIONS>\n\
 <FILTER-TIME-STEP>0.01</FILTER-TIME-STEP>\n\
 <FILTER-METHOD>Curvature flow</FILTER-METHOD>\n\
@@ -91,6 +85,18 @@ def main(args):
     else:
         print('ANTs registration already exists')
 
+    if os.path.exists(T1):
+        T1_INSEG_IMG = "<IMAGE>\n\t<FILE>@T1_INSEG_IMG@</FILE>\n\t<ORIENTATION>file</ORIENTATION>\n</IMAGE>\n"
+        T1_INSEG_IMG = T1_INSEG_IMG.replace("@T1_INSEG_IMG@", T1)
+    else:
+        T1_INSEG_IMG = ""
+
+    if os.path.exists(T2):
+        T2_INSEG_IMG = "<IMAGE>\n\t<FILE>@T2_INSEG_IMG@</FILE>\n\t<ORIENTATION>file</ORIENTATION>\n</IMAGE>\n"
+        T2_INSEG_IMG = T2_INSEG_IMG.replace("@T2_INSEG_IMG@", T2)
+    else:
+        T2_INSEG_IMG = ""
+
     predefined_priors=[1.3, 1.0, 0.7, 0.8]
 
     priors_found = find_files("\\d\\.mha", ATLAS_DIR)
@@ -116,8 +122,8 @@ def main(args):
     for pr in priors:
         PRIORS += "<PRIOR>" + str(pr) + "</PRIOR>\n"
     
-    segfiledata = ABC_TEMPLATE.replace('@T1_INSEG_IMG@',T1)
-    segfiledata = segfiledata.replace('@T2_INSEG_IMG@',T2)
+    segfiledata = ABC_TEMPLATE.replace('@T1_INSEG_IMG@', T1_INSEG_IMG)
+    segfiledata = segfiledata.replace('@T2_INSEG_IMG@', T2_INSEG_IMG)
     segfiledata = segfiledata.replace('@ATLAS_DIR@',OUTPUT_DIR_TISSUE_ATLAS)
     segfiledata = segfiledata.replace('@PRIORS@',PRIORS)
 
